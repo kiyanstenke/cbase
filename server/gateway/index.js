@@ -10,6 +10,7 @@ import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as users from "./users.js";
+import { ensureSetupToken, removeSetupToken, setupTokenMatches } from "./setup-token.js";
 import * as containers from "./containers.js";
 import { proxyRequest, activeStreams, trackStream, passThroughUpgradeResponse, closeStreams } from "./proxy.js";
 import { pushConfiguration, sendTestPush, unwatchBackend, watchBackend } from "./push.js";
@@ -38,6 +39,8 @@ const COOKIE = "cbase_gw";
 const VERSION = "0.1.0";
 
 users.initUsers(DATA_DIR);
+// First-time setup needs a token only the operator can read (setup-token.js): null once the first user exists.
+let setupToken = users.countUsers() === 0 ? ensureSetupToken(DATA_DIR) : null;
 // Every creation of a user container reads that user's limits from gateway.db (without a row: the unit applies).
 containers.setResourcesSource((userId) => users.getResources(userId));
 
@@ -291,6 +294,7 @@ async function handle(req, res) {
       return send(res, 200, {
         gateway: true, version: VERSION,
         setup: users.countUsers() === 0,
+        setupToken: users.countUsers() === 0, // the setup form asks for the token (setup-token.js)
         authenticated: !!sess,
         user: sess ? { username: sess.user.username, role: sess.user.role } : null,
       });
@@ -299,7 +303,15 @@ async function handle(req, res) {
     if (p === "/gw/setup" && m === "POST") {
       if (users.countUsers() > 0) return send(res, 403, { error: "already set up" });
       const b = await readBody(req);
+      // A second setup may have finished while this body was read; never write a new token file after that.
+      if (users.countUsers() > 0) return send(res, 403, { error: "already set up" });
+      if (!setupToken) setupToken = ensureSetupToken(DATA_DIR);
+      if (!setupTokenMatches(setupToken.token, b.setupToken)) {
+        return send(res, 403, { error: "setup token missing or wrong — it is in the gateway log and in <data>/setup-token", code: "SETUP_TOKEN" });
+      }
       const u = users.createUser({ username: b.username, password: b.password, role: "admin" });
+      removeSetupToken(DATA_DIR);
+      setupToken = null;
       users.setResources(u.id, template(), null); // every user has a row — the first one from the template
       writeDesired();
       setSessionCookie(res, users.createSession(u.id));
@@ -729,6 +741,12 @@ if (IDLE_STOP_MIN > 0) {
 server.listen(PORT, HOST, () => {
   console.log(`[gateway] cbase gateway v${VERSION} on http://${HOST}:${PORT}`);
   console.log(`[gateway] Web UI: ${WEB_DIR}${fs.existsSync(path.join(WEB_DIR, "index.html")) ? "" : "  (WARNING: no index.html — build web/ first!)"}`);
+  if (setupToken) {
+    // A token the operator set in the environment is already known to them; it is not written to the log.
+    console.log(setupToken.source === "GW_SETUP_TOKEN"
+      ? "[gateway] First-time setup: no user yet — the setup form asks for the token from GW_SETUP_TOKEN"
+      : `[gateway] First-time setup: no user yet — the setup form asks for this token: ${setupToken.token} (from ${setupToken.source})`);
+  }
   console.log(`[gateway] Data: ${DATA_DIR} · Image: ${process.env.GW_IMAGE || "cbase-backend"} · Idle stop: ${IDLE_STOP_MIN > 0 ? IDLE_STOP_MIN + " min" : "off"}`);
   const push = pushConfiguration();
   console.log(`[gateway] APNs: sandbox ${push.sandbox ? "ready" : "off"} · production ${push.production ? "ready" : "off"} · topic ${push.topic}`);

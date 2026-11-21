@@ -425,7 +425,8 @@
     "push.test.js",
     "resources.test.js",
     "administration-proofread.test.js",
-    "administration.test.js"
+    "administration.test.js",
+    "setup-token.test.js"
   ],
   "Web": [
     "retrieval-airlock.test.mjs",

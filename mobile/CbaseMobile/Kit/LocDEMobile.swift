@@ -241,6 +241,8 @@ let LocDEMobile: [String: String] = [
     "Finishing": "Abschluss",
     "Section": "Abschnitt",
     "Create admin account": "Admin-Konto anlegen",
+    "Setup token": "Einrichtungs-Token",
+    "Printed in the gateway log at start and stored in <data>/setup-token on the server.": "Steht beim Start im Log des Gateways und auf dem Server in <data>/setup-token.",
     "Active goal": "Aktives Ziel",
     "Enabled servers are available to the agent in every chat of this workspace — effective from the next run.": "Aktivierte Server stehen dem Agenten in allen Chats dieses Workspace zur Verfügung — wirksam ab dem nächsten Lauf.",
     "Enabled servers are available to the agent in every chat of this workspace.": "Aktivierte Server stehen dem Agenten in allen Chats dieses Workspace zur Verfügung.",

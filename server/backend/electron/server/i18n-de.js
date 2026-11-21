@@ -1404,6 +1404,7 @@ export const DE = {
   "Usage limit: giving up after {} continuations.": "Nutzungslimit: nach {0} Fortsetzungen wird nicht weiter gewartet.",
   "Use the agent's answer that reports the result, or the call that brought it about; a decision belongs in the text of the event that carries it out.": "Nimm die Antwort des Agenten, die das Ergebnis meldet, oder den Aufruf, der es herbeigeführt hat; eine Entscheidung gehört in den text des Ereignisses, das sie umsetzt.",
   "VS Code CLI cannot be started: {}": "VS-Code-CLI nicht startbar: {0}",
+  "Accept the VS Code Server license terms first ({})": "Erst die Lizenzbedingungen des VS Code Servers annehmen ({0})",
   "VS Code Remote Tunnels are not available in this environment": "VS Code Remote Tunnels sind in dieser Umgebung nicht verfügbar",
   "Verdict waiting": "Urteil wartet",
   "Volume {} already exists — a leftover, not of this build; nothing created": "Volume {0} gibt es schon — ein Rest, nicht dieses Aufbaus; nichts angelegt",

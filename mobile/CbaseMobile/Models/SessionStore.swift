@@ -54,10 +54,12 @@ final class SessionStore: ObservableObject {
         }
     }
 
-    func login(username: String, password: String, setup: Bool) async throws {
+    func login(username: String, password: String, setup: Bool, setupToken: String = "") async throws {
         guard let client else { throw APIError(status: 0, message: L("Not connected to a server yet.")) }
-        struct Credentials: Codable { let username: String; let password: String }
-        let response: LoginResponse = try await client.post(setup ? "/gw/setup" : "/gw/login", body: Credentials(username: username, password: password))
+        // First-time setup also carries the one-time token from the gateway's log (server/gateway/setup-token.js).
+        struct Credentials: Codable { let username: String; let password: String; let setupToken: String? }
+        let token = setup ? setupToken.trimmingCharacters(in: .whitespacesAndNewlines) : nil
+        let response: LoginResponse = try await client.post(setup ? "/gw/setup" : "/gw/login", body: Credentials(username: username, password: password, setupToken: token))
         user = response.user
         defaults.set(username, forKey: "cbase.mobile.username")
         await ensureEnvironment()

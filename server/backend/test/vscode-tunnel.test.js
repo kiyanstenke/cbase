@@ -61,9 +61,19 @@ test("VS Code Remote Tunnel: login with device code, link, stop, crash, restart,
     assert.equal(r400.status, 400);
     assert.equal(vt._intern.proc, null);
 
+    // The VS Code Server is under Microsoft's licence: without the user's acceptance nothing starts — 409 LICENSE, no CLI process,
+    // nothing stored as accepted. COUNTER-TEST: startTunnel without the licence check => red here.
+    assert.equal(st.licenseAccepted, false);
+    assert.match(st.licenseUrl, /^https:\/\/aka\.ms\/vscode-server-license$/);
+    const rNoLicense = await post("start", { name: "cbase-Test", provider: "microsoft" });
+    assert.equal(rNoLicense.status, 409);
+    assert.equal((await rNoLicense.json()).code, "LICENSE");
+    assert.equal(vt._intern.proc, null, "no tunnel process without the accepted licence");
+    assert.equal((await status()).licenseAccepted, false, "a refused start stores no acceptance");
+
     // Start with a Microsoft account: first the login step with device code (Microsoft URL, because the provider is passed
-    // EXPLICITLY — the tunnel command itself would take GitHub).
-    const rStart = await post("start", { name: "cbase-Test", provider: "microsoft" });
+    // EXPLICITLY — the tunnel command itself would take GitHub). The acceptance travels with this first start and is stored.
+    const rStart = await post("start", { name: "cbase-Test", provider: "microsoft", acceptLicense: true });
     assert.equal(rStart.status, 200);
     // Every response has the same shape as GET — without `workspaces` the pill would tear down the whole page at the first
     // click on start ("r.workspaces is not iterable").
@@ -156,4 +166,14 @@ test("without CBASE_VSCODE_TUNNEL=1: not available, start is rejected with 409",
     try { fs.rmSync(root, { recursive: true, force: true, maxRetries: 20, retryDelay: 150 }); }
     catch (e) { console.warn(`Cleanup of ${root} failed (${e.code || e.message}) — test unaffected.`); }
   }
+});
+
+// The autostart after a server start never accepts the licence on the user's behalf: a container that ran a tunnel before the licence
+// question existed stays off until the user accepts in the pill. COUNTER-TEST: autostart without its licenseAccepted check => red.
+test("autostart without an accepted licence starts nothing and stores nothing", async () => {
+  const written = [];
+  const store = { getSetting: (k, d) => ({ "vscode_tunnel.active": "1" })[k] ?? d, setSetting: (k, v) => written.push([k, v]) };
+  await vt.autostart(store);
+  assert.equal(vt._intern.proc, null, "a tunnel started without the user's acceptance");
+  assert.deepEqual(written, [], "the autostart wrote settings (an acceptance?) on the user's behalf");
 });

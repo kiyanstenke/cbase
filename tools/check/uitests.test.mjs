@@ -513,10 +513,10 @@ const RUN_CRASH = HEADER
 
 // A REAL --only run, shortened: Executed 1, xcresult line, SUCCEEDED.
 const RUN_ONLY_REAL = `Command line invocation:
-    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project /Users/maintainer/Documents/cbase/mobile/CbaseMobile.xcodeproj -scheme CbaseMobile -destination "platform=iOS Simulator,id=11111111-2222-4333-8444-555555555555" -derivedDataPath /Users/maintainer/Library/Developer/Xcode/DerivedData/CbaseMobile-UITests -resultBundlePath /private/tmp/claude-501/scratchpad/wackler/w1/finalMatrix-1.xcresult "-only-testing:CbaseMobileUITests/ChatRowsUITests/testSubagentMatrixInLoadedHistory" test-without-building
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project /Users/maintainer/Documents/cbase/mobile/CbaseMobile.xcodeproj -scheme CbaseMobile -destination "platform=iOS Simulator,id=11111111-2222-4333-8444-555555555555" -derivedDataPath /Users/maintainer/Library/Developer/Xcode/DerivedData/CbaseMobile-UITests -resultBundlePath /private/tmp/uitests/run1/finalMatrix-1.xcresult "-only-testing:CbaseMobileUITests/ChatRowsUITests/testSubagentMatrixInLoadedHistory" test-without-building
 
 Writing result bundle at path:
-\t/private/tmp/claude-501/scratchpad/wackler/w1/finalMatrix-1.xcresult
+\t/private/tmp/uitests/run1/finalMatrix-1.xcresult
 
 2026-09-16 01:38:49.820100+0200 CbaseMobileUITests-Runner[94407:38545584] [Default] Running tests...
     t =      nans Interface orientation changed to Portrait
@@ -536,7 +536,7 @@ Test Suite 'Selected tests' passed at 2026-09-16 01:39:26.819.
 2026-09-16 01:39:37.123 xcodebuild[94391:38545432] [MT] IDETestOperationsObserverDebug: 47.891 elapsed -- Testing started completed.
 
 Test session results, code coverage, and logs:
-\t/tmp/claude-501/scratchpad/wackler/w1/finalMatrix-1.xcresult
+\t/tmp/uitests/run1/finalMatrix-1.xcresult
 
 ** TEST EXECUTE SUCCEEDED **
 `;
@@ -795,10 +795,10 @@ test("completionWarning (h5): exit ≠ 0 without SUCCEEDED/FAILED marker ⇒ war
 
 test("parseTestRun (h6): the xcresult path from \"Test session results, code coverage, and logs:\" — not the one from \"Writing result bundle\"", () => {
   const p = parseTestRun(RUN_ONLY_REAL);
-  assert.equal(p.xcresult, "/tmp/claude-501/scratchpad/wackler/w1/finalMatrix-1.xcresult");
+  assert.equal(p.xcresult, "/tmp/uitests/run1/finalMatrix-1.xcresult");
   assert.equal(parseTestRun(RUN_FULL).xcresult, null, "without the line: null, not a random path");
   const z = summary({ stamp: "s", expected: 1, parsed: p, verdict: { ok: true }, exitCode: 0 });
-  assert.equal(z.xcresult, "/tmp/claude-501/scratchpad/wackler/w1/finalMatrix-1.xcresult");
+  assert.equal(z.xcresult, "/tmp/uitests/run1/finalMatrix-1.xcresult");
 });
 
 // ── The whole verdict chain on a real --only run ────────────────────────────────────────────────────────────

@@ -83,6 +83,8 @@ function GatewayLogin({ setup, onDone }: { setup: boolean; onDone: (u: GatewayUs
   const t = useT();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  // First-time setup: the gateway prints a one-time token in its log and stores it in <data>/setup-token (server/gateway/setup-token.js).
+  const [setupToken, setSetupToken] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const field = "w-full rounded-full border border-edge bg-bg px-4 py-2.5 text-fg outline-none focus:border-accent";
@@ -95,7 +97,7 @@ function GatewayLogin({ setup, onDone }: { setup: boolean; onDone: (u: GatewayUs
       const r = await fetch(setup ? "/gw/setup" : "/gw/login", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify(setup ? { username, password, setupToken } : { username, password }),
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.error || t("Login failed"));
@@ -127,8 +129,16 @@ function GatewayLogin({ setup, onDone }: { setup: boolean; onDone: (u: GatewayUs
           <input className={`mt-1.5 ${field}`} type="password" value={password} onChange={(e) => setPassword(e.target.value)}
                  autoComplete={setup ? "new-password" : "current-password"} />
         </label>
+        {setup && (
+          <label className="mb-5 block text-sm text-dim">
+            {t("Setup token")}
+            <input className={`mt-1.5 ${field}`} value={setupToken} onChange={(e) => setSetupToken(e.target.value)}
+                   autoComplete="off" spellCheck={false} />
+            <span className="mt-1.5 block text-xs">{t("Printed in the gateway log at start and stored in <data>/setup-token on the server.")}</span>
+          </label>
+        )}
         {err && <div className="mb-3 text-sm text-danger">{err}</div>}
-        <button type="submit" disabled={busy || !username || !password}
+        <button type="submit" disabled={busy || !username || !password || (setup && !setupToken.trim())}
                 className="w-full rounded-full bg-accent px-4 py-2.5 font-medium text-white transition-opacity disabled:opacity-50">
           {busy ? t("Signing in…") : setup ? t("Create account") : t("Sign in")}
         </button>

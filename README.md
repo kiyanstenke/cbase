@@ -1,78 +1,131 @@
-# cbase — monorepo
+# cbase
 
-cbase is a Claude Code / Codex harness that runs client/server. The repo holds the server (gateway and one backend per user),
-two clients (desktop, iOS) and a shared web UI. The backend also runs without a gateway (tests, probes, local development).
+**A self-hosted workbench for long-running coding agents.** Let Claude Code, Codex and OpenRouter models work for hours in an
+isolated container of their own, and check in from the browser, a Mac app or your iPhone to read along, step in or approve.
+Everyone brings their own provider subscription or API key; cbase runs on your server.
 
-## Layout
+Why not just the CLI in a terminal? Because a run outlives your laptop lid: sessions keep going when you disconnect, every user
+and every project gets its own container, approvals reach you on your phone, and the same agents can run on a schedule or in a
+workflow while you do something else.
+
+## What you get
+
+- **Agents** — Claude Code and Codex through their official CLIs (pinned versions), OpenRouter models through a built-in engine.
+  Subagents, skills, effort levels, slash commands, a message queue, approval cards and automatic context compaction.
+- **A place to work** — workspaces with projects; a project can get its own container with its own Docker daemon. In the browser:
+  a file explorer and editor with language services, terminals, a Git view with branches and diffs, and the agent's
+  own browser to watch and take over; preview links through your own ngrok account. VS Code can attach through Remote Tunnels.
+- **Automation** — scheduled tasks (one chat per job, each run a message), graph and scripted workflows, and channels through
+  which chats hand work to each other.
+- **Clients** — the web UI, a macOS desktop app around it, and a native iOS app with push notifications. English and German.
+- **Operation** — a gateway with user management, one long-lived container per user with its own limits, idle stop, and runs
+  that resume after a restart.
+
+## How it works
 
 ```
-cbase/
-  web/          Shared frontend (Next.js, static export). ONE source of the UI; behind the gateway with
-                login/account/environment, against a bare backend (tests, probes) without those edges.
-  server/       Gateway / control plane for multi-tenant operation (server/gateway) and the per-user
-                backend with image, tests and lockfile (server/backend).
-  client/       Desktop app (Electron shell + connection page); loads the shared UI from the gateway.
-  mobile/       iOS app (SwiftUI, its own Xcode project).
+ browser · macOS app · iOS app
+              │  HTTPS (TLS at your reverse proxy)
+           gateway  ── users, sessions, containers, reverse proxy for HTTP and SSE
+              │
+   ┌──────────┴──────────┐
+ user container A     user container B      one backend per user (Sysbox: its own inner Docker)
+   │  agents, files, tools, the user's provider logins
+   └─ project containers                  optional: one Docker daemon per project
 ```
 
-## Architecture
+- **One container per user.** The backend is single-tenant and runs unchanged inside it; multi-tenancy comes from the container
+  boundary, not from a `user_id` on every query.
+- **Own credentials.** Every user signs in to their providers inside their own container. cbase never shares or proxies a login.
+- **One UI.** `web/` is the only source of the interface; the desktop app loads it from the gateway, the iOS app talks to the same API.
 
-- **One long-lived container per user.** The backend runs unchanged and single-tenant inside it (it already assumes
-  "one user, many workspaces"). Multi-tenancy comes from container separation — no `user_id` on every query, no
-  Postgres migration. That settles filesystem isolation, auth and port namespaces at once.
-- **Gateway** (`server/gateway/`): user management and login, container provisioning and lifecycle (idle → hibernate, the
-  volume stays), reverse proxy for HTTP **and SSE**.
-- **Own credentials per user.** Everyone brings their own Claude/Codex subscription and API keys; no shared login.
-  - **Codex:** `codex login --device-auth` (device-code flow, no localhost callback).
-  - **Claude:** long-lived token from `claude setup-token`, injected into the container as `CLAUDE_CODE_OAUTH_TOKEN`.
+## Status
 
-## Shared UI
-
-`web/` is the only source of the interface. The desktop client loads it from the gateway; the core (chat, projects, editor,
-terminals, …) stays DRY. Only the edges differ (connection, login, account, environment status) and sit behind a small
-session/environment abstraction or in client-own screens.
+cbase is pre-1.0. The author uses it daily on one self-hosted server; there are no releases or stability guarantees yet, and
+`main` is the only supported branch. The provider CLIs are pinned and moved deliberately. Parts are macOS-only: the desktop app,
+the iOS build and the macOS test suite.
 
 ## Requirements
 
-- **Server:** Linux x86_64 with Docker. [Sysbox](https://github.com/nestybox/sysbox) is recommended (`GW_RUNTIME=sysbox-runc`): it gives
-  every user container its own inner Docker without `--privileged`, which project containers need. Without it the gateway runs
-  plain containers and project containers are unavailable.
-- **Node.js 22** for the gateway, the backend and the tools (the backend image brings its own).
-- **Desktop client:** macOS (Electron); **iOS app:** Xcode 26 or newer.
-- Every user brings their own Claude and/or Codex subscription or API key.
+- **Server:** Linux x86_64 with Docker. [Sysbox](https://github.com/nestybox/sysbox) is recommended: it gives every user container
+  its own inner Docker without `--privileged`. Without it, the gateway runs plain containers and project containers are unavailable.
+- **Node.js 22** (22.13 or later in the 22.x line; `node:sqlite`) for the gateway and the tools (the backend image brings its own).
+- **Clients:** any current browser; the desktop app needs macOS, the iOS app Xcode 26 or newer.
+- **Providers:** each user needs their own Claude and/or ChatGPT/Codex subscription, or API keys (OpenRouter).
 
 ## Quick start
 
-```
-(cd server/backend && npm ci)                    # backend dependencies for tests and tools
-server/backend/build.sh                          # build the backend image (once / on changes)
-(cd web && npm ci && npm run build)              # build the shared UI (the gateway serves web/out)
-GW_RUNTIME=sysbox-runc node server/gateway/index.js   # start the gateway on 127.0.0.1:7719
-```
+```sh
+git clone https://github.com/kiyanstenke/cbase.git && cd cbase
+server/backend/build.sh                     # build the backend image (once, and after changes)
+(cd web && npm ci && npm run build)         # build the UI; the gateway serves web/out
 
-Open `http://127.0.0.1:7719`: on first start the UI asks for the **initial setup** and creates the first admin account. The admin then
-adds users under **Settings → Administration**; a user's first request starts their container. In production put the gateway
-behind TLS (`GW_HOST=0.0.0.0`, `GW_SECURE=1`). Gateway settings (`GW_*`) and the server layout: [server/README.md](server/README.md).
-
-Desktop client: `(cd client && npm ci && npm start)` — it asks for the gateway address. iOS: open `mobile/` in Xcode.
-
-## Checks
-
-One public gate for the whole tree — environment, syntax, import smoke test, tree guards, line count, guard register, whitespace,
-then the test suites (backend, gateway, web, client, the gate's own tests):
-
-```
-./check --quick          # everything but the suites (a few seconds); the pre-push hook runs this
-./check                  # the full gate (start it in the background; a green run leaves a marker for the same bytes)
-./check --recheck        # the suites again, even if this exact tree was green within the hour
-./check --short          # everything but the long backend suite (what CI runs on every push and pull request)
+GW_RUNTIME=sysbox-runc node server/gateway/index.js   # with Sysbox (check: docker info | grep -i sysbox)
+node server/gateway/index.js                          # or without Sysbox (no project containers)
 ```
 
-How the gate is built, how to add a test and what the guards promise: [tools/check/README.md](tools/check/README.md).
-Switch the hook on once per clone: `git config core.hooksPath .githooks`.
+The gateway listens on `127.0.0.1:7719`. Its log prints a **setup token** (also stored in `<GW_DATA>/setup-token`,
+by default `server/gateway/data/setup-token`, unless you set `GW_SETUP_TOKEN`).
 
-## License
+1. Open `http://127.0.0.1:7719`, enter the setup token and create the admin account.
+2. Under **Settings → Providers**, sign in to Claude or Codex, or add an OpenRouter key. The Codex browser sign-in works from the
+   macOS desktop app; from a browser or iPhone run `codex login --device-auth` in a cbase terminal.
+3. Create a workspace, add a project, start a chat.
+4. Add more users under **Settings → Admin**; a user's first request starts their container.
 
-cbase is licensed under the Apache License, Version 2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE). Third-party attributions are in
-[web/public/THIRD_PARTY_NOTICES.txt](web/public/THIRD_PARTY_NOTICES.txt). Contributing: [CONTRIBUTING.md](CONTRIBUTING.md);
-security reports: [SECURITY.md](SECURITY.md); conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+Desktop app: `(cd client && npm ci && npm start)` — it asks for the gateway address. iOS: open `mobile/CbaseMobile.xcodeproj` in
+Xcode, set your team and run; if Xcode reports the bundle ID as taken, use your own and set `GW_APNS_TOPIC` to it for push
+([mobile/README.md](mobile/README.md)). Installing the backend's own dependencies on the host (`server/backend`, `npm ci`) is only
+needed for development and the tests — see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Project containers need the project-box image inside each user container. `./deploy server` distributes it (see
+[DEPLOY.md](DEPLOY.md)); with the manual start, load the image `build.sh` built into a running user container yourself:
+
+```sh
+docker save cbase-projectbox:hand | docker exec -i cbase-u-<id> docker load
+docker exec cbase-u-<id> docker tag cbase-projectbox:hand cbase-projectbox:latest
+```
+
+Without it, projects run inside the user container.
+
+## Running it for real
+
+Put the gateway behind a TLS reverse proxy (Caddy, nginx, Traefik) and start it with `GW_SECURE=1`. Keep `GW_HOST=127.0.0.1`
+when the proxy runs on the same host; use `0.0.0.0` only for a proxy elsewhere and list that proxy in `GW_TRUSTED_PROXYS`. The
+proxy must overwrite `CF-Connecting-IP` with the client address (Caddy `header_up CF-Connecting-IP {remote_host}`, nginx
+`proxy_set_header CF-Connecting-IP $remote_addr;`) — the login brake counts failures per that address. `./deploy` builds, checks and rolls out web, backend and desktop app to a server over
+SSH — [DEPLOY.md](DEPLOY.md). Every gateway setting (`GW_*`) and the server layout: [server/README.md](server/README.md).
+
+## Security
+
+Agents run shell commands with full rights inside their user's container — that is the point, and it is also the boundary. Use
+Sysbox, give each container sensible limits, and keep the host's Docker socket away from anything else: the gateway's Docker access
+is root-equivalent on the host. Report vulnerabilities as described in [SECURITY.md](SECURITY.md).
+
+## Provider terms
+
+cbase ships no model access and proxies no login. Each user signs in inside their own container with the providers' official
+tools or an API key, and each user is responsible for following their provider's terms. Consumer subscriptions are licensed to
+the person who holds them; whether a provider allows using one through a self-hosted tool like this is for the provider to decide.
+For shared, team or commercial use, use API keys.
+
+## Documentation
+
+| | |
+|---|---|
+| [server/README.md](server/README.md) | gateway, user containers, settings, provider sign-in |
+| [DEPLOY.md](DEPLOY.md) | the deploy tool: building, checking and rolling out to a server |
+| [DESIGN.md](DESIGN.md) | the interface: colour roles, building blocks, the iOS kit |
+| [AGENTS.md](AGENTS.md) | for coding agents (and their people): how the system is built, the rules and the traps |
+| [tools/check/README.md](tools/check/README.md) | the gate and every guard in it |
+
+## Contributing
+
+`./check` is the gate for the whole tree; `./check --quick` runs everything but the test suites in seconds. Setup, the full gate
+and how to send a change: [CONTRIBUTING.md](CONTRIBUTING.md). Conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
+## Licence and trademarks
+
+cbase is licensed under the Apache License, Version 2.0 — [LICENSE](LICENSE), [NOTICE](NOTICE); third-party notices in
+[web/public/THIRD_PARTY_NOTICES.txt](web/public/THIRD_PARTY_NOTICES.txt). cbase is not affiliated with or endorsed by Anthropic,
+OpenAI, Microsoft or any other provider it works with; their names describe compatibility. See [TRADEMARKS.md](TRADEMARKS.md).

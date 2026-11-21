@@ -197,6 +197,7 @@ struct LoginView: View {
     let setup: Bool
     @State private var username = ""
     @State private var password = ""
+    @State private var setupToken = ""
     @State private var busy = false
     @State private var error = ""
 
@@ -230,6 +231,17 @@ struct LoginView: View {
                         .accessibilityIdentifier("login-password")
                 }
 
+                if setup {
+                    Section {
+                        TextField(L("Setup token"), text: $setupToken)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .accessibilityIdentifier("login-setup-token")
+                    } footer: {
+                        Text(L("Printed in the gateway log at start and stored in <data>/setup-token on the server."))
+                    }
+                }
+
                 if !error.isEmpty {
                     Section {
                         Label(error, systemImage: "exclamationmark.circle")
@@ -249,7 +261,8 @@ struct LoginView: View {
                         }
                     }
                     .buttonStyle(.borderedProminent)
-                    .disabled(busy || username.trimmingCharacters(in: .whitespaces).isEmpty || password.isEmpty)
+                    .disabled(busy || username.trimmingCharacters(in: .whitespaces).isEmpty || password.isEmpty
+                              || (setup && setupToken.trimmingCharacters(in: .whitespaces).isEmpty))
                     .accessibilityIdentifier("login-submit")
 
                     Button(L("Different server address")) {
@@ -269,7 +282,7 @@ struct LoginView: View {
         busy = true
         error = ""
         do {
-            try await session.login(username: username, password: password, setup: setup)
+            try await session.login(username: username, password: password, setup: setup, setupToken: setupToken)
         } catch {
             self.error = error.localizedDescription
         }

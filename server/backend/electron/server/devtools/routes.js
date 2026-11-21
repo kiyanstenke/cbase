@@ -418,8 +418,8 @@ export async function vscodeTunnelRoutes(ctx) {
       if (p === "/api/vscode-tunnel" && m === "GET") return send(res, 200, await tunnelResponse());
       if (p === "/api/vscode-tunnel/start" && m === "POST") {
         const b = await readBody(req);
-        try { await startTunnel(store, { name: b.name, provider: b.provider }); }
-        catch (e) { return send(res, Number(e?.status) || 500, { error: e?.message || String(e) }); }
+        try { await startTunnel(store, { name: b.name, provider: b.provider, acceptLicense: b.acceptLicense === true }); }
+        catch (e) { return send(res, Number(e?.status) || 500, { error: e?.message || String(e), ...(e?.code ? { code: e.code } : {}) }); }
         return send(res, 200, await tunnelResponse());
       }
       if (p === "/api/vscode-tunnel/stop" && m === "POST") { stopTunnel(store); return send(res, 200, await tunnelResponse()); }

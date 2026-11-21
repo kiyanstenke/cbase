@@ -12,6 +12,8 @@ import { containerLink, tunnelLinks, tunnelNameValid, type TunnelPhase } from "@
 // background and the dot. As little text as possible — every row is a state, a button or a link.
 type Status = {
   available: boolean;
+  licenseAccepted?: boolean; // the VS Code Server licence (Microsoft's, not MIT) — accepted once in this pill, stored by the backend
+  licenseUrl?: string;
   phase: TunnelPhase;
   active: boolean;
   name: string;
@@ -66,6 +68,7 @@ export function VsCodePill() {
   const [err, setErr] = useState("");
   const [details, setDetails] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [acceptLicense, setAcceptLicense] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -107,7 +110,7 @@ export function VsCodePill() {
   const start = () => run("start", async () => {
     const n = name.trim().toLowerCase();
     if (!tunnelNameValid(n)) throw new Error(t("Name: 1–20 characters, lowercase letters, digits, hyphens"));
-    setSt(await api<Status>("/api/vscode-tunnel/start", { method: "POST", body: JSON.stringify({ name: n, provider }) }));
+    setSt(await api<Status>("/api/vscode-tunnel/start", { method: "POST", body: JSON.stringify({ name: n, provider, ...(acceptLicense ? { acceptLicense: true } : {}) }) }));
   });
   const stop = () => run("stop", async () => { setSt(await api<Status>("/api/vscode-tunnel/stop", { method: "POST", body: "{}" })); });
   const unregister = () => run("logout", async () => { setSt(await api<Status>("/api/vscode-tunnel/logout", { method: "POST", body: "{}" })); });
@@ -191,8 +194,19 @@ export function VsCodePill() {
                       ))}
                     </span>
                   )}
-                  <Button id="start" text={phase === "error" ? t("Retry") : t("Start")} onClick={start} primary />
+                  {(st.licenseAccepted || acceptLicense)
+                    ? <Button id="start" text={phase === "error" ? t("Retry") : t("Start")} onClick={start} primary />
+                    : <span className="shrink-0 text-[11px] text-dim">{t("Accept the licence first")}</span>}
                 </div>
+                {!st.licenseAccepted && (
+                  <label className="flex items-start gap-2 pt-1.5 text-[11px] text-dim">
+                    <input type="checkbox" checked={acceptLicense} onChange={(e) => setAcceptLicense(e.target.checked)} className="mt-0.5" />
+                    <span>
+                      {t("The tunnel runs Microsoft's VS Code Server. I accept its")}{" "}
+                      <a href={st.licenseUrl || "https://aka.ms/vscode-server-license"} target="_blank" rel="noreferrer" className="text-accent hover:underline">{t("license terms")}</a>.
+                    </span>
+                  </label>
+                )}
                 <div className="pt-1.5 text-[11px] text-dim">
                   {st.account
                     ? <span className="flex items-center gap-2"><span className="min-w-0 flex-1 truncate">{st.account}</span><button onClick={unregister} disabled={!!busy} className="shrink-0 hover:text-fg">{t("Sign out")}</button></span>

@@ -39,7 +39,7 @@ server/backend/build.sh
 - `cbase-share.js` — consumption from the cgroups (host share for `/gw/host`, per container for the administration on request).
 - `push.js` — per-user event stream and APNs delivery; `outerShell.js` — login brake and error policy of the gateway's outer
   skin.
-- The administration (admins only) is **Settings → Administration** in web and iOS; `GET /gw/admin` redirects there
+- The administration (admins only) is **Settings → Admin** in web and iOS; `GET /gw/admin` redirects there
   (`/?settings=administration`).
 
 ```bash
@@ -47,8 +47,10 @@ cd web && npm run build          # build the web UI once (the gateway serves web
 node server/gateway/index.js     # start the gateway
 ```
 
-On first call the UI asks for the **initial setup** (admin account). After that the admin creates users under
-**Settings → Administration**. A user's first API access provisions their container automatically (seconds), with the limits
+On first call the UI asks for the **initial setup** (admin account). It needs the **setup token** the gateway prints in its log at
+start and stores in `GW_DATA/setup-token`, by default `server/gateway/data/setup-token` (or the value of `GW_SETUP_TOKEN`, then no file is written); without it nobody can claim the first admin account, and
+the file is removed once the admin exists (`gateway/setup-token.js`). After that the admin creates users under
+**Settings → Admin**. A user's first API access provisions their container automatically (seconds), with the limits
 stored for that user.
 
 ### Administration: users and resources per container
@@ -75,7 +77,7 @@ template applies. At every start and every change the gateway atomically writes 
 | Variable | Default | Meaning |
 |---|---|---|
 | `GW_PORT` | `7719` | gateway port |
-| `GW_HOST` | `127.0.0.1` | bind address (production: `0.0.0.0` behind TLS termination) |
+| `GW_HOST` | `127.0.0.1` | bind address; keep `127.0.0.1` when the TLS proxy runs on the same host, `0.0.0.0` only for a proxy elsewhere (list it in `GW_TRUSTED_PROXYS`) |
 | `GW_DATA` | `gateway/data` | gateway DB (users/sessions) |
 | `GW_WEB_DIR` | `../../web/out` | built web UI |
 | `GW_IMAGE` | `cbase-backend` | backend image |
@@ -83,6 +85,7 @@ template applies. At every start and every change the gateway atomically writes 
 | `GW_CONTAINER_MEM` / `GW_CONTAINER_CPUS` | — | only the **template** for new users and for existing users without a container; what applies is stored per user in `gateway.db` (`CPUS` is a HARD limit) |
 | `GW_CONTAINER_CPU_SHARES` | — | template of the weight under contention (`--cpu-shares`), rounded to the nearest level (1287 = "low" = cpu.weight 50). Only counts against siblings in system.slice; the conversion depends on the runtime (`CPU_PRIO_SHARES` in `administration-contract.js`) |
 | `GW_SECURE` | — | `1` = Secure flag on session cookies (behind HTTPS) |
+| `GW_SETUP_TOKEN` | — (random, in `GW_DATA/setup-token`) | the token the first-time setup asks for; only needed while no user exists |
 | `GW_TRUSTED_PROXYS` | — (loopback only) | comma list of further addresses whose `CF-Connecting-IP` counts as the real client address (login brake); only needed if cloudflared does not connect over loopback |
 | `GW_USER_QUOTA_GB` | `0` (none) | optional storage quota shown for the own environment |
 | `GW_CGROUP_ROOT` | — | cgroup root override for the consumption meter (tests) |
@@ -116,16 +119,23 @@ rejects or reports expired.
 
 ## Provider auth (own subscription per user)
 
-Each user authenticates their LLM providers **inside their container**:
-- **Codex:** `codex login --device-auth` — device-code flow (URL + one-time code, no localhost callback); convenient through the
-  terminal tab or the login console in the UI.
-- **Claude:** token from `claude setup-token` (generated locally) stored in the container, or `claude auth login` in the UI login
-  console (Linux: credentials in `~/.claude`).
-- Third-party API keys: as before, in the settings — they live in the user's container DB.
+Each user signs in to their LLM providers **inside their own container**, under **Settings → Providers**:
+- **Claude:** the sign-in runs `claude auth login` in a login console in the UI (credentials in the container's `~/.claude`).
+- **Codex:** the sign-in runs `codex login`, whose browser callback goes to `localhost:1455`. Only the macOS desktop app catches it
+  there and relays it through the gateway to the backend (`/api/codex-oauth/*`), so sign in from the desktop app. From a browser or
+  the iOS app, open a terminal in cbase and run `codex login --device-auth` instead (device-code flow, no callback). The backend
+  also honours `CBASE_CODEX_DEVICE_AUTH=1`, but the gateway does not pass container variables through, so it only helps when you
+  build it into the image or start the backend yourself.
+- **OpenRouter:** an API key in the same settings page — it lives in the user's container database.
+
+Which of these a provider permits for a self-hosted, multi-user tool is the provider's decision; see "Provider terms" in the root README.
 
 ## Security / limits
 
 - Isolation = container boundary: bash and agents only see their own `/home/agent`.
 - The gateway binds container ports on `127.0.0.1` only; outward, only the gateway speaks.
-- TLS is the job of an upstream reverse proxy (Caddy/nginx/Traefik) — then set `GW_SECURE=1`.
+- TLS is the job of an upstream reverse proxy (Caddy/nginx/Traefik) — then set `GW_SECURE=1`. The gateway takes the client address
+  for its login brake from `CF-Connecting-IP`, so the proxy must overwrite that header with the real client address (Caddy
+  `header_up CF-Connecting-IP {remote_host}`, nginx `proxy_set_header CF-Connecting-IP $remote_addr;`); passed through unchanged,
+  a client can choose its own address.
 - The gateway's `docker` access is root-equivalent on the host; operate it accordingly.

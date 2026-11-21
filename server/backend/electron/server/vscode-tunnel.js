@@ -219,10 +219,20 @@ export function enterGitPath() {
 }
 
 // ── Public ─────────────────────────────────────────────────────────────────────────────────
-export async function startTunnel(store, { name: n, provider: p } = {}) {
+// `code tunnel` runs Microsoft's VS Code Server, which is under Microsoft's own licence (not MIT). The CLI refuses to start without
+// --accept-server-license-terms; cbase passes it only after the user accepted the terms in the UI (the pill shows the link) — the
+// acceptance is stored per container, and the autostart after a restart needs it too. Guard: test/vscode-tunnel.test.js.
+export const VSCODE_SERVER_LICENSE_URL = "https://aka.ms/vscode-server-license";
+export const licenseAccepted = (store) => !!store?.getSetting("vscode_tunnel.license_accepted", "");
+
+export async function startTunnel(store, { name: n, provider: p, acceptLicense = false } = {}) {
   if (!tunnelAvailable()) throw Object.assign(new Error(T("VS Code Remote Tunnels are not available in this environment")), { status: 409 });
   const fresh = normName(n || store.getSetting("vscode_tunnel.name", "") || "cbase");
   if (!nameValid(fresh)) throw Object.assign(new Error(T("Name: 1-20 characters, lowercase letters, digits and hyphens")), { status: 400 });
+  if (acceptLicense === true && !licenseAccepted(store)) store.setSetting("vscode_tunnel.license_accepted", new Date().toISOString());
+  if (!licenseAccepted(store)) {
+    throw Object.assign(new Error(T`Accept the VS Code Server license terms first (${VSCODE_SERVER_LICENSE_URL})`), { status: 409, code: "LICENSE" });
+  }
   provider = p === "microsoft" ? "microsoft" : p === "github" ? "github" : (store.getSetting("vscode_tunnel.provider", "") || "github");
   name = fresh;
   store.setSetting("vscode_tunnel.name", name);
@@ -258,12 +268,13 @@ export async function unregister(store) {
 
 export async function autostart(store) {
   if (!tunnelAvailable() || store.getSetting("vscode_tunnel.active", "") !== "1") return;
+  if (!licenseAccepted(store)) return; // never accept on the user's behalf — the pill asks
   await startTunnel(store, {});
 }
 
 export async function tunnelStatus(store) {
   const available = tunnelAvailable();
-  const out = { available, phase, active: intended, name: name || normName(store?.getSetting("vscode_tunnel.name", "") || "cbase"), provider, account, loginUrl, loginCode, link, error, version: version || "", rows: rows.slice(-12) };
+  const out = { available, licenseAccepted: licenseAccepted(store), licenseUrl: VSCODE_SERVER_LICENSE_URL, phase, active: intended, name: name || normName(store?.getSetting("vscode_tunnel.name", "") || "cbase"), provider, account, loginUrl, loginCode, link, error, version: version || "", rows: rows.slice(-12) };
   if (!available) return out;
   if (version === null) { version = ""; const r = await run(["--version"], 10_000); version = (r.out.trim().split(/\r?\n/)[0] || "").replace(/\s*\(commit .*\)$/, ""); out.version = version; }
   if (!account && !proc) { await readAccount(); out.account = account; }
