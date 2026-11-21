@@ -34,6 +34,7 @@ extension ChatViewModel {
 
         switch command {
         case "goal":
+            // German terms here match German user input on purpose (the UI is bilingual) - an intended exception to the English-only rule.
             if ["clear", "löschen", "erase"].contains(argument.lowercased()) {
                 try await setGoal("")
                 pushInfo(title: "Goal", body: L("Goal cleared."))

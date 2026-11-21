@@ -830,6 +830,7 @@ private func contextSymbol(_ category: String) -> String {
     let words = category.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
         .split { !$0.isLetter && !$0.isNumber }
         .map(String.init)
+    // German terms here match German user input on purpose (the UI is bilingual) - an intended exception to the English-only rule.
     let table: [(symbol: String, beginnings: [String])] = [
         ("exclamationmark.triangle", ["fallstrick", "falle", "pitfall", "gotcha", "risik", "risk", "bug", "fehler", "problem"]),
         ("questionmark.circle", ["offen", "frage", "question", "todo"]),

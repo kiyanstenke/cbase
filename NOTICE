@@ -7,8 +7,11 @@ This product includes material from third parties. The attributions, licenses an
 web/public/THIRD_PARTY_NOTICES.txt, including code ported from microsoft/vscode (MIT License, Copyright (c) Microsoft Corporation).
 Each ported file carries a header comment that names its origin.
 
-cbase does not bundle the Claude Code or Codex command line tools. A deployment installs them from their own packages under their own
-licenses and terms, and every user brings their own subscription.
+The cbase repository contains no provider command line tools. Images built from server/backend/Dockerfile install Anthropic's Claude Code
+and OpenAI's Codex CLI from their own packages, and download Microsoft's Visual Studio Code CLI, which is licensed under the Microsoft
+Software License Terms (https://aka.ms/vscode-server-license and the product license), not under the MIT License. Each keeps its own
+license and terms, and every user brings their own subscription. Such images are for the builder's own use and must not be pushed to a
+public registry. The contents of the image are listed in web/public/THIRD_PARTY_NOTICES.txt.
 
 Trademarks: Claude and Anthropic, OpenAI and Codex, GitHub, GitLab, ngrok, Microsoft Teams, Visual Studio Code and the other product
 names and logos shown in cbase are trademarks of their respective owners. cbase uses them only to name the service a feature connects

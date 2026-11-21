@@ -6,7 +6,7 @@
     "knownHosts": "~/.ssh/known_hosts"
   },
   "remote": {
-    "root": "/home/user/cbase-server"
+    "root": "/srv/cbase-server"
   },
   "mobile": {
     "desktopUser": "the-macos-user-with-xcode-account",

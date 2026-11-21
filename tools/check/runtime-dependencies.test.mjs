@@ -213,3 +213,24 @@ test("CI: short gate on push/PR, the full gate (backend suite included) nightly 
   assert.deepEqual(ciGateModeFindings(wf.replace(/^\s+schedule:\s*\n\s+- cron: "[^"]+"\n/m, "\n")), ["no nightly schedule"], "sabotage: without the nightly run");
   assert.deepEqual(ciGateModeFindings(wf.replace("then ./check; else", "then ./check --short; else")), ["the gate step does not switch between ./check and ./check --short"], "sabotage: the full branch runs short");
 });
+
+// Supply chain of the CI: every third-party action is pinned to a full commit SHA (a tag can be moved to other code), and the
+// gitleaks archive is checked against a pinned SHA-256 before it is unpacked.
+function ciSupplyChainFindings(text) {
+  const f = [];
+  for (const m of text.matchAll(/^\s*-?\s*uses:\s*(\S+)/gm)) {
+    if (m[1].startsWith("./")) continue;
+    if (!/@[0-9a-f]{40}$/.test(m[1])) f.push(`not pinned to a commit SHA: ${m[1]}`);
+  }
+  if (!/GITLEAKS_SHA256: "[0-9a-f]{64}"/.test(text) || !/sha256sum -c/.test(text)) f.push("gitleaks download is not checked against a pinned SHA-256");
+  if (/curl [^\n]*gitleaks[^\n]*\| *tar/.test(text)) f.push("gitleaks is piped into tar unchecked");
+  if (!/^permissions:\s*\n\s+contents: read/m.test(text)) f.push("no top-level permissions: contents: read");
+  return f;
+}
+test("CI: actions pinned to commit SHAs, gitleaks checked against its SHA-256, read-only token — with counter-proofs", () => {
+  const wf = fs.readFileSync(path.join(REPO, ".github", "workflows", "check.yml"), "utf8");
+  assert.deepEqual(ciSupplyChainFindings(wf), []);
+  assert.deepEqual(ciSupplyChainFindings(wf.replace(/actions\/checkout@[0-9a-f]{40}/, "actions/checkout@v4")), ["not pinned to a commit SHA: actions/checkout@v4"], "sabotage: a tag instead of a SHA");
+  assert.deepEqual(ciSupplyChainFindings(wf.replace(/^.*sha256sum -c.*\n/m, "")), ["gitleaks download is not checked against a pinned SHA-256"], "sabotage: without the checksum");
+  assert.deepEqual(ciSupplyChainFindings(wf.replace(/^permissions:\s*\n\s+contents: read\n/m, "")), ["no top-level permissions: contents: read"], "sabotage: without permissions");
+});

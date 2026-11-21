@@ -422,6 +422,7 @@ private func agentShortLine(_ a: AgentDefinition, _ provider: [Provider]) -> Str
 ///   "ios-dev" → iphone · "explorer" → magnifyingglass · "git-committer" → arrow.triangle.branch.
 private func agentSymbol(_ a: AgentDefinition) -> String {
     let words = a.name.lowercased().split { !$0.isLetter && !$0.isNumber }.map(String.init)
+    // German terms here match German user input on purpose (the UI is bilingual) - an intended exception to the English-only rule.
     let table: [(symbol: String, whole: Set<String>, beginnings: [String])] = [
         ("lock.shield", ["auth", "authz", "authn"], ["secur", "safe", "authent", "authori", "pentest"]),
         ("checkmark.seal", [], ["review", "prüf", "check", "audit", "lint", "verif"]),

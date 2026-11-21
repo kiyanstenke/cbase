@@ -1,5 +1,22 @@
 # Deployment
 
+This is the maintainer's rollout tool. You can use it for your own server, but it is not needed to contribute: the public gate
+(`./check`) is complete on its own. The maintainer also keeps extra, non-public checks in a separate tree; contributors never need
+them.
+
+The client and mobile targets need a Mac: the desktop client is built for macOS arm64 only (`tools/deploy/targets/client.mjs`),
+and iOS needs Xcode. Without a Mac use `./deploy web server` instead of `all`.
+
+### Host prerequisites
+
+- Linux x86_64 with Docker.
+- [Sysbox](https://github.com/nestybox/sysbox): the generated gateway unit (`tools/deploy/templates/cbase-gateway.service`) sets
+  `GW_RUNTIME=sysbox-runc`, so user containers run under the Sysbox runtime.
+- A systemd user session that survives logout: `loginctl enable-linger <user>`.
+- `rsync`.
+- Node 22 at the path `remote.node` (default `/usr/bin/node`, see `tools/deploy/config.mjs`).
+- `ionice` (util-linux): image builds on the host run under `nice -n 10 ionice -c3` (`tools/deploy/lib/build-throttle.mjs`).
+
 One tool rolls out every part of cbase: the web UI, the backend in the user containers, the desktop client and the iOS app.
 
 ```sh
@@ -20,9 +37,8 @@ must be listed there).
 ## Setup
 
 1. Copy `deploy.local.example.json` to `deploy.local.json` (gitignored) and fill in what is specific to your machine:
-   SSH host (`user@server`), key and known-hosts file, the server root (`remote.root`, for example `/home/user/cbase-server`), the
-   gateway port (`remote.gatewayPort`), and for iOS the desktop user, the Xcode location, the device UDID and the simulator.
-   Everything else (paths, image and bundle names) is set in `tools/deploy/config.mjs`.
+   SSH host (`user@server`), key and known-hosts file, the server root (`remote.root`, default `/srv/cbase-server`), and for iOS the desktop user, the Xcode location, the device UDID and the simulator.
+   Everything else (gateway port `remote.gatewayPort`, paths, image and bundle names) has a default in `tools/deploy/config.mjs`.
 2. Every value can also be set by environment variable, which wins over the file: `CBASE_SSH_HOST`, `CBASE_SSH_KEY`,
    `CBASE_SSH_KNOWN_HOSTS`, `CBASE_REMOTE_ROOT`, `CBASE_GATEWAY_PORT`, `CBASE_CONTAINER_PREFIX`, `CBASE_IMAGE`,
    `CBASE_PROJECTBOX_IMAGE`, `CBASE_CLIENT_APP`, `CBASE_DESKTOP_USER`, `CBASE_XCODE_APP`, `CBASE_DEVICE_UDID`, `CBASE_SIMULATOR`,
@@ -95,7 +111,7 @@ paired on the same Wi-Fi. The preflight wakes a sleeping Wi-Fi tunnel via `devic
 phone is reachable by cable or Wi-Fi (`tools/deploy/lib/iphone.mjs`, the same rule as in `status`).
 
 The maintainer's tree carries one more target, `baseline`, which records the reference of the workflow tool from a Claude Code
-binary. It is not part of the public tree.
+binary. It is maintainer-only and not part of the public tree.
 
 ## Options
 
@@ -179,7 +195,7 @@ with `--skip-tests`, or reduced to the quick checks when nothing is shipped, for
   gate of a `./deploy all`) waits and says on whom. A lock whose process is dead, or whose pid was reused, is free. `--quick` never
   takes the lock.
 - **Gate marker.** A full, green gate records the hash of the working tree (`.deploy-logs/gate-ok.json`, or
-  `ops-gate-ok.json` for the merged plan). A deploy on the same bytes within one hour runs only the quick checks and logs why.
+  the private part's own marker for the merged plan). A deploy on the same bytes within one hour runs only the quick checks and logs why.
   `--recheck` forces the suites; `--quick` never writes a marker. So the efficient way is `./deploy check`, read the result, then
   `./deploy all`.
 
@@ -339,7 +355,7 @@ remove it. `status` compares hashes, not timestamps:
 ## Server layout
 
 ```
-/home/user/cbase-server/
+/srv/cbase-server/
   current -> releases/<id>/    symlink to the live release
   activations                  one release per line that carried current, newest last (read by rollback server)
   releases/<id>/backend/       complete docker build context

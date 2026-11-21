@@ -37,6 +37,7 @@ const COMMIT = /\b(?:commits?|sha|hash|rev(?:ision)?|stand|head)\b[\s:=`„"'(@]
 const NUMBER_IN_TITLE = /(?:^|[\s(\/[])([#!]\d{1,6})\b|\b((?:issue|mr|merge[- ]request|ticket|pr)[ \t]{0,3}[#!]?\d{1,6})\b/i;
 // Status section: a heading that AS A WHOLE is a status word (German or English; optionally with date, colon or parenthesis
 // after it) — "Stand der Technik" or "Status-Codes der API" are none. Read from the heading text (no line break, trimmed).
+// German terms here match German user input on purpose (the UI is bilingual) - an intended exception to the English-only rule.
 const STATUS_WORD = /^(?:status|stand|aktueller stand|fortschritt|erledigt|done|nächste schritte|next steps|offen|offene punkte|offene fragen|todo|to-do|verlauf|historie|changelog|was fehlt|ausstehend|noch zu tun)(?:[ \t]{0,3}[:(–]|[ \t]{1,3}\d|$)/i;
 // An ATX heading: up to three spaces, 1–6 "#", ONE whitespace, the rest of the line (trimmed and without closing "#" in JS —
 // `headingText`, not a pattern with two quantifiers over the same whitespace).

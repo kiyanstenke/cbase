@@ -426,7 +426,8 @@
     "resources.test.js",
     "administration-proofread.test.js",
     "administration.test.js",
-    "setup-token.test.js"
+    "setup-token.test.js",
+    "startup-warnings.test.js"
   ],
   "Web": [
     "retrieval-airlock.test.mjs",

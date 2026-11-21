@@ -30,6 +30,7 @@
 
 // Small bilingual stop word list (frequent, barely discriminating tokens). The German words are
 // DATA: they filter stop words out of German user texts.
+// German terms here match German user input on purpose (the UI is bilingual) - an intended exception to the English-only rule.
 export const STOP = new Set([
   // Articles, prepositions, auxiliary verbs
   "der", "die", "das", "des", "dem", "den", "ein", "eine", "einen", "einem", "einer", "eines",

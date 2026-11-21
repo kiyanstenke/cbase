@@ -1,7 +1,7 @@
 # `tools/check/` — the gate
 
 `./check` is the public gate: everything that must hold before a change leaves the working tree. It touches no server, no SSH, no
-device — only this repository. (The private part of a clone, when there is one, adds its own plan on top; see "Plans".)
+device — only this repository. (The private part of a clone, when there is one, adds its own plan on top; see "Plans".) The maintainer keeps extra, non-public checks in a separate tree; contributors never need them, and the public gate is complete on its own.
 
 ```
 ./check --quick        # no suites: node --check, import smoke test, tree guards, line count, guard register, git diff --check
@@ -36,7 +36,7 @@ node client/node_modules/electron/install.js                              # macO
 | `lib/loc-gate.mjs`, `loc-allow.json` | no source file over 2,000 lines; the exceptions are named and may only shrink |
 | `lib/tree-rules.mjs`, `lib/manifest-diff.mjs` | route, schema and hook registers, back-imports; the byte proof of moved code |
 | `cleanliness*.{mjs,json}`, `translations.mjs` | nothing private in the public tree; the translation rules |
-| `baseline/<pin>/` | the checked-in reference of the workflow tool for each pinned Claude Code version (`pinSync.json` ties them to the pin) |
+| `baseline/<pin>/` (maintainer-only) | the checked-in reference of the workflow tool for each pinned Claude Code version (`pinSync.json` ties them to the pin) |
 | `fixtures/` | data a gate test needs from an old state that is not part of the public tree (`monolith-b686294.json`: the routes of the last monolith) |
 | `lib/oldstate.mjs` | reads the recorded old files of the maintainer's private suites (absent from the public tree — public counter-tests carry fixtures of their own) |
 | `*.test.mjs` | the gate's own tests and the product guards that cannot live in a product test folder |

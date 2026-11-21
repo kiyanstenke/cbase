@@ -3,7 +3,7 @@
 Description, targets, options and gates: **`DEPLOY.md` in the repository root.** This file only holds what hangs on a
 guard or on a folder of this tool. Tests named here live next to it (`tools/deploy/*.test.mjs`) unless a path says otherwise; guards that read private data are covered by the maintainer's private suite and are not named here; the gate's libraries and the product guards that came from this folder live in `tools/check/` (same relative layout: `lib/sh.mjs` is `tools/check/lib/sh.mjs`).
 
-The maintainer's tree carries a private remainder of this tool (the `baseline` target, the pin-sync guard, the merged gate plan, the tests that read private data, the list of what never leaves the private repository, and recorded old files for counter-tests). The public tool reaches it only through `lib/private-part.mjs`, a guarded dynamic import, so every file here loads without it. `./deploy check` runs the merged plan where the tree carries it (the public plan plus the maintainer's private suites); without the private part it runs the public plan, which has the suite Deploy tool for this folder.
+The maintainer keeps extra, non-public checks in a separate tree; contributors never need them, and the public gate is complete on its own. That tree carries a private remainder of this tool (the `baseline` target, the pin-sync guard, the merged gate plan, the tests that read private data, the list of what never leaves the private repository, and recorded old files for counter-tests). The public tool reaches it only through `lib/private-part.mjs`, a guarded dynamic import, so every file here loads without it. `./deploy check` runs the merged plan where the tree carries it (the public plan plus the maintainer's private suites); without the private part it runs the public plan, which has the suite Deploy tool for this folder.
 
 ## A runtime dependency lives in three places — one guard ties them together
 
@@ -14,7 +14,7 @@ A runtime dependency of the backend is named in:
 3. `server/backend/Dockerfile` → the ONE install instruction `npm ci --omit=dev` (with `COPY` of the lockfile before it).
 
 The image installs from the lockfile, so the container runs the versions the gate checked on the developer machine. The guard is
-`runtime-dependencies.test.mjs` over `lib/runtime-dependencies.mjs` (reads only manifest, lockfile and Dockerfile, never
+`tools/check/runtime-dependencies.test.mjs` over `tools/check/lib/runtime-dependencies.mjs` (reads only manifest, lockfile and Dockerfile, never
 `node_modules`, so it runs anywhere): ranges and versions manifest vs lockfile, no orphaned lockfile row, the runtime closure
 complete and free of dev packages, exactly one install instruction with `COPY` of the lockfile, and the `rm -rf` after it in both
 directions.
@@ -30,7 +30,7 @@ and a load smoke test of `@huggingface/transformers` from `/app`.
 Dockerfile picks it up via `npm ci`. An edge that is never loaded goes into `NEVER_LOADED` with a reason and its closure into the
 `rm -rf` of the Dockerfile.
 
-## `baseline/` — the workflow tool of the Claude CLI as a versioned state
+## `baseline/` — the workflow tool of the Claude CLI as a versioned state (maintainer-only)
 
 cbase keeps a 1:1 contract with Claude Code's `Workflow` tool; a state records what the model sees at one version.
 

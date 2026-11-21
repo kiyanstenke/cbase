@@ -965,6 +965,7 @@ export function clearPending(cursor) {
 // everything else returns "unclear" and is judged (see workflows/gates.js: answerCap). The patterns carry German AND
 // English words: the user answers in either language.
 const GO_RE = /^(ja+\b|jo\b|jep\b|klar\b|weiter|weitermach|fortsetz|mach\b|mach weiter|los\b|nochmal|noch\s+(ein|\d)|yes\b|go\b|continue|proceed|keep going|more\b)/i;
+// German terms here match German user input on purpose (the UI is bilingual) - an intended exception to the English-only rule.
 const STOP_RE = /^(nein\b|nee\b|stop\b|stopp|abbruch|abbrech|beenden?\b|beende\b|abschließ|abschliess|schluss\b|ende\b|fertig\b|genug\b|aufhör|aufhoer|halt\b|no\b|cancel|abort|finish|enough|that's enough)/i;
 export function capIntent(text) {
   const s = String(text ?? "").trim();
@@ -1352,8 +1353,10 @@ export function reviewPrompt({ workflowName, node, step, total, approx, vars, lo
 // everything else counts as a finding or is judged (see workflows/gates.js: answerReview). The asymmetry is deliberate:
 // a wrongly recognized approval sends unchecked code on, a wrongly recognized finding costs one turn. When in doubt,
 // NO approval.
+// German terms here match German user input on purpose (the UI is bilingual) - an intended exception to the English-only rule.
 const OK_RE = /^(passt\b|perfekt\b|top\b|super\b|prima\b|sieht (gut|prima|top) aus\b|alles (gut|ok|okay|in ordnung|klar)\b|ok(ay)?\b|in ordnung\b|einverstanden\b|freigegeben\b|freigabe\b|gib frei\b|ja,? (passt|gut|freigabe|weiter)\b|läuft\b|laeuft\b|keine (befunde|einwände|einwaende|anmerkungen|fehler)\b|nichts (zu meckern|gefunden)\b|approved?\b|lgtm\b|looks good\b|ship it\b|all good\b|fine\b|works\b|no (issues|findings|complaints))/i;
 // "fine, but X" / "ok, only Y still" is NOT an approval — the afterthought is the finding.
+// German terms here match German user input on purpose (the UI is bilingual) - an intended exception to the English-only rule.
 const BUT_RE = /\b(aber|allerdings|nur noch|bis auf|außer|ausser|jedoch|trotzdem|dennoch|einzig|however|except|but)\b/i;
 export function reviewIntent(text) {
   const s = String(text ?? "").trim();

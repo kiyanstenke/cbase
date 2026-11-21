@@ -110,7 +110,7 @@ export async function status() {
     if (ping.stdout.trim() !== "ok") {
       log.table([
         ["SSH", `unreachable (${config.ssh.host})`, "bad"],
-        ["Hint", "Tailscale logged out? MagicDNS then no longer resolves — the login is interactive.", null],
+        ["Hint", "SSH unreachable? Check the host in deploy.local.json and that a non-interactive `ssh -o BatchMode=yes <host>` works.", null],
       ]);
     } else {
       const rel = await currentRelease();

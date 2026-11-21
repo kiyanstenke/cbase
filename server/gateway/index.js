@@ -11,6 +11,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as users from "./users.js";
 import { ensureSetupToken, removeSetupToken, setupTokenMatches } from "./setup-token.js";
+import { startupWarnings } from "./startup-warnings.js";
 import * as containers from "./containers.js";
 import { proxyRequest, activeStreams, trackStream, passThroughUpgradeResponse, closeStreams } from "./proxy.js";
 import { pushConfiguration, sendTestPush, unwatchBackend, watchBackend } from "./push.js";
@@ -740,6 +741,7 @@ if (IDLE_STOP_MIN > 0) {
 
 server.listen(PORT, HOST, () => {
   console.log(`[gateway] cbase gateway v${VERSION} on http://${HOST}:${PORT}`);
+  for (const line of startupWarnings(process.env)) console.warn(line);
   console.log(`[gateway] Web UI: ${WEB_DIR}${fs.existsSync(path.join(WEB_DIR, "index.html")) ? "" : "  (WARNING: no index.html — build web/ first!)"}`);
   if (setupToken) {
     // A token the operator set in the environment is already known to them; it is not written to the log.

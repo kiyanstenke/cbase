@@ -8,8 +8,9 @@ address and no credentials in the project.
 
 - **Header** — workspace or `Workspace › Project` as a picker (enter and switch projects) and the usage rings for Claude and
   Codex once the server delivers values (`ProviderMark`; the active provider is opaque, the other half transparent).
-- **Home bar** at the bottom — `Coding`, `Apps`, `Profile`; hidden while the keyboard is open.
-- **Swipe left** — right drawer with all areas of the workspace (chats, agents, skills, projects, MCP, context, credentials, code,
+- **No bottom bar** — the content reaches the bottom edge. The places `Coding`, `Apps` and `Profile` sit at the top of the right drawer
+  (`Shell/AppShell.swift`).
+- **Swipe left** — right drawer: the places first, then all areas of the workspace (chats, agents, skills, projects, MCP, context, credentials, code,
   terminal, browser). Bell, appearance and settings stick to the bottom edge, the rest scrolls.
 - **Swipe right** — left drawer, depending on the area (chat list, file tree, git, context pages, terminals, tabs, projects/ports).
   `App agents` sticks to the bottom.
@@ -55,8 +56,9 @@ designs that read the displayed edge per frame and wrote SwiftUI state were alwa
 - The announcement is per PROCESS, not per stage (`KeyboardAnnouncement`): opening another chat with an open keyboard closes it
   without animation and leaves the root guide at the grip's height; a fresh stage without its own announcement would lift the
   composer by that much. The shell (outside a chat) follows the announcement as well.
-- The home bar STAYS while a chat is in front (it lies fully behind the keyboard); if it disappeared, the chat's bottom edge would
-  move by its height mid-animation.
+- With a chat in front, the spacer strip at the bottom (home-indicator height, the value remembered from the window) STAYS while the
+  keyboard is up; if it vanished or shrank, the chat's bottom edge would move mid-animation. Outside a chat the same strip is the
+  shell's keyboard evasion, as high as the announced keyboard.
 - A trap that cost hours: **an assignment made in the middle of SwiftUI's own pass is lost** — the body is evaluated once more with the
   OLD value and never again; a check against the model never notices because the model is right.
 
@@ -204,7 +206,8 @@ The seven folders follow the place where the user OPENS a view; each has a `READ
 
 ## Distribution
 
-- **Daily device build:** `./refresh-on-iphone.command` — Xcode signs, installs over the existing app and starts it without erasing
+- **Daily device build:** `CBASE_DEVICE_UDID=<udid> CBASE_DEVELOPMENT_TEAM=<team> ./refresh-on-iphone.command` (list devices with
+  `xcrun devicectl list devices`; the script aborts without the UDID) — Xcode signs, installs over the existing app and starts it without erasing
   local app data (the stored API base stays).
 - **TestFlight:** create an app with bundle ID `dev.cbase.mobile` in App Store Connect once, then `./deploy-testflight.command`
   (release archive, App Store Connect manages the build number, upload). Needs the paid team visible in Xcode and the agreements

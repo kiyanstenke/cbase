@@ -18,8 +18,8 @@ Client ──HTTPS/SSE──▶ Gateway (gateway/)      ──▶ container user
 ### `backend/` — image of the per-user backend
 - `Dockerfile`: `node:22-bookworm-slim` + git/ripgrep/compilers + the **claude and codex CLIs** (npm -g, pinned) + backend code.
   Runs as user `agent`; `$HOME=/home/agent` is the persistent volume (SQLite DB, workspaces, `~/.claude`, `~/.codex`).
-- `headless.js`: starts `startServer` from `server/backend/electron/server` without Electron (`CBASE_HOST=0.0.0.0`, `CBASE_UI_LANG=de` would make German the default until a client reports its language; English otherwise, data
-  under `/home/agent/cbase`).
+- `headless.js`: starts `startServer` from `server/backend/electron/server` without Electron. The image sets `CBASE_HOST=0.0.0.0`; data lives under `/home/agent/cbase`. Optional:
+  `CBASE_UI_LANG=de` makes German the default language until a client reports its own (English otherwise).
 - `build.sh`: stages a lean build context (copies `server/backend/electron`) and builds the images `cbase-backend` (override
   with `CBASE_IMAGE`) and `cbase-projectbox`.
 

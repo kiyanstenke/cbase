@@ -22,3 +22,8 @@ This is a volunteer project, so there is no fixed response time.
 cbase runs coding agents with shell access inside one container per user. Reports about escaping that container, reaching another user's
 container or data, bypassing the gateway's login, or leaking credentials are in scope. Findings that need an operator to deliberately
 weaken their own deployment are not.
+
+Isolation depends on the runtime. With [Sysbox](https://github.com/nestybox/sysbox) (`GW_RUNTIME=sysbox-runc`) each user container
+gets its own inner Docker. Without it (`GW_RUNTIME` empty) user containers are plain Docker containers: not privileged, no Docker
+socket, ports bound to `127.0.0.1`, but with weaker isolation against a container escape and no project containers; the gateway
+warns at start. Use Sysbox for anything shared. Behind TLS set `GW_SECURE=1`.

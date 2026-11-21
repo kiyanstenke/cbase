@@ -48,7 +48,10 @@ the iOS build and the macOS test suite.
 ## Requirements
 
 - **Server:** Linux x86_64 with Docker. [Sysbox](https://github.com/nestybox/sysbox) is recommended: it gives every user container
-  its own inner Docker without `--privileged`. Without it, the gateway runs plain containers and project containers are unavailable.
+  its own inner Docker without `--privileged`. Without it (`GW_RUNTIME` empty) the gateway runs plain Docker containers: not
+  privileged, no Docker socket, ports bound to `127.0.0.1`, but weaker isolation against a container escape and no project
+  containers. The gateway warns at start. Use Sysbox for anything shared.
+- The OS user running the gateway must be able to run `docker`.
 - **Node.js 22** (22.13 or later in the 22.x line; `node:sqlite`) for the gateway and the tools (the backend image brings its own).
 - **Clients:** any current browser; the desktop app needs macOS, the iOS app Xcode 26 or newer.
 - **Providers:** each user needs their own Claude and/or ChatGPT/Codex subscription, or API keys (OpenRouter).
@@ -57,12 +60,15 @@ the iOS build and the macOS test suite.
 
 ```sh
 git clone https://github.com/kiyanstenke/cbase.git && cd cbase
-server/backend/build.sh                     # build the backend image (once, and after changes)
+server/backend/build.sh                     # build the backend image (once, and after changes; the first build takes minutes)
 (cd web && npm ci && npm run build)         # build the UI; the gateway serves web/out
 
 GW_RUNTIME=sysbox-runc node server/gateway/index.js   # with Sysbox (check: docker info | grep -i sysbox)
 node server/gateway/index.js                          # or without Sysbox (no project containers)
 ```
+
+If you build with `CBASE_IMAGE=<name>`, start the gateway with `GW_IMAGE=<name>` (default for both: `cbase-backend`), or creating
+a user's container fails.
 
 The gateway listens on `127.0.0.1:7719`. Its log prints a **setup token** (also stored in `<GW_DATA>/setup-token`,
 by default `server/gateway/data/setup-token`, unless you set `GW_SETUP_TOKEN`).
@@ -90,17 +96,20 @@ Without it, projects run inside the user container.
 
 ## Running it for real
 
-Put the gateway behind a TLS reverse proxy (Caddy, nginx, Traefik) and start it with `GW_SECURE=1`. Keep `GW_HOST=127.0.0.1`
-when the proxy runs on the same host; use `0.0.0.0` only for a proxy elsewhere and list that proxy in `GW_TRUSTED_PROXYS`. The
-proxy must overwrite `CF-Connecting-IP` with the client address (Caddy `header_up CF-Connecting-IP {remote_host}`, nginx
-`proxy_set_header CF-Connecting-IP $remote_addr;`) — the login brake counts failures per that address. `./deploy` builds, checks and rolls out web, backend and desktop app to a server over
-SSH — [DEPLOY.md](DEPLOY.md). Every gateway setting (`GW_*`) and the server layout: [server/README.md](server/README.md).
+Put the gateway behind a TLS reverse proxy (Caddy, nginx, Traefik) and start it with `GW_SECURE=1` (required behind TLS, otherwise
+the session cookie lacks `Secure`; the gateway warns at start when `GW_HOST` is not loopback and it is unset). Keep
+`GW_HOST=127.0.0.1` when the proxy runs on the same host; use `0.0.0.0` only for a proxy elsewhere and list that proxy in
+`GW_TRUSTED_PROXYS`. The proxy must overwrite `CF-Connecting-IP` with the client address (Caddy `header_up CF-Connecting-IP
+{remote_host}`, nginx `proxy_set_header CF-Connecting-IP $remote_addr;`) — the login brake counts failures per that address.
+`./deploy` builds, checks and rolls out web, backend and desktop app to a server over SSH — [DEPLOY.md](DEPLOY.md). Every gateway
+setting (`GW_*`) and the server layout: [server/README.md](server/README.md).
 
 ## Security
 
 Agents run shell commands with full rights inside their user's container — that is the point, and it is also the boundary. Use
-Sysbox, give each container sensible limits, and keep the host's Docker socket away from anything else: the gateway's Docker access
-is root-equivalent on the host. Report vulnerabilities as described in [SECURITY.md](SECURITY.md).
+Sysbox (without it, containers are plain Docker containers with weaker isolation), give each container sensible limits, and keep the
+host's Docker socket away from anything else: the gateway's Docker access is root-equivalent on the host. Report vulnerabilities as
+described in [SECURITY.md](SECURITY.md).
 
 ## Provider terms
 
@@ -108,6 +117,10 @@ cbase ships no model access and proxies no login. Each user signs in inside thei
 tools or an API key, and each user is responsible for following their provider's terms. Consumer subscriptions are licensed to
 the person who holds them; whether a provider allows using one through a self-hosted tool like this is for the provider to decide.
 For shared, team or commercial use, use API keys.
+
+Images built from `server/backend/Dockerfile` install the proprietary Claude Code and Codex CLIs and download Microsoft's VS Code
+CLI (Microsoft Software License Terms, <https://aka.ms/vscode-server-license>; the VS Code tunnel asks each user to accept them
+once). Such images are for your own use: do not push them to a public registry.
 
 ## Documentation
 
