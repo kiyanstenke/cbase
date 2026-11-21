@@ -55,7 +55,8 @@ function fresh(patch = {}) {
   fs.rmSync(SYSTEMCTL_LOG, { force: true });
   fs.rmSync(path.join(HOME, ".config"), { recursive: true, force: true });
   setDryRun(false);
-  Object.assign(config.remote, { root, gatewayPort: 7729, image: "cbase-backend", containerPrefix: "cbase-u-", projectboxImage: "cbase-projectbox", ...patch });
+  // node: undefined — a remote.node in the checkout's own deploy.local.json must not leak into the default-path case.
+  Object.assign(config.remote, { root, gatewayPort: 7729, image: "cbase-backend", containerPrefix: "cbase-u-", projectboxImage: "cbase-projectbox", node: undefined, ...patch });
   return root;
 }
 const calls = () => (fs.existsSync(CALLS) ? fs.readdirSync(CALLS).length : 0);
