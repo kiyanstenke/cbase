@@ -102,6 +102,17 @@ export function openSubtests(stdout) {
  *   abort     null, or `{ kind: "stall" | "cap", ms }` if lib/sh.mjs aborted the suite (`stall` resp.
  *             `timedOut`) — the output is then truncated, and the row says so instead of the metrics.
  */
+/** From the process lines of a stalled suite (lib/sh.mjs `running`): the test files whose child still ran. `node --test` runs one
+ *  child per file (its argv names that ONE file); the runner itself names all of them and is left out. */
+export function stillRunningFiles(lines = []) {
+  const out = [];
+  for (const l of lines) {
+    const files = String(l).split(/\s+/).filter((w) => /\.test\.m?js$/.test(w));
+    if (files.length === 1 && !out.includes(files[0])) out.push(files[0]);
+  }
+  return out;
+}
+
 export function valuesSuite(name, stdout, code, { expectedSkips = [], abort = null } = {}) {
   // An abort says that it is one, and WHICH: the silence (a hang) or the emergency cap on the total duration (it ran, but too long).
   // Otherwise only the last line of the TAP output would stand in the table — "...", the end of a YAML block — and no word of it.

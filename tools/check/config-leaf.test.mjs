@@ -42,7 +42,7 @@ test("the gate's import closure is closed: only these files, none with installat
   // cleanliness.mjs (publicFiles) and secrets.mjs (gitleaks): the secret scan runs in every gate mode; neither
   // reads installation configuration or talks ssh.
   assert.deepEqual(files, ["cleanliness.mjs", "config-repo.mjs", "lib/asar.mjs", "lib/gate-lock.mjs", "lib/gate-marker.mjs", "lib/gate-plan.mjs", "lib/gate-plans.mjs", "lib/git.mjs",
-    "lib/guard-register.mjs", "lib/loc-gate.mjs", "lib/log.mjs", "lib/manifest-diff.mjs", "lib/sh.mjs", "lib/test-output.mjs",
+    "lib/guard-register.mjs", "lib/loc-gate.mjs", "lib/log.mjs", "lib/manifest-diff.mjs", "lib/sh.mjs", "lib/sleep-watch.mjs", "lib/test-output.mjs",
     "lib/tree-rules.mjs", "secrets.mjs", "targets/check.mjs"],
     "the gate reaches a file outside the closed set — a new import widens what the public gate depends on");
 });

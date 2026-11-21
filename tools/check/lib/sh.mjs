@@ -5,7 +5,7 @@
 //
 // Whoever PROCESSES the result of a command further must use probe(); act() returns empty output in a
 // dry run, and no logic may build on that.
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { REPO } from "../config-repo.mjs";
 import * as log from "./log.mjs";
 
@@ -117,16 +117,28 @@ export function exec(cmd, args, opts = {}) {
           timedOut: true,
         });
       }, timeout);
+    // What still ran when the silence struck: every process of the group, BEFORE the kill (`node --test` runs one child per test
+    // file, its argv names the file). The TAP stream cannot say it — node reports files in their order, so a hanging file holds
+    // back the results of every file after it, and "last reported" names the file BEFORE the culprit.
+    const groupProcesses = () => {
+      try {
+        return execFileSync("ps", ["-A", "-o", "pgid=,pid=,etime=,command="], { encoding: "utf8", timeout: 5000 })
+          .split("\n").map((l) => l.trim()).filter((l) => l && Number(l.split(/\s+/)[0]) === child.pid)
+          .map((l) => l.split(/\s+/).slice(1).join(" "));
+      } catch { return []; }
+    };
     const setStall = () => {
       if (!stillMs || finished) return;
       if (stillTimer) clearTimeout(stillTimer);
       stillTimer = setTimeout(() => {
+        const running = groupProcesses();
         killGroup();
         end({
           code: 124,
           stdout: out,
           stderr: `${err}\n[stall: ${stillMs} ms without progress — process group killed]`,
           stall: true,
+          running,
         });
       }, stillMs);
     };

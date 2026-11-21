@@ -17,7 +17,7 @@ import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { shProbe } from "./lib/sh.mjs";
-import { isTapResult, valuesSuite } from "./lib/test-output.mjs";
+import { isTapResult, stillRunningFiles, valuesSuite } from "./lib/test-output.mjs";
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cbase-stall-"));
 test.after(() => fs.rmSync(dir, { recursive: true, force: true }));
@@ -83,6 +83,10 @@ test("a suite that goes silent dies after the silence — with a message, no sur
     assert.equal(r.timedOut, undefined);
     assert.match(r.stderr, /stall: 1000 ms without progress — process group killed/);
     assert.equal(await leftOverAfterKill(marker), 0, "the silence must hit the whole group — a surviving grandchild keeps the pipe open");
+    // What still ran is named (the hanging grandchild with its argv) — taken BEFORE the kill. COUNTER-TEST: snapshot after the
+    // kill (or none) => no line with the marker.
+    assert.ok(Array.isArray(r.running) && r.running.some((l) => l.includes(marker)), `the stall names what still ran: ${JSON.stringify(r.running)}`);
+    assert.deepEqual(stillRunningFiles(["123 01:02 node /x/server/backend/test/a.test.js", "124 00:01 sleep 120", "125 00:05 node --test tools/check/run.test.mjs tools/check/gate-plan.test.mjs"]), ["/x/server/backend/test/a.test.js"], "one file per child; the runner itself (argv with every file) is not a running file");
     const u = valuesSuite("Backend", r.stdout, r.code, { abort: { kind: "stall", ms: 180_000 } });
     assert.equal(u.red, true);
     assert.equal(u.line, "Stall: 180 s without a test result — aborted after 1 reported tests; last reported: „kind eins“; open: „gruppe“");

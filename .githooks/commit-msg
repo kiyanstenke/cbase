@@ -1,0 +1,20 @@
+#!/bin/sh
+# The latch on the commit message. Code passes the gate's guards; the message of a commit passes none of them, and it is public the
+# moment the commit is pushed.
+#
+# Parts: every executable file in the folder commit-msg.d next to this hook runs (sorted by name) with the hook's arguments ($1 is
+# the message file). A part that exits non-zero refuses the commit — it has printed why. Which parts exist is a matter of the clone
+# (the maintainer's clone links its private part here); a clone without parts commits as before.
+#
+# Switch on (once per clone):   git config core.hooksPath .githooks
+# Skip once:                    git commit --no-verify
+
+hook_dir=$(dirname "$0")
+[ -d "$hook_dir/commit-msg.d" ] || exit 0
+for part in "$hook_dir"/commit-msg.d/*; do
+  [ -f "$part" ] && [ -x "$part" ] || continue
+  "$part" "$@"
+  code=$?
+  [ "$code" -eq 0 ] || exit "$code"
+done
+exit 0

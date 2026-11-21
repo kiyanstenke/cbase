@@ -7,7 +7,8 @@ import { REPO } from "../config-repo.mjs";
 import { probe, shProbe } from "../lib/sh.mjs";
 import { treeFiles } from "../lib/asar.mjs";
 import { locGate } from "../lib/loc-gate.mjs";
-import { isTapResult, valuesSuite } from "../lib/test-output.mjs";
+import { isTapResult, stillRunningFiles, valuesSuite } from "../lib/test-output.mjs";
+import { SLEPT_REASON, lastSleep, sleptBetween } from "../lib/sleep-watch.mjs";
 import { readRegister, guardInTree, guardRegister, guardRegisterText } from "../lib/guard-register.mjs";
 import { backImports, hookRegistry, hookRegistryText, routeRegistry, routeRuleViolations, schemaRegistry, schemaRegistryText } from "../lib/tree-rules.mjs";
 import { report, manifestDiff, manifestOpen, readManifest } from "../lib/manifest-diff.mjs";
@@ -532,10 +533,15 @@ export async function check({ quick = false, quickReason = "--quick", plan = DEF
     log.table([["Backend parallelism", backendParallelismText(backend, { lastStart, lastBackend, deadlines }), null]]);
   };
   let results;
+  const sleepBefore = lastSleep();   // lib/sleep-watch.mjs: a sleep during the suites makes every red row below about the sleep
   try {
     results = await runSuites(suites, start, { beforeLang });
   } finally {
     if (lock.taken) lock.release();
+  }
+  if (sleptBetween(sleepBefore, lastSleep())) {
+    log.table([["System sleep", SLEPT_REASON, "bad"]]);
+    failures.push(SLEPT_REASON);
   }
   const resultsValue = [];
   for (const [i, [name]] of suites.entries()) {
@@ -551,6 +557,12 @@ export async function check({ quick = false, quickReason = "--quick", plan = DEF
     resultsValue.push(`${name} ${(line || "").replace(/\s*#\s*/g, " ").trim() || (red ? "red" : "green")}`);
     if (red) {
       failures.push(reason);
+      // A stall names the files that still ran (lib/sh.mjs `running`): the culprit, not the file before it.
+      if (r.stall) {
+        const files = stillRunningFiles(r.running).map((f) => path.relative(REPO, path.resolve(REPO, f)));
+        log.detail(files.length ? `still running at the stall: ${files.join(", ")}` : "still running at the stall: no test file found in the process group");
+        if (files.length) failures.push(`${name} tests: still running at the stall: ${files.join(", ")}`);
+      }
       // Name the skipped — otherwise only a number stands there and nobody knows which guard
       // did not run.
       for (const l of r.stdout.split("\n").filter((l) => /^ok .*# SKIP/.test(l)).slice(0, 8)) log.detail(l.trim());

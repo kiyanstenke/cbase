@@ -46,6 +46,10 @@ function repo(dir, remote, branch = null) {
   fs.writeFileSync(path.join(dir, "a.txt"), "a");
   git(dir, "add", "-A");
   git(dir, "commit", "-q", "-m", "one");
+  // The cases write the first 10 characters of this SHA into a text, and the link recognition takes hex only with a letter in it
+  // (a run of digits is a number, see "hex only with a digit and a letter" below). A random SHA starts with 10 digits in about 1 %
+  // of runs (seen in the gate, 21.11.2026: 3505458463…) — amend until the prefix carries a letter, so the case tests what it names.
+  for (let i = 0; i < 50 && !/[a-f]/.test(git(dir, "rev-parse", "HEAD").slice(0, 10)); i++) git(dir, "commit", "-q", "--amend", "-m", `one ${i}`);
   if (remote) git(dir, "remote", "add", "origin", remote);
   if (branch) git(dir, "branch", branch);
   return git(dir, "rev-parse", "HEAD");
