@@ -1,0 +1,55 @@
+{
+  "omit": {
+    "folder": [
+      "node_modules",
+      ".next",
+      ".turbo",
+      ".cache",
+      "__pycache__",
+      ".venv",
+      "venv",
+      "__MACOSX"
+    ],
+    "files": [
+      ".DS_Store"
+    ]
+  },
+  "limits": {
+    "depth": 4,
+    "repos": 25,
+    "skip": [
+      "node_modules",
+      ".git",
+      "dist",
+      "build",
+      ".next",
+      "out",
+      "target",
+      "vendor",
+      ".venv",
+      "venv",
+      "__pycache__",
+      ".cache",
+      "coverage",
+      ".turbo",
+      ".idea",
+      ".vscode",
+      ".svn",
+      ".hg"
+    ],
+    "dependencies": [
+      "node_modules",
+      ".venv",
+      ".pptx-venv",
+      ".playwright-mcp"
+    ]
+  },
+  "names": {
+    "forbidden": [
+      ".",
+      "..",
+      ".git"
+    ],
+    "prefix": ".cbase-"
+  }
+}

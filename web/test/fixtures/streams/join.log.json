@@ -1,0 +1,37 @@
+[
+  {
+    "id": "<msg-1>",
+    "role": "user",
+    "text": "Erzähl etwas Längeres.",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-2>",
+    "role": "assistant",
+    "text": "Ich fange an und schreibe weiter, bis der Block endet.",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-3>",
+    "role": "user",
+    "text": "Und noch etwas hinterher.",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-4>",
+    "role": "assistant",
+    "text": "Antwort auf: Und noch etwas hinterher.",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-5>",
+    "role": "meta",
+    "text": "{\"secs\":\"<secs>\",\"inTok\":170,\"outTok\":28}",
+    "ts": "<t>",
+    "attachments": null
+  }
+]

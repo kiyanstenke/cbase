@@ -1,0 +1,163 @@
+{
+  "name": "swap",
+  "description": "Two folders swap their names through an intermediate name; no duplicate at the end.",
+  "mode": "creation",
+  "selection": [
+    {
+      "seq": 1,
+      "kind": "folder",
+      "name": "a",
+      "files": [
+        {
+          "rel": "1.txt",
+          "size": 10
+        }
+      ]
+    },
+    {
+      "seq": 2,
+      "kind": "folder",
+      "name": "b",
+      "files": [
+        {
+          "rel": "2.txt",
+          "size": 10
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "kind": "move",
+      "from": "a",
+      "to": "tmp"
+    },
+    {
+      "kind": "move",
+      "from": "b",
+      "to": "a"
+    },
+    {
+      "kind": "move",
+      "from": "tmp",
+      "to": "b"
+    }
+  ],
+  "expected": {
+    "tree": [
+      {
+        "path": "a",
+        "kind": "folder",
+        "source": 1,
+        "origin": "a",
+        "size": 10,
+        "codeRepo": true
+      },
+      {
+        "path": "a/1.txt",
+        "kind": "file",
+        "source": 1,
+        "origin": "a/1.txt",
+        "size": 10
+      },
+      {
+        "path": "b",
+        "kind": "folder",
+        "source": 2,
+        "origin": "b",
+        "size": 10,
+        "codeRepo": true
+      },
+      {
+        "path": "b/2.txt",
+        "kind": "file",
+        "source": 2,
+        "origin": "b/2.txt",
+        "size": 10
+      }
+    ],
+    "hints": [],
+    "omitted": 0,
+    "upload": {
+      "1": [
+        "a/1.txt"
+      ],
+      "2": [
+        "b/2.txt"
+      ]
+    },
+    "finalTree": [
+      {
+        "path": "a",
+        "kind": "folder",
+        "source": 2,
+        "origin": "b",
+        "size": 10,
+        "codeRepo": true
+      },
+      {
+        "path": "a/2.txt",
+        "kind": "file",
+        "source": 2,
+        "origin": "b/2.txt",
+        "size": 10
+      },
+      {
+        "path": "b",
+        "kind": "folder",
+        "source": 1,
+        "origin": "a",
+        "size": 10,
+        "codeRepo": true
+      },
+      {
+        "path": "b/1.txt",
+        "kind": "file",
+        "source": 1,
+        "origin": "a/1.txt",
+        "size": 10
+      }
+    ],
+    "mapping": {
+      "1": [
+        {
+          "from": "a",
+          "to": "b"
+        }
+      ],
+      "2": [
+        {
+          "from": "b",
+          "to": "a"
+        }
+      ]
+    },
+    "finalMapping": {
+      "ways": [],
+      "gone": [],
+      "codeRepos": []
+    },
+    "codeRepos": [
+      "a",
+      "b"
+    ],
+    "repos": [
+      "a",
+      "b"
+    ],
+    "error": [],
+    "warnings": [],
+    "targets": [
+      {
+        "source": 1,
+        "origin": "a/1.txt",
+        "target": "b/1.txt"
+      },
+      {
+        "source": 2,
+        "origin": "b/2.txt",
+        "target": "a/2.txt"
+      }
+    ]
+  }
+}

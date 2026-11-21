@@ -1,0 +1,482 @@
+{
+  "start": "[]",
+  "history": [
+    {
+      "seq": 1,
+      "kind": "harness/connected",
+      "bubbles": 0,
+      "stream": {
+        "open": false,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 2,
+      "kind": "harness/user_message",
+      "bubbles": 1,
+      "stream": {
+        "open": false,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 3,
+      "kind": "harness/run_started",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 4,
+      "kind": "system",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 5,
+      "kind": "stream_event/message_start",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 6,
+      "kind": "stream_event/content_block_start:tool_use",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 7,
+      "kind": "stream_event/content_block_delta:input_json_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 8,
+      "kind": "stream_event/content_block_stop",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 9,
+      "kind": "stream_event/message_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 10,
+      "kind": "stream_event/message_stop",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 11,
+      "kind": "assistant",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 12,
+      "kind": "harness/ask_request",
+      "bubbles": 3,
+      "stream": {
+        "open": false,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 13,
+      "kind": "user",
+      "bubbles": 3,
+      "stream": {
+        "open": false,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 14,
+      "kind": "stream_event/message_start",
+      "bubbles": 3,
+      "stream": {
+        "open": false,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 15,
+      "kind": "stream_event/content_block_start:text",
+      "bubbles": 3,
+      "stream": {
+        "open": false,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 16,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 17,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 18,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 19,
+      "kind": "stream_event/content_block_stop",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 20,
+      "kind": "stream_event/message_delta",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 21,
+      "kind": "stream_event/message_stop",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 22,
+      "kind": "assistant",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 23,
+      "kind": "result",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 24,
+      "kind": "harness/run_done",
+      "bubbles": 4,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 25,
+      "kind": "harness/ask_resolved",
+      "bubbles": 4,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 26,
+      "kind": "harness/user_message",
+      "bubbles": 5,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 27,
+      "kind": "harness/run_started",
+      "bubbles": 6,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 28,
+      "kind": "system",
+      "bubbles": 6,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 29,
+      "kind": "stream_event/message_start",
+      "bubbles": 6,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 30,
+      "kind": "stream_event/content_block_start:text",
+      "bubbles": 6,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 31,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 6,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 32,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 6,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 33,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 6,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 34,
+      "kind": "stream_event/content_block_stop",
+      "bubbles": 6,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 35,
+      "kind": "stream_event/message_delta",
+      "bubbles": 6,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 36,
+      "kind": "stream_event/message_stop",
+      "bubbles": 6,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 37,
+      "kind": "assistant",
+      "bubbles": 6,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 38,
+      "kind": "result",
+      "bubbles": 6,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 39,
+      "kind": "harness/run_done",
+      "bubbles": 6,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    }
+  ],
+  "bubbles": [
+    {
+      "role": "user",
+      "blocks": [
+        {
+          "kind": "text",
+          "text": "Wir planen ein neues Repo-Layout."
+        }
+      ],
+      "attachments": []
+    },
+    {
+      "role": "assistant",
+      "blocks": [
+        {
+          "kind": "tool",
+          "id": "toolu_ask_01",
+          "name": "mcp__cbase__cbase_ask",
+          "detail": "",
+          "count": 1,
+          "input": {
+            "questions": [
+              {
+                "header": "Layout",
+                "question": "Monorepo oder getrennte Repos?",
+                "options": [
+                  {
+                    "label": "Monorepo (Empfehlung)",
+                    "description": "Ein Repo, geteilte Tooling-Basis."
+                  },
+                  {
+                    "label": "Getrennte Repos",
+                    "description": "Unabhängige Release-Zyklen."
+                  }
+                ]
+              }
+            ]
+          },
+          "result": "{\"ok\":true,\"requestId\":\"<id-1>\",\"note\":\"Die Frage steht jetzt als anklickbare Karte im Chat. BEENDE JETZT DEINEN TURN — höchstens ein kurzer Satz, keine weitere Arbeit und keine weitere Frage. Die Auswahl des Nutzers erreicht dich als nächste Nachricht.\"}",
+          "resultIsError": false,
+          "done": true
+        }
+      ],
+      "streaming": false
+    },
+    {
+      "role": "ask",
+      "blocks": [],
+      "ask": {
+        "requestId": "<id-1>",
+        "questions": [
+          {
+            "header": "Layout",
+            "question": "Monorepo oder getrennte Repos?",
+            "multiSelect": false,
+            "options": [
+              {
+                "label": "Monorepo (Empfehlung)",
+                "description": "Ein Repo, geteilte Tooling-Basis."
+              },
+              {
+                "label": "Getrennte Repos",
+                "description": "Unabhängige Release-Zyklen."
+              }
+            ]
+          }
+        ],
+        "answerable": false,
+        "answers": [
+          {
+            "header": "Layout",
+            "question": "Monorepo oder getrennte Repos?",
+            "selected": [
+              "Getrennte Repos"
+            ],
+            "text": "wegen der Release-Zyklen"
+          }
+        ],
+        "overChannel": null
+      }
+    },
+    {
+      "role": "assistant",
+      "blocks": [
+        {
+          "kind": "text",
+          "text": "Ich habe eine Rückfrage gestellt und warte auf deine Auswahl."
+        }
+      ],
+      "streaming": false,
+      "summary": {
+        "secs": 21,
+        "inTok": 160,
+        "outTok": 42,
+        "aborted": false,
+        "at": 1789646423000
+      }
+    },
+    {
+      "role": "user",
+      "blocks": [
+        {
+          "kind": "text",
+          "text": "Getrennte Repos — wegen der Release-Zyklen"
+        }
+      ],
+      "attachments": []
+    },
+    {
+      "role": "assistant",
+      "blocks": [
+        {
+          "kind": "text",
+          "text": "Verstanden — getrennte Repos, wegen der Release-Zyklen. Ich lege die Struktur so an."
+        }
+      ],
+      "streaming": false,
+      "summary": {
+        "secs": 12,
+        "inTok": 120,
+        "outTok": 18,
+        "aborted": false,
+        "at": 1789646438000
+      }
+    }
+  ]
+}

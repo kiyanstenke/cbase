@@ -1,0 +1,65 @@
+#!/bin/sh
+# The latch before the push: a bare `git commit && git push` goes past the full gate, and once a change went out with 152 of 153
+# tests passing.
+#
+# What runs here is the QUICK CHECK (`./check --quick`; measured 5 s): node --check over all backend files, the import smoke test,
+# the tree guards, the line count, the guard register and `git diff --check`. The test suites stay out — eleven minutes before every
+# push is the way to `--no-verify` as a habit. The suites belong to the full gate (`./check`); this hook is the quick net in front,
+# not the replacement.
+#
+# Switch on (once per clone):   git config core.hooksPath .githooks
+# Skip once:                    git push --no-verify
+#
+# Parts: every executable file in the folder pre-push.d next to this hook runs first (sorted by name) with the hook's arguments and the pushed refs on
+# stdin. Exit protocol of a part:
+#   0    nothing to say — the next part runs, then the quick check
+#   10   allow the push and SKIP the quick check (the part knows why: e.g. the full gate just ran)
+#   else refuse the push (the part has printed the reason)
+# Which parts exist is a matter of the clone: a clone may add its own (a push-target block, its own quick check that answers 10);
+# a clone without parts simply runs ./check --quick.
+
+refs=$(cat)
+hook_dir=$(dirname "$0")
+
+if [ -d "$hook_dir/pre-push.d" ]; then
+  for part in "$hook_dir"/pre-push.d/*; do
+    [ -f "$part" ] && [ -x "$part" ] || continue
+    printf '%s\n' "$refs" | "$part" "$@"
+    code=$?
+    case "$code" in
+      0) ;;
+      10) exit 0 ;;
+      *) exit "$code" ;;
+    esac
+  done
+fi
+
+# A delete push (`git push origin :main`) carries no new bytes — nothing to check.
+only_deletes=1
+while read -r _local_ref local_sha _remote_ref _remote_sha; do
+  [ -n "$local_sha" ] || continue
+  case "$local_sha" in
+    0000000000000000000000000000000000000000) ;;
+    *) only_deletes=0 ;;
+  esac
+done <<END_OF_LIST
+$refs
+END_OF_LIST
+[ "$only_deletes" = "1" ] && exit 0
+
+root=$(git rev-parse --show-toplevel) || exit 1
+if [ ! -x "$root/check" ]; then
+  echo "pre-push: $root/check is not present and executable — push goes through"
+  exit 0
+fi
+
+echo "pre-push: ./check --quick (about 5 s) — skip with git push --no-verify"
+"$root/check" --quick && exit 0
+
+cat >&2 <<'END_OF_HELP'
+
+pre-push: the quick check is red — nothing is pushed.
+The full picture is the full gate (about 11 min, always start it in the background).
+If you must push anyway: git push --no-verify
+END_OF_HELP
+exit 1

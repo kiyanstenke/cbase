@@ -1,0 +1,51 @@
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120 # the backend suite alone takes about 65 min on the runner's two cores
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install gitleaks
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz | tar -xz -C /usr/local/bin gitleaks
+          gitleaks version
+      - name: Browser and ffmpeg for the real-browser tests
+        run: |
+          # The backend suite starts a real Chromium (browsers.js resolveChromium, CBASE_CHROMIUM first) and builds MP4s with ffmpeg
+          # (captures.js) — the container image ships both, the runner image does not promise ffmpeg. The runner's /usr/bin/chromium is a
+          # Chromium snapshot without SUID sandbox; Ubuntu 24.04 restricts unprivileged user namespaces with AppArmor, so it dies at
+          # once with "No usable sandbox!" (Chromium ended (code 1)). Google Chrome's package brings chrome-sandbox and Ubuntu's
+          # AppArmor profile for it: take that one, and start it once here so a broken browser is named here, not in the suite.
+          command -v ffmpeg || { sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg; }
+          ffmpeg -version | head -1
+          chrome="$(command -v google-chrome)"
+          "$chrome" --version
+          timeout 60 "$chrome" --headless=new --dump-dom about:blank > /dev/null
+          echo "CBASE_CHROMIUM=$chrome" >> "$GITHUB_ENV"
+      - name: Install dependencies
+        run: |
+          (cd web && npm ci)
+          (cd client && npm ci)
+          # onnxruntime-node fetches its CUDA build on linux/x64 from an address that answers 404 since November 2026 (same switch as server/backend/Dockerfile).
+          (cd server/backend && ONNXRUNTIME_NODE_INSTALL_CUDA=skip npm ci)
+          chmod +x server/backend/node_modules/node-pty/prebuilds/*/spawn-helper || true
+      - name: Gate
+        env:
+          # The gate's emergency cap per suite is one hour (tools/check/lib/gate-plan.mjs SUITE_CAP_MS); the backend suite needs about
+          # 65 min on the runner's two cores (run 44865499914: 3267 of ~3570 tests after 60 min). The stall rule (300 s) still applies.
+          CBASE_SUITE_TIMEOUT_MS: "5400000"
+        run: ./check

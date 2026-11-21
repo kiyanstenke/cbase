@@ -1,0 +1,72 @@
+[
+  {
+    "id": "<msg-1>",
+    "role": "user",
+    "text": "Sammle die zwei Befunde mit einem Workflow.",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-2>",
+    "role": "tool",
+    "text": "{\"name\":\"mcp__cbase__cbase_dynamic_workflow\",\"detail\":\"\",\"id\":\"toolu_dynwf\",\"input\":{\"script\":\"export const meta = { name: 'findings-collect', description: 'Zwei Befunde nacheinander', phases: [{ title: 'Lesen' }] }\\nconst a = await agent('Lies A', { label: 'eins' });\\nconst b = await agent('Lies B', { label: 'zwei' });\\nreturn { a, b };\\n\"},\"parent\":null}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-3>",
+    "role": "workflow_marker",
+    "text": "{\"phase\":\"start\",\"runId\":\"<wfrun>\",\"taskId\":\"<wftask>\",\"name\":\"findings-collect\",\"at\":\"<t>\"}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-4>",
+    "role": "tool_result",
+    "text": "{\"id\":\"toolu_dynwf\",\"result\":\"{\\n  \\\"status\\\": \\\"gestartet\\\",\\n  \\\"taskId\\\": \\\"<wftask>\\\",\\n  \\\"runId\\\": \\\"<wfrun>\\\",\\n  \\\"scriptPath\\\": \\\"<path>/data-root/data/outputs/<chat-1>/workflows/<wfrun>/script.js\\\",\\n  \\\"name\\\": \\\"findings-collect\\\",\\n  \\\"note\\\": \\\"Der Workflow „findings-collect“ läuft im Hintergrund. Beende jetzt deinen Turn: wenn er endet, kommt eine <task-notification> mit dem Ergebnis. Stoppen: cbase_dynamic_workflow_stop mit taskId <wftask>.\\\"\\n}\",\"isError\":false}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-5>",
+    "role": "assistant",
+    "text": "Der Workflow läuft im Hintergrund.",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-6>",
+    "role": "meta",
+    "text": "{\"secs\":\"<secs>\",\"inTok\":210,\"outTok\":48}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-7>",
+    "role": "workflow_marker",
+    "text": "{\"phase\":\"end\",\"runId\":\"<wfrun>\",\"taskId\":\"<wftask>\",\"name\":\"findings-collect\",\"status\":\"finished\",\"at\":\"<t>\"}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-8>",
+    "role": "user",
+    "text": "<task-notification>\n<task-id><wftask></task-id>\n<tool-use-id>toolu_dynwf</tool-use-id>\n<output-file><path>/data-root/data/outputs/<chat-1>/workflows/<wfrun>/result.json</output-file>\n<status>completed</status>\n<name>findings-collect</name>\n<summary>Workflow \"findings-collect\" completed</summary>\n<result>{\n  \"a\": \"Befund A: gelesen.\",\n  \"b\": \"Befund B: gelesen.\"\n}</result>\n<diagnostics>Run-Id <wfrun>, Skript <path>/data-root/data/outputs/<chat-1>/workflows/<wfrun>/script.js, agent()-Aufrufe: 2.\nDas Ergebnis, das Journal je agent() und die log()-Zeilen stehen in der Ausgabedatei.</diagnostics>\n<note>Das ist eine Systemmeldung über deinen dynamischen Workflow, keine Nutzerantwort. Werte sie aus und arbeite weiter.</note>\n</task-notification>",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-9>",
+    "role": "assistant",
+    "text": "Workflow ausgewertet: beide Befunde da",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-10>",
+    "role": "meta",
+    "text": "{\"secs\":\"<secs>\",\"inTok\":280,\"outTok\":9}",
+    "ts": "<t>",
+    "attachments": null
+  }
+]

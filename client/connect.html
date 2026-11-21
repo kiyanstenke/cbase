@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>cbase — Connect</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; }
+  body {
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    display: grid; place-items: center;
+    background: #eeece6; color: #1c1c20;
+    -webkit-app-region: drag; /* window-wide drag region — the card opts out */
+  }
+  .card {
+    -webkit-app-region: no-drag;
+    width: 380px; padding: 30px; border-radius: 24px;
+    background: #ffffff; border: 1px solid #ddd9cf;
+    box-shadow: 0 18px 50px rgba(0,0,0,.12);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+  .brand .mark { width: 30px; height: 30px; }
+  .brand b { font-size: 16px; letter-spacing: -0.02em; }
+  .brand small { display: block; font-weight: 400; opacity: .6; }
+  label { display: block; font-size: 13px; opacity: .75; margin-bottom: 18px; }
+  input {
+    width: 100%; margin-top: 6px; font: inherit; color: inherit;
+    padding: 10px 16px; border-radius: 999px; border: 1px solid #ddd9cf; background: #faf9f5;
+    outline: none;
+  }
+  input:focus { border-color: #1f57f7; }
+  button {
+    width: 100%; font: inherit; font-weight: 500; color: #fff;
+    background: #1f57f7; border: 0; border-radius: 999px; padding: 10px 16px; cursor: pointer;
+  }
+  button:disabled { opacity: .5; cursor: default; }
+  .err { color: #d9534f; font-size: 13px; min-height: 1.4em; margin-bottom: 12px; }
+  .hint { font-size: 12px; opacity: .65; margin-top: 16px; color: #55524a; }
+  /* Dark mode LAST — same specificity, the later rule wins. */
+  @media (prefers-color-scheme: dark) {
+    body { background: #101014; color: #e8e8ec; }
+    .card { background: #17171d; border-color: #26262e; box-shadow: 0 18px 50px rgba(0,0,0,.5); }
+    input { background: #101016; border-color: #33333f; color: #e8e8ec; }
+    input:focus { border-color: #4d89ff; }
+    button { background: #4d89ff; }
+    .hint { color: #8b8b95; }
+  }
+</style>
+</head>
+<body>
+  <form class="card" id="f">
+    <div class="brand">
+      <!-- The mark inside the app is always the lens. It is embedded as a data URI because
+           connect.html is the only local page of the client bundle (package.json lists the files
+           one by one) — a second file would have to be added to several lists. -->
+      <img class="mark" alt="" src="data:image/png;base64,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">
+      <b>cbase<small>Connect to a server</small></b>
+    </div>
+    <label>Server address
+      <input id="url" placeholder="https://cbase.example.com" autofocus spellcheck="false" autocomplete="off">
+    </label>
+    <div class="err" id="err"></div>
+    <button id="go" type="submit">Connect</button>
+    <div class="hint">You get the address from the person who runs your cbase server. Sign-in follows in the next step.</div>
+  </form>
+<script>
+  const $ = (id) => document.getElementById(id);
+  window.cbaseClient?.getServer().then((u) => { if (u) $("url").value = u; });
+  $("f").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    $("err").textContent = ""; $("go").disabled = true; $("go").textContent = "Connecting…";
+    try {
+      const r = await window.cbaseClient.connect($("url").value);
+      if (r?.error) { $("err").textContent = r.error; }
+      // on success the main process loads the server URL — this page disappears
+    } catch (e) {
+      $("err").textContent = String(e?.message || e);
+    } finally {
+      $("go").disabled = false; $("go").textContent = "Connect";
+    }
+  });
+</script>
+</body>
+</html>

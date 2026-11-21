@@ -1,0 +1,93 @@
+{
+  "name": "inventory-swap-and-subtree",
+  "description": "Inventory without all levels loaded: parent path as fixed text; two repos swap their places; a repo moved into a folder.",
+  "mode": "inventory",
+  "tree": [
+    {
+      "path": "apps",
+      "kind": "folder"
+    },
+    {
+      "path": "apps/x",
+      "kind": "code-repo"
+    },
+    {
+      "path": "apps/y",
+      "kind": "code-repo"
+    },
+    {
+      "path": "lib/deep/z",
+      "kind": "code-repo"
+    }
+  ],
+  "steps": [
+    {
+      "kind": "move",
+      "from": "apps/x",
+      "to": "apps/tmp"
+    },
+    {
+      "kind": "move",
+      "from": "apps/y",
+      "to": "apps/x"
+    },
+    {
+      "kind": "move",
+      "from": "apps/tmp",
+      "to": "apps/y"
+    },
+    {
+      "kind": "move",
+      "from": "lib/deep/z",
+      "to": "apps/z"
+    }
+  ],
+  "expected": {
+    "finalTree": [
+      {
+        "path": "apps",
+        "kind": "folder"
+      },
+      {
+        "path": "apps/x",
+        "kind": "code-repo"
+      },
+      {
+        "path": "apps/y",
+        "kind": "code-repo"
+      },
+      {
+        "path": "apps/z",
+        "kind": "code-repo"
+      }
+    ],
+    "mapping": {},
+    "finalMapping": {
+      "ways": [
+        {
+          "old": "apps/x",
+          "fresh": "apps/y"
+        },
+        {
+          "old": "apps/y",
+          "fresh": "apps/x"
+        },
+        {
+          "old": "lib/deep/z",
+          "fresh": "apps/z"
+        }
+      ],
+      "gone": [],
+      "codeRepos": []
+    },
+    "codeRepos": [],
+    "repos": [
+      "apps/x",
+      "apps/y",
+      "apps/z"
+    ],
+    "error": [],
+    "warnings": [],
+    "targets": []
+  }
+}

@@ -1,0 +1,161 @@
+{
+  "name": "child-from-moved-parent-folder",
+  "description": "First rename the parent folder, then pull a child out of it to the root - the child carries its own entry, the sibling follows the parent folder.",
+  "mode": "creation",
+  "selection": [
+    {
+      "seq": 1,
+      "kind": "folder",
+      "name": "a",
+      "files": [
+        {
+          "rel": "b/c/d.txt",
+          "size": 10
+        },
+        {
+          "rel": "b/e.txt",
+          "size": 10
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "kind": "move",
+      "from": "a/b",
+      "to": "a/x"
+    },
+    {
+      "kind": "move",
+      "from": "a/x/c",
+      "to": "c"
+    }
+  ],
+  "expected": {
+    "tree": [
+      {
+        "path": "a",
+        "kind": "folder",
+        "source": 1,
+        "origin": "a",
+        "size": 20,
+        "codeRepo": true
+      },
+      {
+        "path": "a/b",
+        "kind": "folder",
+        "source": 1,
+        "origin": "a/b",
+        "size": 20
+      },
+      {
+        "path": "a/b/c",
+        "kind": "folder",
+        "source": 1,
+        "origin": "a/b/c",
+        "size": 10
+      },
+      {
+        "path": "a/b/c/d.txt",
+        "kind": "file",
+        "source": 1,
+        "origin": "a/b/c/d.txt",
+        "size": 10
+      },
+      {
+        "path": "a/b/e.txt",
+        "kind": "file",
+        "source": 1,
+        "origin": "a/b/e.txt",
+        "size": 10
+      }
+    ],
+    "hints": [],
+    "omitted": 0,
+    "upload": {
+      "1": [
+        "a/b/c/d.txt",
+        "a/b/e.txt"
+      ]
+    },
+    "finalTree": [
+      {
+        "path": "a",
+        "kind": "folder",
+        "source": 1,
+        "origin": "a",
+        "size": 20,
+        "codeRepo": true
+      },
+      {
+        "path": "a/x",
+        "kind": "folder",
+        "source": 1,
+        "origin": "a/b",
+        "size": 20
+      },
+      {
+        "path": "a/x/e.txt",
+        "kind": "file",
+        "source": 1,
+        "origin": "a/b/e.txt",
+        "size": 10
+      },
+      {
+        "path": "c",
+        "kind": "folder",
+        "source": 1,
+        "origin": "a/b/c",
+        "size": 10
+      },
+      {
+        "path": "c/d.txt",
+        "kind": "file",
+        "source": 1,
+        "origin": "a/b/c/d.txt",
+        "size": 10
+      }
+    ],
+    "mapping": {
+      "1": [
+        {
+          "from": "a",
+          "to": "a"
+        },
+        {
+          "from": "a/b",
+          "to": "a/x"
+        },
+        {
+          "from": "a/b/c",
+          "to": "c"
+        }
+      ]
+    },
+    "finalMapping": {
+      "ways": [],
+      "gone": [],
+      "codeRepos": []
+    },
+    "codeRepos": [
+      "a"
+    ],
+    "repos": [
+      "a"
+    ],
+    "error": [],
+    "warnings": [],
+    "targets": [
+      {
+        "source": 1,
+        "origin": "a/b/c/d.txt",
+        "target": "c/d.txt"
+      },
+      {
+        "source": 1,
+        "origin": "a/b/e.txt",
+        "target": "a/x/e.txt"
+      }
+    ]
+  }
+}

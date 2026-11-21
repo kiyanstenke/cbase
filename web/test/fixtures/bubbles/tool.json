@@ -1,0 +1,518 @@
+{
+  "rows": [
+    {
+      "role": "user",
+      "text": "Sieh nach, was im Testordner liegt.",
+      "markers": [],
+      "dom": {
+        "t": "div",
+        "a": {
+          "data-contain": "",
+          "class": "cb-contain-bleed"
+        },
+        "k": [
+          {
+            "t": "div",
+            "a": {
+              "class": "transition-opacity duration-200 "
+            },
+            "k": [
+              {
+                "t": "div",
+                "a": {
+                  "class": "flex flex-col items-end"
+                },
+                "k": [
+                  {
+                    "t": "div",
+                    "a": {
+                      "class": "cb-kit-pane cb-bubble max-w-[85%] min-w-0 rounded-[20px] px-4 py-2.5"
+                    },
+                    "k": [
+                      {
+                        "t": "div",
+                        "a": {
+                          "class": "whitespace-pre-wrap break-words"
+                        },
+                        "k": [
+                          "Sieh nach, was im Testordner liegt."
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "t": "div",
+                    "a": {
+                      "class": "mt-1 flex items-center gap-0.5",
+                      "data-message-actions": "true"
+                    },
+                    "k": [
+                      {
+                        "t": "button",
+                        "a": {
+                          "type": "button",
+                          "title": "Nachricht kopieren",
+                          "aria-label": "Nachricht kopieren",
+                          "class": "grid h-7 w-7 place-items-center rounded-lg transition-colors text-dim hover:bg-hover hover:text-fg"
+                        },
+                        "k": [
+                          {
+                            "t": "svg",
+                            "a": {
+                              "width": "14",
+                              "height": "14",
+                              "viewBox": "0 0 24 24",
+                              "aria-hidden": "true"
+                            },
+                            "k": [
+                              {
+                                "t": "rect",
+                                "a": {
+                                  "x": "9",
+                                  "y": "9",
+                                  "width": "11",
+                                  "height": "11"
+                                }
+                              },
+                              {
+                                "t": "path",
+                                "a": {
+                                  "d": "M15 5.5A2.5 2.5 0 0 0 12.5 3H6.5A3.5 3.5 0 0 0 3 6.5v6A2.5 2.5 0 0 0 5.5 15"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "t": "button",
+                        "a": {
+                          "type": "button",
+                          "title": "Vorlesen",
+                          "aria-label": "Vorlesen",
+                          "class": "grid h-7 w-7 place-items-center rounded-lg transition-colors text-dim hover:bg-hover hover:text-fg"
+                        },
+                        "k": [
+                          {
+                            "t": "svg",
+                            "a": {
+                              "width": "14",
+                              "height": "14",
+                              "viewBox": "0 0 24 24",
+                              "aria-hidden": "true"
+                            },
+                            "k": [
+                              {
+                                "t": "path",
+                                "a": {
+                                  "d": "M11 5 6.5 9H3v6h3.5L11 19z"
+                                }
+                              },
+                              {
+                                "t": "path",
+                                "a": {
+                                  "d": "M15.5 8.5a5 5 0 0 1 0 7"
+                                }
+                              },
+                              {
+                                "t": "path",
+                                "a": {
+                                  "d": "M18.5 5.5a9 9 0 0 1 0 13"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "role": "assistant",
+      "text": "1 Befehl ausgeführtShell · ls web/testagents.mjs stream.mjs streams.mjsIm Ordner liegen drei Testdateien.<verb> für <secs> · ↑ 190 · ↓ 39 Tokens",
+      "markers": [
+        "tool-row:done!",
+        "text"
+      ],
+      "dom": {
+        "t": "div",
+        "a": {
+          "data-contain": "",
+          "class": "cb-contain-bleed"
+        },
+        "k": [
+          {
+            "t": "div",
+            "a": {
+              "class": "transition-opacity duration-200 "
+            },
+            "k": [
+              {
+                "t": "div",
+                "a": {
+                  "class": "group relative"
+                },
+                "k": [
+                  {
+                    "t": "div",
+                    "a": {
+                      "data-contain": "",
+                      "class": "cb-contain-bleed"
+                    },
+                    "k": [
+                      {
+                        "t": "div",
+                        "a": {
+                          "class": "py-0.5",
+                          "data-tool-row": "done",
+                          "data-tool-error": "0"
+                        },
+                        "k": [
+                          {
+                            "t": "button",
+                            "a": {
+                              "type": "button",
+                              "class": "flex w-full items-center gap-1.5 text-left text-tool text-dim hover:text-fg"
+                            },
+                            "k": [
+                              {
+                                "t": "span",
+                                "a": {
+                                  "class": "flex min-w-0 flex-1 items-center gap-1.5"
+                                },
+                                "k": [
+                                  {
+                                    "t": "span",
+                                    "a": {
+                                      "class": "min-w-0 truncate "
+                                    },
+                                    "k": [
+                                      "1 Befehl ausgeführt"
+                                    ]
+                                  },
+                                  {
+                                    "t": "span",
+                                    "a": {
+                                      "class": "shrink-0"
+                                    },
+                                    "k": [
+                                      {
+                                        "t": "span",
+                                        "a": {
+                                          "class": "inline-flex transition-transform duration-150 rotate-90"
+                                        },
+                                        "k": [
+                                          {
+                                            "t": "svg",
+                                            "a": {
+                                              "width": "12",
+                                              "height": "12",
+                                              "viewBox": "0 0 24 24",
+                                              "aria-hidden": "true"
+                                            },
+                                            "k": [
+                                              {
+                                                "t": "path",
+                                                "a": {
+                                                  "d": "M9 18l6-6-6-6"
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "t": "div",
+                            "a": {
+                              "class": "mt-1 border-l border-edge pl-3"
+                            },
+                            "k": [
+                              {
+                                "t": "div",
+                                "a": {
+                                  "class": "py-0.5"
+                                },
+                                "k": [
+                                  {
+                                    "t": "div",
+                                    "a": {
+                                      "class": "min-w-0 text-tool"
+                                    },
+                                    "k": [
+                                      {
+                                        "t": "button",
+                                        "a": {
+                                          "type": "button",
+                                          "class": "flex w-full items-center gap-1.5 text-left hover:text-fg"
+                                        },
+                                        "k": [
+                                          {
+                                            "t": "span",
+                                            "a": {
+                                              "class": "min-w-0 truncate "
+                                            },
+                                            "k": [
+                                              "Shell",
+                                              {
+                                                "t": "span",
+                                                "a": {
+                                                  "class": "text-dim"
+                                                },
+                                                "k": [
+                                                  " · ",
+                                                  "ls web/test"
+                                                ]
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "t": "span",
+                                            "a": {
+                                              "class": "ml-auto shrink-0 text-dim"
+                                            },
+                                            "k": [
+                                              {
+                                                "t": "span",
+                                                "a": {
+                                                  "class": "inline-flex transition-transform duration-150 rotate-90"
+                                                },
+                                                "k": [
+                                                  {
+                                                    "t": "svg",
+                                                    "a": {
+                                                      "width": "12",
+                                                      "height": "12",
+                                                      "viewBox": "0 0 24 24",
+                                                      "aria-hidden": "true"
+                                                    },
+                                                    "k": [
+                                                      {
+                                                        "t": "path",
+                                                        "a": {
+                                                          "d": "M9 18l6-6-6-6"
+                                                        }
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "t": "div",
+                                        "a": {
+                                          "class": "mt-1.5 flex flex-col gap-1.5"
+                                        },
+                                        "k": [
+                                          {
+                                            "t": "div",
+                                            "a": {
+                                              "class": "overflow-x-auto rounded-lg border border-edge bg-code px-2.5 py-1.5"
+                                            },
+                                            "k": [
+                                              {
+                                                "t": "pre",
+                                                "a": {
+                                                  "class": "whitespace-pre-wrap break-words cb-cs-12 leading-[1.5] text-fg/80"
+                                                },
+                                                "k": [
+                                                  "agents.mjs\nstream.mjs\nstreams.mjs"
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "t": "div",
+                    "a": {
+                      "data-contain": "",
+                      "class": "cb-contain-bleed"
+                    },
+                    "k": [
+                      {
+                        "t": "div",
+                        "a": {
+                          "class": "min-w-0 py-1",
+                          "data-text-block": "true"
+                        },
+                        "k": [
+                          {
+                            "t": "p",
+                            "a": {
+                              "class": "my-1.5 whitespace-pre-wrap break-words leading-relaxed first:mt-0 last:mb-0"
+                            },
+                            "k": [
+                              "Im Ordner liegen drei Testdateien."
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "t": "div",
+                    "a": {
+                      "class": "mt-1 flex items-center gap-1.5 text-dim",
+                      "data-metric-row": "true"
+                    },
+                    "k": [
+                      {
+                        "t": "span",
+                        "a": {
+                          "class": "inline-flex size-[1em] shrink-0 text-accent/70",
+                          "data-metric-hex": "true"
+                        },
+                        "k": [
+                          {
+                            "t": "svg",
+                            "a": {
+                              "width": "1em",
+                              "height": "1em",
+                              "viewBox": "0 0 24 24",
+                              "aria-hidden": "true"
+                            },
+                            "k": [
+                              {
+                                "t": "path",
+                                "a": {
+                                  "d": "M12 2.5l8.2 4.75v9.5L12 21.5l-8.2-4.75v-9.5L12 2.5z"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "t": "span",
+                        "k": [
+                          "<verb> für <secs>",
+                          " · ↑ ",
+                          "190",
+                          " · ↓ ",
+                          "39",
+                          "Tokens"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "t": "div",
+                    "a": {
+                      "class": "mt-1 flex items-center gap-0.5",
+                      "data-message-actions": "true"
+                    },
+                    "k": [
+                      {
+                        "t": "button",
+                        "a": {
+                          "type": "button",
+                          "title": "Nachricht kopieren",
+                          "aria-label": "Nachricht kopieren",
+                          "class": "grid h-7 w-7 place-items-center rounded-lg transition-colors text-dim hover:bg-hover hover:text-fg"
+                        },
+                        "k": [
+                          {
+                            "t": "svg",
+                            "a": {
+                              "width": "14",
+                              "height": "14",
+                              "viewBox": "0 0 24 24",
+                              "aria-hidden": "true"
+                            },
+                            "k": [
+                              {
+                                "t": "rect",
+                                "a": {
+                                  "x": "9",
+                                  "y": "9",
+                                  "width": "11",
+                                  "height": "11"
+                                }
+                              },
+                              {
+                                "t": "path",
+                                "a": {
+                                  "d": "M15 5.5A2.5 2.5 0 0 0 12.5 3H6.5A3.5 3.5 0 0 0 3 6.5v6A2.5 2.5 0 0 0 5.5 15"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "t": "button",
+                        "a": {
+                          "type": "button",
+                          "title": "Vorlesen",
+                          "aria-label": "Vorlesen",
+                          "class": "grid h-7 w-7 place-items-center rounded-lg transition-colors text-dim hover:bg-hover hover:text-fg"
+                        },
+                        "k": [
+                          {
+                            "t": "svg",
+                            "a": {
+                              "width": "14",
+                              "height": "14",
+                              "viewBox": "0 0 24 24",
+                              "aria-hidden": "true"
+                            },
+                            "k": [
+                              {
+                                "t": "path",
+                                "a": {
+                                  "d": "M11 5 6.5 9H3v6h3.5L11 19z"
+                                }
+                              },
+                              {
+                                "t": "path",
+                                "a": {
+                                  "d": "M15.5 8.5a5 5 0 0 1 0 7"
+                                }
+                              },
+                              {
+                                "t": "path",
+                                "a": {
+                                  "d": "M18.5 5.5a9 9 0 0 1 0 13"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "attachment": []
+}

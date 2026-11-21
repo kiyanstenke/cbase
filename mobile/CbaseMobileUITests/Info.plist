@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- On a REAL device the tests reach the fixture gateway over the Mac's LAN IP in plain
+	     HTTP. Without these exceptions ATS blocks the test runner's request IMMEDIATELY
+	     (before the local-network dialog) - the tests then skipped themselves with
+	     "fixture gateway is not running" although it was. In the simulator 127.0.0.1 is
+	     exempt anyway; this changes nothing there. -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>The UI tests reach the fixture gateway on the Mac over the local network.</string>
+</dict>
+</plist>

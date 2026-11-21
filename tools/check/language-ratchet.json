@@ -1,0 +1,4 @@
+{
+ "hint": "Count of real German lines in the public tree. The test fails above it. It is 0: German outside the allowlist fails the gate.",
+ "maxFindings": 0
+}

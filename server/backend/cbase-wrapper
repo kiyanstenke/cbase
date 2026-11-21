@@ -1,0 +1,130 @@
+#!/usr/bin/perl
+# cbase-wrapper — starts a command in the project container as leader of a PROCESS GROUP OF ITS OWN and records the group id.
+#
+#   cbase-wrapper --pgid-file P -- command …                    (runs: chat CLI, Bash, hooks, MCP, terminal)
+#   cbase-wrapper --pgid-file P --log L --exit E -- command …   (services, `docker exec -d`)
+#
+# Why: a `docker exec` knows only ITS process. If the exec caller in B dies, the process lives on in the container (as with the
+# real docker), and a signal to the pid of the docker child never reaches the grandchildren. The backend therefore ends a start via
+# `docker exec <c> kill -<sig> -<pgid>` — the group id is in P.
+#
+# Without --log: the process becomes leader of a process group of its own (POSIX::setsid; if it already is one — with a TTY, or
+# because the caller started it so — it stays that way), writes the group id to P and replaces itself by the command via exec.
+# argv[0] stays the command itself (`claude`, `codex`): the deploy's oneshot detection hangs on the name, and `ps` shows no wrapper
+# afterwards.
+# With --log/--exit (only together): a child becomes leader of a new session, stdin from /dev/null, stdout/stderr append to L (as
+# `services.js` does with `openSync(log, "a")`); the child writes P and replaces itself by the command. The parent does NOT belong to
+# the group, so it survives a `kill -<sig> -<pgid>`, waits and writes the exit code to E (128 + signal if a signal ended the command —
+# like a shell). It ends with the same code.
+#
+# Promises:
+#   - P comes into being ONLY when the group exists (after setsid), and atomically (tmp + rename): whoever reads P can hit it.
+#   - Without a written P the command NEVER runs: a process nobody can end would be worse than a failed start.
+#   - Own errors (call, P not writable, L not openable) end with 125, like `env`/`nohup`; a missing command with 127, a non-executable
+#     one with 126.
+#   - Create no directories: the runtime folder belongs to the backend; a missing folder is an error.
+#
+# perl, because `perl-base` is essential in bookworm and macOS ships perl: the same file runs in the gate with the real group
+# semantics. Core modules only. Guard: tools/check/wrapper.test.mjs; docking point in the fake docker:
+# server/backend/test/fake-docker.mjs (`programs`, /usr/sbin/cbase-wrapper).
+use strict;
+use warnings;
+use POSIX ();
+
+my $CALL = 'cbase-wrapper --pgid-file P [--log L --exit E] -- command ...';
+
+sub error {
+  my ($text) = @_;
+  print STDERR "cbase-wrapper: $text\n";
+  exit 125;
+}
+
+# In the child after fork: never `exit` (END blocks and the parent's buffered output would run twice).
+sub kind_error {
+  my ($text, $code) = @_;
+  print STDERR "cbase-wrapper: $text\n";
+  POSIX::_exit($code // 125);
+}
+
+# Write atomically: first a tmp file of its own in the same folder, then rename. undef = succeeded, otherwise the message.
+sub write_atomic {
+  my ($target, $content) = @_;
+  my $tmp = "$target.new.$$";
+  my $fh;
+  open($fh, '>', $tmp) or return "$tmp: $!";
+  unless (print {$fh} $content) { my $e = "$!"; close($fh); unlink($tmp); return "$tmp: $e"; }
+  unless (close($fh)) { my $e = "$!"; unlink($tmp); return "$tmp: $e"; }
+  unless (rename($tmp, $target)) { my $e = "$!"; unlink($tmp); return "$target: $e"; }
+  return undef;
+}
+
+# The code of a failed exec, as a shell reports it.
+sub exec_code { return $!{ENOENT} ? 127 : 126; }
+
+# ── Read the call ─────────────────────────────────────────────────────────────────────────────────────────────────
+my ($pgid_file, $log, $exit_file);
+my $separator = 0;
+while (@ARGV) {
+  my $arg = shift @ARGV;
+  if ($arg eq '--') { $separator = 1; last; }
+  if ($arg eq '--pgid-file' || $arg eq '--log' || $arg eq '--exit') {
+    error("$arg without a value ($CALL)") unless @ARGV && length $ARGV[0];
+    my $value = shift @ARGV;
+    if ($arg eq '--pgid-file') { $pgid_file = $value; }
+    elsif ($arg eq '--log') { $log = $value; }
+    else { $exit_file = $value; }
+    next;
+  }
+  error("unknown argument '$arg' ($CALL)");
+}
+my @command = @ARGV;
+error("-- missing ($CALL)") unless $separator;
+error("no command after -- ($CALL)") unless @command;
+error("--pgid-file missing ($CALL)") unless defined $pgid_file;
+error("--log and --exit are only valid together ($CALL)") if defined($log) != defined($exit_file);
+
+# ── Without --log: become leader yourself, write P, exec ──────────────────────────────────────────────────────────
+# A group leader cannot call setsid (EPERM) — but it already is what we need. In every other case setsid creates session and group
+# anew.
+sub become_leader {
+  return if getpgrp() == $$;
+  defined(POSIX::setsid()) or error("setsid: $!");
+}
+
+unless (defined $log) {
+  become_leader();
+  my $group = getpgrp();
+  error("the process's own group is not $$ (but $group)") unless $group == $$;
+  my $e = write_atomic($pgid_file, "$group\n");
+  error("pgid file not written ($e) — the command does not run") if defined $e;
+  { no warnings 'exec'; exec { $command[0] } @command; }
+  my $error_code = exec_code();
+  print STDERR "cbase-wrapper: exec $command[0]: $!\n";
+  exit $error_code;
+}
+
+# ── With --log/--exit: a child leads, the parent waits and writes the code ─────────────────────────────────
+my $kind = fork();
+error("fork: $!") unless defined $kind;
+if ($kind == 0) {
+  defined(POSIX::setsid()) or kind_error("setsid: $!");
+  kind_error("the process's own group is not $$") unless getpgrp() == $$;
+  open(STDIN, '<', '/dev/null') or kind_error("stdin: $!");
+  open(STDOUT, '>>', $log) or kind_error("log $log: $! — the command does not run");
+  open(STDERR, '>&', \*STDOUT) or kind_error("stderr: $!");
+  my $e = write_atomic($pgid_file, "$$\n");
+  kind_error("pgid file not written ($e) — the command does not run") if defined $e;
+  { no warnings 'exec'; exec { $command[0] } @command; }
+  kind_error("exec $command[0]: $!", exec_code());
+}
+
+my $r;
+do { $r = waitpid($kind, 0); } while ($r == -1 && $!{EINTR});
+my $st = $?;
+my $code = $r != $kind ? 125
+  : POSIX::WIFEXITED($st) ? POSIX::WEXITSTATUS($st)
+  : POSIX::WIFSIGNALED($st) ? 128 + POSIX::WTERMSIG($st)
+  : 125;
+my $e = write_atomic($exit_file, "$code\n");
+print STDERR "cbase-wrapper: exit file not written ($e)\n" if defined $e;
+exit $code;

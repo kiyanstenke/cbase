@@ -1,0 +1,17 @@
+{
+  "_": "Copy to deploy.local.json (gitignored). Only machine- and device-specific values; the structure is in tools/deploy/config.mjs.",
+  "ssh": {
+    "host": "user@server",
+    "key": "~/.ssh/id_ed25519",
+    "knownHosts": "~/.ssh/known_hosts"
+  },
+  "remote": {
+    "root": "/home/user/cbase-server"
+  },
+  "mobile": {
+    "desktopUser": "the-macos-user-with-xcode-account",
+    "xcodeApp": "/Applications/Xcode.app",
+    "udid": "UDID-of-the-test-device",
+    "simulator": "iPhone 17"
+  }
+}

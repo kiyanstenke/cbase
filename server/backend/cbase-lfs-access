@@ -1,0 +1,308 @@
+#!/usr/local/bin/node
+// cbase-lfs-access — the git credential helper of the agent shells of a project container: git access for the agent shells (LFS
+// and https). The stored access of a host is handed to git-lfs, and — so that agents do not copy the token in clear text into
+// their commands and thereby into the chat logs — to git ITSELF when it talks to the remote over https from an agent shell
+// (fetch/pull/push/ls-remote/clone). A `git pull`/`checkout`/`clone` an agent runs in its shell therefore fetches commits AND LFS
+// files with the stored access of its host. The names (helper, route `lfs-access`, CBASE_LFS_*) stay: a rename would bring a new
+// projectbox id and the re-creation of every project container. What may be answered is decided by the ANCESTRY of the request
+// (d), measured with git-lfs and git itself; a path gate in front of it has been refuted.
+//
+// WHERE IT LIVES. In the backend image under /usr/local/bin (Dockerfile, stage backend) — which is mounted read-only into every
+// project container (projectbox/creation.js, rule `system-bin`), so a fix here is a backend deploy, no new projectbox id (like
+// cbase-clone and cbase-manifest). The projectbox carries `credential.helper = /usr/local/bin/cbase-lfs-access` and
+// `credential.useHttpPath = true` in /etc/gitconfig, fixed in the image, not from the environment (lifetime, children, effective
+// only at the next start; Codex does NOT strip names containing KEY/TOKEN/SECRET from its shell). This helper no longer needs
+// the path; the line stays anyway (changing it would bring a new projectbox id and the re-creation of every project container).
+// It is not entirely harmless: a STORING helper (`store`/`cache`) no longer finds an entry without path, because git now asks
+// with path — where the stored access used to hit (exit 0), the command ends with 128. Harmless for the mounted `~/.gitconfig`
+// of B because `~/.git-credentials` is never mounted (projectbox/creation.js); it hits a storing helper an agent sets up itself.
+//
+// WHEN IT ANSWERS. A helper in /etc/gitconfig is asked by EVERY git in the project container (administration git, terminals,
+// services, VS Code, agents). It therefore answers only if all of this holds:
+//   (a) the action is `get` — `store` reads its input and ends silently (it never stores or deletes); `erase` only reports the
+//       REJECTION to the route (see "THE REJECTION"), under the same conditions (b)–(d) with `reject`;
+//   (b) the environment carries CBASE_LFS_URL and CBASE_LFS_PASS (both non-empty) — only the agent starts do
+//       (server/backend/electron/server/runs/lfs-environment.js `lfsAgentEnvironment`); without both it ends at once, silently,
+//       with 0, asks nobody and reads no /proc;
+//   (c) `protocol=https`, `host` is `hostname[:port]` (pattern like HOST_PATTERN in projectbox/git-assignment.js, here with port);
+//   (d) THE ANCESTRY: the request comes from git-lfs (rules 1–3) OR from git itself via git-remote-http (rules 1, 2′, 3′).
+//       Measured in the project container (git 2.39.5, git-lfs 3.3.0, /bin/sh = dash). If git-lfs asks (checkout/pull/clone with
+//       smudge, `git lfs pull`), the chain is
+//         this helper ← /bin/sh -c "<helper> get" "<helper> get" (exe /usr/bin/dash — git ALWAYS starts a helper with an argument
+//         via sh -c) ← git credential fill (exe /usr/lib/git-core/git) ← git-lfs … (exe /usr/bin/git-lfs);
+//       if git itself asks (fetch/ls-remote, so also pull/push over https): helper ← sh ← git-remote-http ← git remote-http ←
+//       git; if someone calls `git credential fill` from a shell: helper ← sh ← git credential fill (exe /usr/bin/git) ← sh. The
+//       rule derived from it:
+//         1. P1 = parent of this process. If P1 is an sh (base name of the exe dash, sh or bash) with argv `-c "<…> <action>"`,
+//            then P2 = parent of P1, otherwise P2 = P1 (a shell that replaces itself by its last command via exec is missing);
+//         2. P2: base name of the exe `git` and argv exactly `git credential fill`;
+//         3. P3 = parent of P2: the exe is `/usr/bin/git-lfs` (the readlink of /proc/<pid>/exe — the kernel resolves links there
+//            already; a replaced binary carries " (deleted)" and does not count).
+//       GIT ITSELF (measured with a measuring helper for `ls-remote`, `fetch --dry-run` and `push --dry-run`, the same chain each):
+//         helper ← /bin/sh -c "<helper> get" (exe /usr/bin/dash) ← git-remote-https (argv[0] /usr/lib/git-core/git-remote-https,
+//         exe /usr/lib/git-core/git-remote-http — `-https` is a link to `-http`, readlink shows the target) ←
+//         git remote-https <remote> <url> (exe /usr/lib/git-core/git) ← git fetch|push|ls-remote … (exe /usr/bin/git).
+//       The rule derived from it, after rule 1:
+//         2′. P2: the exe is exactly `/usr/lib/git-core/git-remote-http`;
+//         3′. P3 = parent of P2: base name of the exe `git` and argv[1] `remote-https` or `remote-http` (the wrapper through which
+//            git starts every remote helper; `protocol=https` is demanded by (c) anyway).
+//       An `erase` from git itself (after a 401 git-remote-http calls `reject`, then git aborts — it does not loop) reports NO
+//       rejection: a single 401 against a repo the access may not see would otherwise lock the host for all (see "THE REJECTION").
+//       Otherwise it is silent. `comm` and `cmdline` are set by every process itself (a renamed sh called git-lfs has
+//       comm=git-lfs, but exe=/tmp/…/git-lfs) — hence the exe. This is no boundary against an agent that wants the access (it can
+//       point the REAL git-lfs at any remote or call the route itself); it only keeps other ways from getting the access ON THEIR
+//       OWN (`git credential fill` from the shell, a script calling the helper). The ancestry is read in /proc, read-ONLY
+//       (`readFileSync`, `readlinkSync`), under the root `CBASE_LFS_PROC` (test seam: a folder with `self` and
+//       `<pid>/{stat,cmdline,exe}` — a test never reads the real /proc), otherwise `/proc`. A chain that cannot be read (no /proc, a
+//       member gone, foreign user) is "not git-lfs".
+//       THE PATH GATE IS REFUTED. It used to say: `path` ends in `info/lfs`. But git-lfs 3.3.0 asks for an endpoint on scheme and
+//       host of the remote with the URL of the REMOTE (`lfsapi/auth.go` `getCredURLForAPI`, `creds/creds.go`
+//       `strings.TrimPrefix(u.Path, "/")`), so with `path=o/r.git` like git itself (`…/info/lfs` only with an own `lfs.url`). The
+//       path is therefore neither precondition nor feature; it only goes along to the route, which does not evaluate it.
+//       After every jump of git or git-lfs the chain must be measured again — a changed chain makes the helper fall silent
+//       (pointer instead of content), it never makes it answer more.
+// Then ONE request: `POST $CBASE_LFS_URL` with `{ "host": …, "path": … }` (host with port as git sends it; path only if git sends
+// it) and the credential in the header `x-cbase-token` (projectbox/fence.js TOKEN_HEADER). Answer of the route
+// (projectbox/lfs-access.js): 200 `{ "access": { "username": …, "password": … } }` ⇒ `username=`/`password=` on stdout to git;
+// 200 `{ "access": null }`, another status, no answer or an unreadable one ⇒ no output and ONE line on stderr. Without output
+// git asks the next helper or fails as before — this helper without output is neutral.
+//
+// THE REJECTION. A helper that gives the same wrong access on EVERY `get` makes git-lfs loop against an endpoint with 401 without
+// end (`git checkout` with smudge and GIT_LFS_SKIP_DOWNLOAD_ERRORS=1 did NOT end: 124 batch requests with Authorization in 20 s,
+// 364 get and 363 erase in 60 s, until the alarm; `git lfs pull` likewise): after every 401 git-lfs calls `git credential reject`
+// (erase to every helper) and asks again. Counter-proof "remember": if the helper falls silent after the first erase, `git
+// checkout` ends after 1 s with exit 0 (pointer), `git lfs pull` with exit 2 ("Git credentials for … not found"). The chain of an
+// erase is that of a get with `reject` instead of `fill` — this helper ← /bin/sh -c "<helper> erase" (exe dash) ← git credential
+// reject (exe git) ← git-lfs (exe /usr/bin/git-lfs) —, and its input carries `username=` and `password=`.
+// Therefore on `erase` with this chain (rules 1–3 with `reject`; the sh segment ends in ` erase`) ONE request
+// `{ host, rejected }` — `rejected` is the sha256 (hex) of `username + "\n" + password`, NEVER the value itself (WebCrypto,
+// global — no import). The route remembers the fingerprint if it is that of the STORED access and answers every further `get` of
+// this host with `{ access: null }` until another access is stored (projectbox/lfs-access.js). For git erase stays silent: no
+// output, no stderr, exit 0, the answer of the route is not read. Without environment (b), without https or host (c), without
+// user and password in the input or without this chain (git itself calls `reject` via git-remote-http — it aborts after a 401
+// and does not loop; it does get the access, but reports no rejection): silent, no request.
+//
+// NO VALUES. No value appears in an argv (it starts nothing), in a file (it writes none) or on stderr (the messages name at most
+// host and status). The credential is the token of the instance that the MCP server of the run already carries. What the access
+// can do afterwards: the value is readable for the agent — also every git of the agent (pull/push over https) gets it, with all
+// the rights the stored access has at the host.
+//
+// THE CAP (a cap for a query, not for content). The request takes at most 10 s (knob CBASE_LFS_CAP_MS, positive integer, smaller
+// only for the guard); after that a line with "cap" and no output. Input from git above 64 KiB is likewise a cap with a message
+// (no request).
+//
+// Deliberately WITHOUT import/export and without a library: in the image the file lies without a package.json above it
+// (CommonJS), in the repo under server/backend/package.json with `"type": "module"` (ESM) — so it loads alike in both cases,
+// without Node having to guess the module type and warn on stderr (git showed that on every call). fetch, AbortSignal and process
+// are global (Node 22 from the base image); `node:fs` comes via `process.getBuiltinModule` (in both module types without import,
+// from Node 22.3). The path in the shebang is that of the base image (node:22-bookworm-slim) and the same in the project
+// container (ro bind of /usr/local/bin): a process with a shortened PATH would not find `env node` otherwise.
+//
+// Guard: tools/check/lfs-helper.test.mjs (this helper against a fake endpoint and fake /proc trees after the chains, and with real
+// git beside the access of the administration git, runtime/git-run.js accessAsEnvironment); its place in the image:
+// tools/check/projectbox-dockerfile.test.mjs; route and environment of the agent starts: server/backend/test/lfs-access.test.js.
+
+const NAME = "cbase-lfs-access";
+const CAP_DEFAULT_MS = 10_000;
+const INPUT_CAP = 64 * 1024;
+const RESPONSE_CAP = 64 * 1024;
+const HOST_PATTERN = /^[A-Za-z0-9](?:[A-Za-z0-9.-]{0,251}[A-Za-z0-9])?(?::[0-9]{1,5})?$/;
+// A character that would break the credential protocol (one line per value, NUL ends).
+const CONTROL_CHARACTERS = /[\r\n\0]/;
+
+function capMs() {
+  const raw = String(process.env.CBASE_LFS_CAP_MS || "");
+  return /^[1-9][0-9]*$/.test(raw) ? Number(raw) : CAP_DEFAULT_MS;
+}
+
+// The whole input from git (until EOF), with a cap: `{ text }` or `{ tooBig: true }` (then read on until EOF and discarded,
+// so that git does not write into a closed pipe).
+function readInput() {
+  return new Promise((resolve) => {
+    const parts = [];
+    let length = 0;
+    let tooBig = false;
+    process.stdin.on("data", (b) => {
+      length += b.length;
+      if (length > INPUT_CAP) tooBig = true;
+      else parts.push(b);
+    });
+    process.stdin.on("end", () => resolve(tooBig ? { tooBig } : { text: Buffer.concat(parts).toString("utf8") }));
+    process.stdin.on("error", () => resolve({ text: "" }));
+  });
+}
+
+// `key=value` per line up to the first empty line; the FIRST value per key counts (repeated ones like `wwwauth[]` do not disturb).
+function readDescription(text) {
+  const fields = new Map();
+  for (const row of text.split("\n")) {
+    if (row === "") break;
+    const i = row.indexOf("=");
+    if (i <= 0) continue;
+    const k = row.slice(0, i);
+    if (!fields.has(k)) fields.set(k, row.slice(i + 1));
+  }
+  return fields;
+}
+
+// ── The ancestry (d), see header ───────────────────────────────────────────────────────────────────────────────────────
+const fs = process.getBuiltinModule("node:fs");
+const SHELLS = new Set(["sh", "dash", "bash"]);
+const GIT_LFS_EXE = "/usr/bin/git-lfs";
+const GIT_REMOTE_HTTP_EXE = "/usr/lib/git-core/git-remote-http";
+const REMOTE_HTTP_COMMANDS = new Set(["remote-http", "remote-https"]);
+const procRoot = () => {
+  const raw = String(process.env.CBASE_LFS_PROC || "");
+  return raw.startsWith("/") ? raw : "/proc";
+};
+const baseName = (p) => String(p || "").slice(String(p || "").lastIndexOf("/") + 1);
+
+// A member of the chain → `{ ppid, argv, exe }` or null (not readable). `ppid` is the second field in `stat`, behind the
+// LAST ")" (comm may carry spaces and parentheses); `cmdline` is NUL-separated; `exe` is a link (if missing: null).
+function segment(root, pid) {
+  try {
+    const stat = fs.readFileSync(`${root}/${pid}/stat`, "utf8");
+    const closing = stat.lastIndexOf(")");
+    const ppid = closing < 0 ? NaN : Number(stat.slice(closing + 1).trim().split(/\s+/)[1]);
+    if (!Number.isInteger(ppid) || ppid < 1) return null;
+    const argv = fs.readFileSync(`${root}/${pid}/cmdline`, "utf8").split("\0");
+    if (argv.at(-1) === "") argv.pop();
+    let exe = null;
+    try { exe = fs.readlinkSync(`${root}/${pid}/exe`); } catch { exe = null; }
+    return { ppid, argv, exe };
+  } catch { return null; }
+}
+
+// Rule 1 of the header: P2 — the parent of this process, across a shell `sh -c "<helper> <action>" …` — or null.
+function secondSegment(root, action) {
+  const itself = segment(root, "self");
+  let p2 = itself ? segment(root, itself.ppid) : null;
+  if (!p2) return null;
+  // 1. a shell in between (`sh -c "<helper> <action>" …`): then its parent is P2.
+  if (SHELLS.has(baseName(p2.exe)) && p2.argv[1] === "-c" && typeof p2.argv[2] === "string" && p2.argv[2].endsWith(` ${action}`)) {
+    p2 = segment(root, p2.ppid);
+  }
+  return p2;
+}
+
+// Rules 1–3 of the header: does git-lfs ask via `git credential fill` (or reject via `git credential reject`, "THE REJECTION")?
+function ofGitLfs(action, subcommand = "fill") {
+  const root = procRoot();
+  const p2 = secondSegment(root, action);
+  if (!p2) return false;
+  // 2. git credential fill (or reject)
+  if (baseName(p2.exe) !== "git" || p2.argv.length !== 3 || p2.argv[1] !== "credential" || p2.argv[2] !== subcommand) return false;
+  // 3. its parent: the git-lfs of the image
+  const p3 = segment(root, p2.ppid);
+  return Boolean(p3 && p3.exe === GIT_LFS_EXE);
+}
+
+// Rules 1, 2′, 3′ of the header: does git itself ask via its remote helper git-remote-http(s)?
+function ofGitRemoteHttp(action) {
+  const root = procRoot();
+  const p2 = secondSegment(root, action);
+  // 2′. the remote helper of the image (git-remote-https is a link to it)
+  if (!p2 || p2.exe !== GIT_REMOTE_HTTP_EXE) return false;
+  // 3′. its parent: `git remote-http(s) …`
+  const p3 = segment(root, p2.ppid);
+  return Boolean(p3 && baseName(p3.exe) === "git" && REMOTE_HTTP_COMMANDS.has(p3.argv[1]));
+}
+
+// Writes and ends only when both streams have let go of their bytes (a pipe is asynchronous on macOS, and an open keep-alive
+// connection of fetch would otherwise keep the process alive for seconds — git waited that long).
+function end({ output = "", notice = "" } = {}) {
+  let open = 2;
+  const finished = () => { if (--open === 0) process.exit(0); };
+  if (output) process.stdout.write(output, finished); else finished();
+  if (notice) process.stderr.write(`${NAME}: ${notice}\n`, finished); else finished();
+}
+
+// The fingerprint of a rejected access (see "THE REJECTION"): sha256 hex of `username + "\n" + password`.
+async function fingerprint(user, password) {
+  const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${user}\n${password}`));
+  return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// erase: report the rejection (see "THE REJECTION") — always silent for git.
+async function rejection(input) {
+  const url = process.env.CBASE_LFS_URL || "";
+  const pass = process.env.CBASE_LFS_PASS || "";
+  if (!url || !pass || input.tooBig) return end(); // (b)
+  const f = readDescription(input.text);
+  const host = f.get("host") || "";
+  const user = f.get("username");
+  const password = f.get("password");
+  if (!(f.get("protocol") === "https" && HOST_PATTERN.test(host))) return end(); // (c) as for get
+  if (typeof user !== "string" || !user || typeof password !== "string") return end(); // nothing that could be rejected
+  if (!ofGitLfs("erase", "reject")) return end(); // (d) only git-lfs: git itself ends after its reject anyway
+  let target;
+  try { target = new URL(url); } catch { target = null; }
+  if (!target || (target.protocol !== "http:" && target.protocol !== "https:") || CONTROL_CHARACTERS.test(pass)) return end();
+  try {
+    const r = await fetch(target, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-cbase-token": pass, accept: "application/json" },
+      body: JSON.stringify({ host, rejected: await fingerprint(user, password) }),
+      signal: AbortSignal.timeout(capMs()),
+      redirect: "error",
+    });
+    await r.arrayBuffer().catch(() => null);
+  } catch { /* still: git reports nothing for an erase */ }
+  return end();
+}
+
+async function main() {
+  const action = process.argv[2];
+  const input = await readInput();
+  if (action === "erase") return rejection(input); // (a) erase: only the rejection (see "THE REJECTION")
+  if (action !== "get") return end(); // (a) store and everything else: silent
+  const url = process.env.CBASE_LFS_URL || "";
+  const pass = process.env.CBASE_LFS_PASS || "";
+  if (!url || !pass) return end(); // (b) no agent shell: silent, nobody is asked
+  if (input.tooBig) return end({ notice: `input from git larger than ${INPUT_CAP / 1024} KiB (cap) — no request` });
+  const f = readDescription(input.text);
+  const host = f.get("host") || "";
+  const path = f.get("path");
+  if (f.get("protocol") !== "https" || !HOST_PATTERN.test(host)) return end(); // (c)
+  if (!ofGitLfs(action) && !ofGitRemoteHttp(action)) return end(); // (d) neither git-lfs nor git over https (a call from the shell): silent
+  let target;
+  try { target = new URL(url); } catch { target = null; }
+  if (!target || (target.protocol !== "http:" && target.protocol !== "https:") || CONTROL_CHARACTERS.test(pass)) {
+    return end({ notice: "CBASE_LFS_URL or CBASE_LFS_PASS is invalid — no request" });
+  }
+  const deadline = capMs();
+  let response;
+  try {
+    const r = await fetch(target, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-cbase-token": pass, accept: "application/json" },
+      body: JSON.stringify({ host, ...(typeof path === "string" && !CONTROL_CHARACTERS.test(path) ? { path: path } : {}) }),
+      signal: AbortSignal.timeout(deadline),
+      redirect: "error",
+    });
+    if (!r.ok) return end({ notice: `the backend refuses (HTTP ${r.status}) — no access for ${host}` });
+    const text = await r.text();
+    if (Buffer.byteLength(text) > RESPONSE_CAP) return end({ notice: `response of the backend larger than ${RESPONSE_CAP / 1024} KiB (cap) — no access for ${host}` });
+    response = JSON.parse(text);
+  } catch (e) {
+    if (e?.name === "TimeoutError" || e?.name === "AbortError") {
+      return end({ notice: `cap — the backend did not answer within ${deadline < 1000 ? `${deadline} ms` : `${deadline / 1000} s`}; no access for ${host}` });
+    }
+    if (e instanceof SyntaxError) return end({ notice: `response of the backend is not JSON — no access for ${host}` });
+    const kind = typeof e?.cause?.code === "string" && /^[A-Z_]{1,40}$/.test(e.cause.code) ? ` (${e.cause.code})` : "";
+    return end({ notice: `the backend is not reachable${kind} — no access for ${host}` });
+  }
+  if (!response || typeof response !== "object" || !("access" in response)) {
+    return end({ notice: `response of the backend without field “access” — no access for ${host}` });
+  }
+  const z = response.access;
+  if (z === null) return end({ notice: `no stored access for ${host}` });
+  if (!z || typeof z.username !== "string" || typeof z.password !== "string" || !z.username
+    || CONTROL_CHARACTERS.test(z.username) || CONTROL_CHARACTERS.test(z.password)) {
+    return end({ notice: `response of the backend without valid access — no access for ${host}` });
+  }
+  return end({ output: `username=${z.username}\npassword=${z.password}\n` });
+}
+
+// Whatever goes wrong: silent for git, one line without value, exit 0 (git then asks on as without a helper).
+main().catch(() => end({ notice: "unexpected error — no output" }));

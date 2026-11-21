@@ -1,0 +1,144 @@
+{
+  "name": "inventory-final-mapping",
+  "description": "Inventory: only the topmost affected nodes; child from a renamed folder, leaving out, marking; one code repo becomes two; there is no \"remove the mark\".",
+  "mode": "inventory",
+  "tree": [
+    {
+      "path": "a",
+      "kind": "code-repo"
+    },
+    {
+      "path": "docs",
+      "kind": "folder"
+    },
+    {
+      "path": "docs/x.md",
+      "kind": "file"
+    },
+    {
+      "path": "docs/old",
+      "kind": "folder"
+    },
+    {
+      "path": "docs/old/o.md",
+      "kind": "file"
+    },
+    {
+      "path": "tmp",
+      "kind": "folder"
+    },
+    {
+      "path": "tmp/t.log",
+      "kind": "file"
+    },
+    {
+      "path": "CLAUDE.md",
+      "kind": "file"
+    }
+  ],
+  "steps": [
+    {
+      "kind": "move",
+      "from": "docs",
+      "to": "doku"
+    },
+    {
+      "kind": "move",
+      "from": "doku/old",
+      "to": "old"
+    },
+    {
+      "kind": "leaveOut",
+      "path": "tmp"
+    },
+    {
+      "kind": "code-repo",
+      "path": "doku"
+    },
+    {
+      "kind": "move",
+      "from": "CLAUDE.md",
+      "to": "doku/CLAUDE.md"
+    },
+    {
+      "kind": "code-repo-off",
+      "path": "doku"
+    }
+  ],
+  "expected": {
+    "finalTree": [
+      {
+        "path": "a",
+        "kind": "code-repo"
+      },
+      {
+        "path": "doku",
+        "kind": "folder",
+        "codeRepo": true
+      },
+      {
+        "path": "doku/CLAUDE.md",
+        "kind": "file"
+      },
+      {
+        "path": "doku/x.md",
+        "kind": "file"
+      },
+      {
+        "path": "old",
+        "kind": "folder"
+      },
+      {
+        "path": "old/o.md",
+        "kind": "file"
+      }
+    ],
+    "mapping": {},
+    "finalMapping": {
+      "ways": [
+        {
+          "old": "CLAUDE.md",
+          "fresh": "doku/CLAUDE.md"
+        },
+        {
+          "old": "docs",
+          "fresh": "doku"
+        },
+        {
+          "old": "docs/old",
+          "fresh": "old"
+        }
+      ],
+      "gone": [
+        "tmp"
+      ],
+      "codeRepos": [
+        "doku"
+      ]
+    },
+    "codeRepos": [
+      "doku"
+    ],
+    "repos": [
+      "a",
+      "doku"
+    ],
+    "error": [
+      {
+        "code": "STEP_INVALID",
+        "step": 5,
+        "path": "doku"
+      }
+    ],
+    "warnings": [
+      {
+        "code": "MEMORY",
+        "path": "doku/CLAUDE.md"
+      },
+      {
+        "code": "REPO_SHARED"
+      }
+    ],
+    "targets": []
+  }
+}

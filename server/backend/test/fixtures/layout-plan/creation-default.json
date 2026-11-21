@@ -1,0 +1,197 @@
+{
+  "name": "creation-default",
+  "description": "Default without steps: a folder becomes a code repo (mark), loose files go to the root; node_modules, .DS_Store and __MACOSX stay out.",
+  "mode": "creation",
+  "selection": [
+    {
+      "seq": 1,
+      "kind": "folder",
+      "name": "web",
+      "files": [
+        {
+          "rel": "index.html",
+          "size": 100
+        },
+        {
+          "rel": "src/app.js",
+          "size": 200
+        },
+        {
+          "rel": "node_modules/x/y.js",
+          "size": 5
+        },
+        {
+          "rel": ".DS_Store",
+          "size": 1
+        },
+        {
+          "rel": "src/__MACOSX/z",
+          "size": 1
+        }
+      ]
+    },
+    {
+      "seq": 2,
+      "kind": "files",
+      "name": "",
+      "files": [
+        {
+          "rel": "README.md",
+          "size": 30
+        },
+        {
+          "rel": "CLAUDE.md",
+          "size": 40
+        }
+      ]
+    }
+  ],
+  "steps": [],
+  "expected": {
+    "tree": [
+      {
+        "path": "web",
+        "kind": "folder",
+        "source": 1,
+        "origin": "web",
+        "size": 300,
+        "codeRepo": true
+      },
+      {
+        "path": "web/index.html",
+        "kind": "file",
+        "source": 1,
+        "origin": "web/index.html",
+        "size": 100
+      },
+      {
+        "path": "web/src",
+        "kind": "folder",
+        "source": 1,
+        "origin": "web/src",
+        "size": 200
+      },
+      {
+        "path": "web/src/app.js",
+        "kind": "file",
+        "source": 1,
+        "origin": "web/src/app.js",
+        "size": 200
+      },
+      {
+        "path": "CLAUDE.md",
+        "kind": "file",
+        "source": 2,
+        "origin": "CLAUDE.md",
+        "size": 40
+      },
+      {
+        "path": "README.md",
+        "kind": "file",
+        "source": 2,
+        "origin": "README.md",
+        "size": 30
+      }
+    ],
+    "hints": [],
+    "omitted": 3,
+    "upload": {
+      "1": [
+        "web/index.html",
+        "web/src/app.js"
+      ],
+      "2": [
+        "README.md",
+        "CLAUDE.md"
+      ]
+    },
+    "finalTree": [
+      {
+        "path": "CLAUDE.md",
+        "kind": "file",
+        "source": 2,
+        "origin": "CLAUDE.md",
+        "size": 40
+      },
+      {
+        "path": "README.md",
+        "kind": "file",
+        "source": 2,
+        "origin": "README.md",
+        "size": 30
+      },
+      {
+        "path": "web",
+        "kind": "folder",
+        "source": 1,
+        "origin": "web",
+        "size": 300,
+        "codeRepo": true
+      },
+      {
+        "path": "web/index.html",
+        "kind": "file",
+        "source": 1,
+        "origin": "web/index.html",
+        "size": 100
+      },
+      {
+        "path": "web/src",
+        "kind": "folder",
+        "source": 1,
+        "origin": "web/src",
+        "size": 200
+      },
+      {
+        "path": "web/src/app.js",
+        "kind": "file",
+        "source": 1,
+        "origin": "web/src/app.js",
+        "size": 200
+      }
+    ],
+    "mapping": {
+      "1": [
+        {
+          "from": "web",
+          "to": "web"
+        }
+      ],
+      "2": [
+        {
+          "from": "CLAUDE.md",
+          "to": "CLAUDE.md"
+        },
+        {
+          "from": "README.md",
+          "to": "README.md"
+        }
+      ]
+    },
+    "finalMapping": {
+      "ways": [],
+      "gone": [],
+      "codeRepos": []
+    },
+    "codeRepos": [
+      "web"
+    ],
+    "repos": [
+      "web"
+    ],
+    "error": [],
+    "warnings": [],
+    "targets": [
+      {
+        "source": 1,
+        "origin": "web/src/app.js",
+        "target": "web/src/app.js"
+      },
+      {
+        "source": 2,
+        "origin": "README.md",
+        "target": "README.md"
+      }
+    ]
+  }
+}

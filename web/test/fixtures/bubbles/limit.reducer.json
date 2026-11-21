@@ -1,0 +1,267 @@
+{
+  "start": "[]",
+  "history": [
+    {
+      "seq": 1,
+      "kind": "harness/connected",
+      "bubbles": 0,
+      "stream": {
+        "open": false,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 2,
+      "kind": "harness/user_message",
+      "bubbles": 1,
+      "stream": {
+        "open": false,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 3,
+      "kind": "harness/run_started",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 4,
+      "kind": "harness/limit_line",
+      "bubbles": 3,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 5,
+      "kind": "harness/limit_wait",
+      "bubbles": 3,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 6,
+      "kind": "harness/limit_wait",
+      "bubbles": 3,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 7,
+      "kind": "harness/limit_line",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 8,
+      "kind": "harness/limit_wait",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 9,
+      "kind": "harness/run_started",
+      "bubbles": 5,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 10,
+      "kind": "system",
+      "bubbles": 5,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 11,
+      "kind": "stream_event/message_start",
+      "bubbles": 5,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 12,
+      "kind": "stream_event/content_block_start:text",
+      "bubbles": 5,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 13,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 5,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 14,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 5,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 15,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 5,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 16,
+      "kind": "stream_event/content_block_stop",
+      "bubbles": 5,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 17,
+      "kind": "stream_event/message_delta",
+      "bubbles": 5,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 18,
+      "kind": "stream_event/message_stop",
+      "bubbles": 5,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 19,
+      "kind": "assistant",
+      "bubbles": 5,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 20,
+      "kind": "result",
+      "bubbles": 5,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 21,
+      "kind": "harness/limit_wait",
+      "bubbles": 5,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 22,
+      "kind": "harness/run_done",
+      "bubbles": 5,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    }
+  ],
+  "bubbles": [
+    {
+      "role": "user",
+      "blocks": [
+        {
+          "kind": "text",
+          "text": "Bitte etwas tun, das am Limit scheitert."
+        }
+      ],
+      "attachments": []
+    },
+    {
+      "role": "assistant",
+      "blocks": [],
+      "streaming": true
+    },
+    {
+      "role": "limit",
+      "blocks": [],
+      "limit": {
+        "at": 1789646400000,
+        "kind": "wait",
+        "group": "",
+        "label": "",
+        "evidence": "usage limit reached",
+        "limitText": "Nutzungslimit",
+        "waitFor": "run",
+        "reason": "reset",
+        "resetsAt": 1789646400000,
+        "dueAt": 1789646400000,
+        "text": "Nutzungslimit erreicht. Der Lauf wird um <clock> automatisch fortgesetzt."
+      }
+    },
+    {
+      "role": "limit",
+      "blocks": [],
+      "limit": {
+        "at": 1789646400000,
+        "kind": "resume",
+        "group": "",
+        "label": "",
+        "attempts": 1,
+        "waitFor": "run",
+        "text": "Nutzungslimit zurückgesetzt — der Lauf wird fortgesetzt."
+      }
+    },
+    {
+      "role": "assistant",
+      "blocks": [
+        {
+          "kind": "text",
+          "text": "FERTIG: Bitte etwas tun, das am Limit scheitert."
+        }
+      ],
+      "streaming": false,
+      "summary": {
+        "secs": 13,
+        "inTok": 120,
+        "outTok": 18,
+        "aborted": false,
+        "at": 1789646421000
+      }
+    }
+  ]
+}

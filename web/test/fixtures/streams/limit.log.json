@@ -1,0 +1,37 @@
+[
+  {
+    "id": "<msg-1>",
+    "role": "user",
+    "text": "Bitte etwas tun, das am Limit scheitert.",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-2>",
+    "role": "limit",
+    "text": "{\"at\":\"<t>\",\"kind\":\"wait\",\"group\":\"\",\"label\":\"\",\"evidence\":\"usage limit reached\",\"limitText\":\"Nutzungslimit\",\"waitFor\":\"run\",\"reason\":\"reset\",\"resetsAt\":\"<t>\",\"dueAt\":\"<t>\",\"text\":\"Nutzungslimit erreicht. Der Lauf wird um <clock> automatisch fortgesetzt.\"}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-3>",
+    "role": "limit",
+    "text": "{\"at\":\"<t>\",\"kind\":\"resume\",\"group\":\"\",\"label\":\"\",\"attempts\":1,\"waitFor\":\"run\",\"text\":\"Nutzungslimit zurückgesetzt — der Lauf wird fortgesetzt.\"}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-4>",
+    "role": "assistant",
+    "text": "FERTIG: Bitte etwas tun, das am Limit scheitert.",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-5>",
+    "role": "meta",
+    "text": "{\"secs\":\"<secs>\",\"inTok\":120,\"outTok\":18}",
+    "ts": "<t>",
+    "attachments": null
+  }
+]

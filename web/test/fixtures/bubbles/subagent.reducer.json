@@ -1,0 +1,427 @@
+{
+  "start": "[]",
+  "history": [
+    {
+      "seq": 1,
+      "kind": "harness/connected",
+      "bubbles": 0,
+      "stream": {
+        "open": false,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 2,
+      "kind": "harness/user_message",
+      "bubbles": 1,
+      "stream": {
+        "open": false,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 3,
+      "kind": "harness/run_started",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 4,
+      "kind": "system",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 5,
+      "kind": "stream_event/message_start",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 6,
+      "kind": "stream_event/content_block_start:tool_use",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 7,
+      "kind": "stream_event/content_block_delta:input_json_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 8,
+      "kind": "stream_event/content_block_stop",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 9,
+      "kind": "stream_event/message_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 10,
+      "kind": "stream_event/message_stop",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 11,
+      "kind": "assistant",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 12,
+      "kind": "stream_event/message_start",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 13,
+      "kind": "stream_event/content_block_start:tool_use",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 14,
+      "kind": "stream_event/content_block_delta:input_json_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 15,
+      "kind": "stream_event/content_block_stop",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 16,
+      "kind": "stream_event/message_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 17,
+      "kind": "stream_event/message_stop",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 18,
+      "kind": "assistant",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 19,
+      "kind": "user",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 20,
+      "kind": "stream_event/message_start",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 21,
+      "kind": "stream_event/content_block_start:text",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 22,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 23,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 24,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 25,
+      "kind": "stream_event/content_block_stop",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 26,
+      "kind": "stream_event/message_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 27,
+      "kind": "stream_event/message_stop",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 28,
+      "kind": "assistant",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 29,
+      "kind": "user",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 30,
+      "kind": "stream_event/message_start",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 31,
+      "kind": "stream_event/content_block_start:text",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 32,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 33,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 34,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 35,
+      "kind": "stream_event/content_block_stop",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 36,
+      "kind": "stream_event/message_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 37,
+      "kind": "stream_event/message_stop",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 38,
+      "kind": "assistant",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 39,
+      "kind": "result",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 40,
+      "kind": "harness/run_done",
+      "bubbles": 2,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    }
+  ],
+  "bubbles": [
+    {
+      "role": "user",
+      "blocks": [
+        {
+          "kind": "text",
+          "text": "Lass einen Subagenten die Testdatei lesen."
+        }
+      ],
+      "attachments": []
+    },
+    {
+      "role": "assistant",
+      "blocks": [
+        {
+          "kind": "tool",
+          "id": "toolu_agent_01",
+          "name": "Agent",
+          "detail": "Testdatei lesen",
+          "count": 1,
+          "input": {
+            "description": "Testdatei lesen",
+            "prompt": "Lies web/test/stream.test.mjs und sag, was sie prüft."
+          },
+          "children": [
+            {
+              "kind": "tool",
+              "id": "toolu_sub_01",
+              "name": "Read",
+              "detail": "web/test/stream.test.mjs",
+              "count": 1,
+              "input": {
+                "file_path": "web/test/stream.test.mjs"
+              },
+              "result": "// Was ein wiederverbundener Ereignisstrom nachträgt (src/lib/stream.ts) …",
+              "resultIsError": false,
+              "done": true
+            },
+            {
+              "kind": "text",
+              "text": "Die Datei prüft missingBeginning in sieben Fällen."
+            }
+          ],
+          "result": "Die Datei prüft missingBeginning in sieben Fällen.",
+          "resultIsError": false,
+          "done": true
+        },
+        {
+          "kind": "text",
+          "text": "Der Subagent hat die Datei gelesen: sieben Fälle zu missingBeginning."
+        }
+      ],
+      "streaming": false,
+      "summary": {
+        "secs": 37,
+        "inTok": 210,
+        "outTok": 44,
+        "aborted": false,
+        "at": 1789646439000
+      }
+    }
+  ]
+}

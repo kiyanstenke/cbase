@@ -1,0 +1,237 @@
+{
+  "name": "longest-prefix",
+  "description": "The longest matching prefix wins: app → kern, app/src/lib → kern/lib; files under app/src/lib follow lib, the rest kern.",
+  "mode": "creation",
+  "selection": [
+    {
+      "seq": 1,
+      "kind": "folder",
+      "name": "app",
+      "files": [
+        {
+          "rel": "src/a.js",
+          "size": 10
+        },
+        {
+          "rel": "src/lib/b.js",
+          "size": 10
+        },
+        {
+          "rel": "src/lib/deep/c.js",
+          "size": 10
+        },
+        {
+          "rel": "docs/c.md",
+          "size": 10
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "kind": "move",
+      "from": "app/src/lib",
+      "to": "app/lib"
+    },
+    {
+      "kind": "move",
+      "from": "app",
+      "to": "core"
+    }
+  ],
+  "expected": {
+    "tree": [
+      {
+        "path": "app",
+        "kind": "folder",
+        "source": 1,
+        "origin": "app",
+        "size": 40,
+        "codeRepo": true
+      },
+      {
+        "path": "app/docs",
+        "kind": "folder",
+        "source": 1,
+        "origin": "app/docs",
+        "size": 10
+      },
+      {
+        "path": "app/docs/c.md",
+        "kind": "file",
+        "source": 1,
+        "origin": "app/docs/c.md",
+        "size": 10
+      },
+      {
+        "path": "app/src",
+        "kind": "folder",
+        "source": 1,
+        "origin": "app/src",
+        "size": 30
+      },
+      {
+        "path": "app/src/a.js",
+        "kind": "file",
+        "source": 1,
+        "origin": "app/src/a.js",
+        "size": 10
+      },
+      {
+        "path": "app/src/lib",
+        "kind": "folder",
+        "source": 1,
+        "origin": "app/src/lib",
+        "size": 20
+      },
+      {
+        "path": "app/src/lib/b.js",
+        "kind": "file",
+        "source": 1,
+        "origin": "app/src/lib/b.js",
+        "size": 10
+      },
+      {
+        "path": "app/src/lib/deep",
+        "kind": "folder",
+        "source": 1,
+        "origin": "app/src/lib/deep",
+        "size": 10
+      },
+      {
+        "path": "app/src/lib/deep/c.js",
+        "kind": "file",
+        "source": 1,
+        "origin": "app/src/lib/deep/c.js",
+        "size": 10
+      }
+    ],
+    "hints": [],
+    "omitted": 0,
+    "upload": {
+      "1": [
+        "app/src/a.js",
+        "app/src/lib/b.js",
+        "app/src/lib/deep/c.js",
+        "app/docs/c.md"
+      ]
+    },
+    "finalTree": [
+      {
+        "path": "core",
+        "kind": "folder",
+        "source": 1,
+        "origin": "app",
+        "size": 40,
+        "codeRepo": true
+      },
+      {
+        "path": "core/docs",
+        "kind": "folder",
+        "source": 1,
+        "origin": "app/docs",
+        "size": 10
+      },
+      {
+        "path": "core/docs/c.md",
+        "kind": "file",
+        "source": 1,
+        "origin": "app/docs/c.md",
+        "size": 10
+      },
+      {
+        "path": "core/lib",
+        "kind": "folder",
+        "source": 1,
+        "origin": "app/src/lib",
+        "size": 20
+      },
+      {
+        "path": "core/lib/b.js",
+        "kind": "file",
+        "source": 1,
+        "origin": "app/src/lib/b.js",
+        "size": 10
+      },
+      {
+        "path": "core/lib/deep",
+        "kind": "folder",
+        "source": 1,
+        "origin": "app/src/lib/deep",
+        "size": 10
+      },
+      {
+        "path": "core/lib/deep/c.js",
+        "kind": "file",
+        "source": 1,
+        "origin": "app/src/lib/deep/c.js",
+        "size": 10
+      },
+      {
+        "path": "core/src",
+        "kind": "folder",
+        "source": 1,
+        "origin": "app/src",
+        "size": 30
+      },
+      {
+        "path": "core/src/a.js",
+        "kind": "file",
+        "source": 1,
+        "origin": "app/src/a.js",
+        "size": 10
+      }
+    ],
+    "mapping": {
+      "1": [
+        {
+          "from": "app",
+          "to": "core"
+        },
+        {
+          "from": "app/src/lib",
+          "to": "core/lib"
+        }
+      ]
+    },
+    "finalMapping": {
+      "ways": [],
+      "gone": [],
+      "codeRepos": []
+    },
+    "codeRepos": [
+      "core"
+    ],
+    "repos": [
+      "core"
+    ],
+    "error": [],
+    "warnings": [],
+    "targets": [
+      {
+        "source": 1,
+        "origin": "app/src/lib/b.js",
+        "target": "core/lib/b.js"
+      },
+      {
+        "source": 1,
+        "origin": "app/src/lib/deep/c.js",
+        "target": "core/lib/deep/c.js"
+      },
+      {
+        "source": 1,
+        "origin": "app/src/a.js",
+        "target": "core/src/a.js"
+      },
+      {
+        "source": 1,
+        "origin": "app/docs/c.md",
+        "target": "core/docs/c.md"
+      },
+      {
+        "source": 1,
+        "origin": "nowhere/x"
+      }
+    ]
+  }
+}

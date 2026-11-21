@@ -1,0 +1,3 @@
+#!/bin/sh
+# The public gate: `./check`, `./check --quick`, `./check --recheck`, `./check --skip-tests` (see tools/check/README.md).
+exec node "$(dirname "$0")/tools/check/run.mjs" "$@"

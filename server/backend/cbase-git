@@ -1,0 +1,175 @@
+#!/bin/sh
+# cbase-git — git for VS Code in the user container (B). VS Code stays outside and starts `git status`/`commit` through its Git
+# extension itself — in B, also in repos of converted projects whose hooks, `core.fsmonitor` and filters the project container can
+# write. VS Code therefore gets THIS wrapper as `git.path` (vscode-tunnel.js enterGitPath):
+#
+#   the effective folder lies in a converted project   exec cbase-project <projectId> --git-access -- git <arguments>
+#   otherwise                                          exec git <arguments>
+#
+# `--git-access`: for the network commands (push, pull, fetch, ls-remote, remote update) cbase-project fetches ONLY the workspace's
+# stored git access from the backend (the same set as the Git view) and hands it to the git in the container as environment — never
+# the access of VS Code, of B's global helper or of the Mac; no `git credential` runs in B for this. In addition it demands that the
+# folder lies in the container (otherwise exit 128). The logic is there (node), not here: this wrapper stays POSIX sh without a parser.
+#
+# The effective folder is the working directory (physical), moved by every leading `-C <folder>` (like git itself, also several;
+# GitLens calls `git -C <repo> …`). If it goes into the project container, these `-C` are dropped and the wrapper changes there
+# itself: cbase-project takes `$PWD` as the working folder in the container, a relative `-C` would otherwise apply there a second
+# time. Other global options stay as and where they stand. NOT recognised: `--git-dir=`/`--work-tree=` and `GIT_DIR` — they steer git
+# to another place, the wrapper decides by the folder.
+#
+# HOW IT KNOWS. A sh script at every git call of VS Code cannot ask; the backend writes the list (projectbox/git-assignment.js
+# writeGitProjects): one line `<projectId>\t<path>` each. Location: `CBASE_GIT_PROJECTS`, otherwise
+# `${CBASE_DATA_ROOT:-$HOME/cbase}/data/git-projects` (the backend's data folder, server/backend/headless.js). The longest prefix
+# wins; the comparison is made with a `/` behind it (kasse2 does not lie in kasse) and literally (asterisks, brackets and spaces in a
+# path are no pattern). Per converted project the list carries its folder AND its WHOLE runtime folder (the project container also
+# creates `.git` folders in `outputs/<chat>` and in the CLI home). LOCK LINES `!locked\t<path>`: `<data>/copies`,
+# `<data>/copies-backup` (with the ops marker ALWAYS) and per project `<runtime>/copy-worktrees` — they take part in the longest
+# prefix (on equal length the lock wins, a living copy below it is longer and wins); if one hits the folder or its common git
+# directory, the wrapper refuses (exit 128) — never git in B. If the folder itself hits nothing, its COMMON git directory decides (a
+# linked worktree outside shares `.git/config` and hooks with the main repo) — like git when ascending to the root, the first `.git`
+# (folder or file `gitdir: <path>`), in it `commondir`, physical; if it lies in a converted project, the call goes there, and
+# cbase-project refuses it because the folder is missing in the container (exit 128) — never git in B.
+# If the list is missing, without the ops marker there is no converted project — `exec git`; WITH the ops marker it is unknown — exit
+# 128. The marker here is `CBASE_DIND=1` ALONE: it is in the environment of the whole container (gateway `-e`), the second half of
+# the backend marker (`CBASE_CONTAINER=1`) is only set by headless.js in the backend's process — a shell via `docker exec` or a VS
+# Code attached through Dev Containers never sees it. If it is there but not readable, or carries `!incomplete` (a path with a
+# newline), the wrapper REFUSES with a message (exit 128, like git on "fatal"): whoever does not know where it is starts no git in B.
+#
+# POSIX sh: runs under bash 3.2 (macOS, gate), bash 5.2 and dash (image) — no `local`, no arrays, no `[[`.
+# Test seams: CBASE_GIT_BIN (git), CBASE_PROJECT_BIN (cbase-project). Guard: tools/check/cbase-git.test.mjs.
+list=${CBASE_GIT_PROJECTS:-${CBASE_DATA_ROOT:-$HOME/cbase}/data/git-projects}
+git_bin=${CBASE_GIT_BIN:-git}
+project_bin=${CBASE_PROJECT_BIN:-cbase-project}
+TAB=$(printf '\t')
+CR=$(printf '\r')
+
+# A folder relative to another, physical — or nothing (exit ≠ 0) if it does not exist.
+folder_in() {
+  case $2 in /*) z=$2 ;; *) z=./$2 ;; esac
+  (cd "$1" 2>/dev/null && cd "$z" 2>/dev/null && pwd -P)
+}
+
+# The effective folder (see header): prints it, exit ≠ 0 if a `-C` goes nowhere (then git decides itself).
+effective() {
+  d=$(pwd -P) || return 1
+  while [ $# -gt 0 ]; do
+    case $1 in
+      -C) [ $# -ge 2 ] || break; d=$(folder_in "$d" "$2") || return 1; shift 2 ;;
+      -c|--config-env|--git-dir|--work-tree|--namespace|--super-prefix|--list-cmds|--attr-source)
+        [ $# -ge 2 ] || break; shift 2 ;;
+      -*) shift ;;
+      *) break ;;
+    esac
+  done
+  printf '%s\n' "$d"
+}
+
+target=$(effective "$@") || exec "$git_bin" "$@"
+# If the list is missing: without the ops marker (local, Mac) there is no converted project — git. WITH the ops marker the backend
+# ALWAYS writes it (the lock lines of the copies are in it even without a converted project, see header) — if it is missing there,
+# it is unknown, not empty. The marker is `CBASE_DIND=1` alone (header: with both halves a `docker exec` without `CBASE_CONTAINER`
+# would run git in B).
+if [ ! -e "$list" ]; then
+  if [ "${CBASE_DIND:-}" = 1 ]; then
+    printf 'cbase-git: the list %s is missing — no git while it is unclear whether %s lies in a converted project\n' "$list" "$target" >&2
+    exit 128
+  fi
+  exec "$git_bin" "$@"
+fi
+if [ ! -r "$list" ]; then
+  printf 'cbase-git: %s not readable — no git while it is unclear whether %s lies in a converted project\n' "$list" "$target" >&2
+  exit 128
+fi
+
+# Whom does a folder belong to (physical)? Sets `best` to the id of the longest prefix of the list, or empty; `!incomplete`
+# ⇒ exit 128 (the function runs in this shell, never in `$(…)`). A lock line `!locked\t<path>` takes part in the longest prefix —
+# if IT is the longest (on equal length the lock wins), it stands in `locked`, and `best` is empty.
+search() {
+  best=
+  locked=
+  length=0
+  while IFS= read -r row || [ -n "$row" ]; do
+    if [ "$row" = "!incomplete" ]; then
+      printf 'cbase-git: the list %s is incomplete (a project path cannot be represented) — no git\n' "$list" >&2
+      exit 128
+    fi
+    id=${row%%"$TAB"*}
+    path=${row#*"$TAB"}
+    [ -n "$id" ] && [ "$id" != "$row" ] && [ -n "$path" ] || continue
+    case $1/ in
+      "$path"/*)
+        if [ "$id" = "!locked" ]; then
+          if [ ${#path} -ge "$length" ]; then best=; locked=$path; length=${#path}; fi
+        elif [ ${#path} -gt "$length" ]; then best=$id; locked=; length=${#path}; fi ;;
+    esac
+  done < "$list"
+}
+
+# Does the most recently searched folder lie under a lock line? ⇒ message, exit 128 (before any exec).
+lock() {
+  if [ -n "$locked" ]; then
+    printf 'cbase-git: %s lies under %s (locked: layers, backups or worktrees of a copy) — no git\n' "$1" "$locked" >&2
+    exit 128
+  fi
+}
+
+# The common git directory of the repo a folder lies in (see header) — physical, or nothing (exit ≠ 0). Reads files only, starts no
+# git.
+common() {
+  d=$1
+  while :; do
+    if [ -d "$d/.git" ]; then g=$d/.git; break; fi
+    if [ -f "$d/.git" ]; then
+      z=
+      { IFS= read -r z < "$d/.git"; } 2>/dev/null
+      z=${z%"$CR"}
+      case $z in "gitdir: "*) g=${z#gitdir: } ;; *) return 1 ;; esac
+      case $g in /*) ;; *) g=$d/$g ;; esac
+      break
+    fi
+    [ "$d" = / ] && return 1
+    d=${d%/*}
+    [ -n "$d" ] || d=/
+  done
+  if [ -f "$g/commondir" ]; then
+    c=
+    { IFS= read -r c < "$g/commondir"; } 2>/dev/null
+    c=${c%"$CR"}
+    case $c in "") ;; /*) g=$c ;; *) g=$g/$c ;; esac
+  fi
+  (cd "$g" 2>/dev/null && pwd -P)
+}
+
+search "$target"
+lock "$target"
+# If the folder itself hits nothing, its common git directory decides. The lock applies there ALWAYS — even if the folder itself
+# belongs to a project: otherwise git would run with hooks from a copy's layer.
+b0=$best
+if gd=$(common "$target"); then
+  search "$gd"
+  lock "$gd"
+  [ -n "$b0" ] && best=$b0
+fi
+
+[ -n "$best" ] || exec "$git_bin" "$@"
+
+# Into the project container: leading `-C` are dropped (the wrapper already stands in the effective folder), everything else keeps its
+# order. The list is rotated once: every argument off the front, back on at the end.
+n=$#
+front=1
+while [ "$n" -gt 0 ]; do
+  a=$1; shift; n=$((n - 1))
+  if [ "$front" = 1 ]; then
+    case $a in
+      -C)
+        if [ "$n" -gt 0 ]; then shift; n=$((n - 1)); continue; fi ;;
+      -c|--config-env|--git-dir|--work-tree|--namespace|--super-prefix|--list-cmds|--attr-source)
+        if [ "$n" -gt 0 ]; then set -- "$@" "$a" "$1"; shift; n=$((n - 1)); continue; fi ;;
+      -*) ;;
+      *) front=0 ;;
+    esac
+  fi
+  set -- "$@" "$a"
+done
+cd "$target" || exit 128
+exec "$project_bin" "$best" --git-access -- git "$@"

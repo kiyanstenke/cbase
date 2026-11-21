@@ -1,0 +1,23 @@
+[
+  {
+    "id": "<msg-1>",
+    "role": "user",
+    "text": "Erklär mir den Ereignisstrom eines Chats.",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-2>",
+    "role": "assistant",
+    "text": "Gern. Der Ereignisstrom eines Chats trägt drei Gattungen: Harness-Ereignisse des Servers, die stream-json-Events der CLI und das Ergebnis am Ende.",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-3>",
+    "role": "meta",
+    "text": "{\"secs\":\"<secs>\",\"inTok\":120,\"outTok\":18}",
+    "ts": "<t>",
+    "attachments": null
+  }
+]

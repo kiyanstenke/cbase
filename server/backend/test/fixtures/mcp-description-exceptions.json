@@ -1,0 +1,4 @@
+{
+  "hint": "Exceptions to the target budget (1,500 characters) of the length guard server/backend/test/mcp-description-length.test.js. Per entry name, reason and the MEASURED length (the maximum over all run environments). The list may only shrink: an entry under the budget is red (delete it), a tool that grows beyond its measured length is red (shorten it - or raise the number with a reason, visible in the diff). The hard limit (the CLI's truncation) applies to every exception as well.",
+  "exceptions": []
+}

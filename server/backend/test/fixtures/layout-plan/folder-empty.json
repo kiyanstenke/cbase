@@ -1,0 +1,254 @@
+{
+ "name": "folder-empty",
+ "description": "Second reading, slice 3 (#23): a folder whose content was pulled out entirely never comes into being (only files are uploaded) - warning FOLDER_EMPTY, and despite the default mark no entry in codeRepos/repos; a folder with a block below it is not empty.",
+ "mode": "creation",
+ "selection": [
+  {
+   "seq": 1,
+   "kind": "folder",
+   "name": "export",
+   "files": [
+    {
+     "rel": "a/x.txt",
+     "size": 3
+    },
+    {
+     "rel": "b/y.txt",
+     "size": 4
+    }
+   ]
+  },
+  {
+   "seq": 2,
+   "kind": "folder",
+   "name": "mono",
+   "files": [
+    {
+     "rel": "app/.git/HEAD",
+     "size": 23
+    },
+    {
+     "rel": "app/m.js",
+     "size": 2
+    },
+    {
+     "rel": "doc/r.md",
+     "size": 1
+    }
+   ]
+  }
+ ],
+ "steps": [
+  {
+   "kind": "move",
+   "from": "export/a",
+   "to": "a"
+  },
+  {
+   "kind": "move",
+   "from": "export/b",
+   "to": "b"
+  },
+  {
+   "kind": "leaveOut",
+   "path": "mono/doc"
+  }
+ ],
+ "expected": {
+  "tree": [
+   {
+    "path": "export",
+    "kind": "folder",
+    "source": 1,
+    "origin": "export",
+    "size": 7,
+    "codeRepo": true
+   },
+   {
+    "path": "export/a",
+    "kind": "folder",
+    "source": 1,
+    "origin": "export/a",
+    "size": 3
+   },
+   {
+    "path": "export/a/x.txt",
+    "kind": "file",
+    "source": 1,
+    "origin": "export/a/x.txt",
+    "size": 3
+   },
+   {
+    "path": "export/b",
+    "kind": "folder",
+    "source": 1,
+    "origin": "export/b",
+    "size": 4
+   },
+   {
+    "path": "export/b/y.txt",
+    "kind": "file",
+    "source": 1,
+    "origin": "export/b/y.txt",
+    "size": 4
+   },
+   {
+    "path": "mono",
+    "kind": "folder",
+    "source": 2,
+    "origin": "mono",
+    "size": 26
+   },
+   {
+    "path": "mono/app",
+    "kind": "code-repo",
+    "source": 2,
+    "origin": "mono/app",
+    "size": 25
+   },
+   {
+    "path": "mono/doc",
+    "kind": "folder",
+    "source": 2,
+    "origin": "mono/doc",
+    "size": 1
+   },
+   {
+    "path": "mono/doc/r.md",
+    "kind": "file",
+    "source": 2,
+    "origin": "mono/doc/r.md",
+    "size": 1
+   }
+  ],
+  "hints": [],
+  "omitted": 0,
+  "upload": {
+   "1": [
+    "export/a/x.txt",
+    "export/b/y.txt"
+   ],
+   "2": [
+    "mono/app/.git/HEAD",
+    "mono/app/m.js",
+    "mono/doc/r.md"
+   ]
+  },
+  "finalTree": [
+   {
+    "path": "a",
+    "kind": "folder",
+    "source": 1,
+    "origin": "export/a",
+    "size": 3
+   },
+   {
+    "path": "a/x.txt",
+    "kind": "file",
+    "source": 1,
+    "origin": "export/a/x.txt",
+    "size": 3
+   },
+   {
+    "path": "b",
+    "kind": "folder",
+    "source": 1,
+    "origin": "export/b",
+    "size": 4
+   },
+   {
+    "path": "b/y.txt",
+    "kind": "file",
+    "source": 1,
+    "origin": "export/b/y.txt",
+    "size": 4
+   },
+   {
+    "path": "export",
+    "kind": "folder",
+    "source": 1,
+    "origin": "export",
+    "size": 7,
+    "codeRepo": true
+   },
+   {
+    "path": "mono",
+    "kind": "folder",
+    "source": 2,
+    "origin": "mono",
+    "size": 26
+   },
+   {
+    "path": "mono/app",
+    "kind": "code-repo",
+    "source": 2,
+    "origin": "mono/app",
+    "size": 25
+   }
+  ],
+  "mapping": {
+   "1": [
+    {
+     "from": "export",
+     "to": "export"
+    },
+    {
+     "from": "export/a",
+     "to": "a"
+    },
+    {
+     "from": "export/b",
+     "to": "b"
+    }
+   ],
+   "2": [
+    {
+     "from": "mono",
+     "to": "mono"
+    },
+    {
+     "from": "mono/doc",
+     "to": null
+    }
+   ]
+  },
+  "finalMapping": {
+   "ways": [],
+   "gone": [],
+   "codeRepos": []
+  },
+  "codeRepos": [],
+  "repos": [
+   "mono/app"
+  ],
+  "error": [],
+  "warnings": [
+   {
+    "code": "FOLDER_EMPTY",
+    "path": "export"
+   }
+  ],
+  "targets": [
+   {
+    "source": 1,
+    "origin": "export/a/x.txt",
+    "target": "a/x.txt"
+   },
+   {
+    "source": 1,
+    "origin": "export/b/y.txt",
+    "target": "b/y.txt"
+   },
+   {
+    "source": 2,
+    "origin": "mono/app/m.js",
+    "target": "mono/app/m.js"
+   },
+   {
+    "source": 2,
+    "origin": "mono/doc/r.md",
+    "target": null
+   }
+  ]
+ }
+}

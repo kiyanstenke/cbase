@@ -1,0 +1,303 @@
+{
+ "hint": "What the language guard lets through because it is meant to be German or is not ours. Every entry carries a reason. A file entry covers the whole file (an entry ending in / covers a directory, * matches inside one path segment). A line entry needs a pattern (regex on the line) and optionally a file regex. Keep it small: the way to fix German text is to translate it, not to list it.",
+ "files": [
+  {
+   "path": "tools/check/language-allow.json",
+   "reason": "the allowlist quotes the German patterns it lets through"
+  },
+  {
+   "path": "web/src/lib/i18n-de.ts",
+   "reason": "translation table (web): German is the point"
+  },
+  {
+   "path": "server/backend/electron/server/i18n-de.js",
+   "reason": "translation table (server): German is the point"
+  },
+  {
+   "path": "mobile/CbaseMobile/Kit/LocDE*.swift",
+   "reason": "translation tables (iOS): German is the point"
+  },
+  {
+   "path": "server/backend/electron/server/lsp/l10n/de/",
+   "reason": "German UI texts of the vendored VS Code language features (third-party translation)"
+  },
+  {
+   "path": "tools/check/language.mjs",
+   "reason": "the guard itself: its German word list is data"
+  },
+  {
+   "path": "tools/check/language.test.mjs",
+   "reason": "the guard's counter-test plants German on purpose"
+  },
+  {
+   "path": "web/test/fixtures/vscode-de-wordings.json",
+   "reason": "fixture of the German VS Code wordings the editor texts are measured against: German by design"
+  },
+  {
+   "path": "web/test/vscode-de-wordings.test.mjs",
+   "reason": "test of the German VS Code wordings (formal-to-informal rewrite of German text): German by design"
+  },
+  {
+   "path": "web/test/streams/fake-cli.cjs",
+   "reason": "fake CLI of the stream recorder and golden harness: the German chat texts it emits are recorded into the fixtures and stay German on purpose"
+  },
+  {
+   "path": "web/test/streams/scenarios.mjs",
+   "reason": "stream recorder scenarios: German user messages that the recorded fixtures contain"
+  },
+  {
+   "path": "web/test/fixtures/streams/",
+   "reason": "recorded German chat streams (output of the fake CLI) — byte-equal fixtures the reducer gate reads"
+  },
+  {
+   "path": "web/test/fixtures/bubbles/",
+   "reason": "recorded German chat bubbles (reducer output of the recorded streams) — byte-equal fixtures"
+  },
+  {
+   "path": "server/backend/test/fixtures/golden/",
+   "reason": "recorded golden fixtures, compared byte for byte: German test inputs of the scenarios, texts of the fake CLI and the German wording of the backend under test"
+  },
+  {
+   "path": "tools/check/identifiers.test.mjs",
+   "reason": "the identifier guard's counter-test plants German names on purpose"
+  },
+  {
+   "path": "tools/check/identifiers-vocab.json",
+   "reason": "the German vocabulary of the identifier guard: German words are its data"
+  },
+  {
+   "path": "tools/check/identifiers-allow.json",
+   "reason": "the identifier allowlist quotes the German name patterns it lets through"
+  },
+  {
+   "path": "tools/check/identifiers.mjs",
+   "reason": "the identifier guard itself: it names the umlaut letters it detects"
+  }
+ ],
+ "lines": [
+  {
+   "pattern": "Björn Ottosson",
+   "reason": "a person's name in the source credit of the OKLab conversion"
+  },
+  {
+   "file": "(ZipDirectory\\.swift|store/_util\\.js)$",
+   "pattern": "[\"'][äöüß][\"']",
+   "reason": "transliteration tables: the umlaut is the data"
+  },
+  {
+   "file": "^client/test/",
+   "pattern": "Müller|grün|a b/ä",
+   "reason": "umlaut path/name cases of the client's profile and path rules"
+  },
+  {
+   "file": "CbaseUITestBase\\.swift$",
+   "pattern": "'Schließen'",
+   "reason": "button label of the German system locale the UI tests also run in"
+  },
+  {
+   "file": "^server/backend/test/(file-download|dispatcher|codex-prefix|copy-from-copy|files-in-copy|first-set)\\.test\\.js$",
+   "pattern": "ä\\.txt|notiz ä|hallo äöü|Grüße äöü|Ümlaut|\"Ä\\\\n\"|copy-Groß|Ünï|Blättert|Liefert Werte|\"ä\"",
+   "reason": "umlaut and German-sentence test data (UTF-8 handling, sentence splitting, name sanitising)"
+  },
+  {
+   "file": "^server/backend/test/communication-search\\.test\\.js$",
+   "pattern": "Fälle",
+   "reason": "umlaut folding test data"
+  },
+  {
+   "file": "^server/backend/electron/server/(git\\.js|providers/connectors/codex-prefix\\.js|store/toolchain\\.js)$",
+   "pattern": "ü\\.txt|Ünï|Ärzte",
+   "reason": "English comment quoting a non-ASCII example name"
+  },
+  {
+   "file": "mobile/CbaseMobile/Code/ContextPanes\\.swift$",
+   "pattern": "Übersicht",
+   "reason": "English comment quoting a German example word for the umlaut folding"
+  },
+  {
+   "file": "^web/test/streams/README\\.md$",
+   "pattern": "<verb> für <secs>",
+   "reason": "quotes the placeholder token that the maintainer's recording probe writes into the recordings"
+  },
+  {
+   "file": "^web/test/",
+   "pattern": "Datei(en)? geändert|Keine Dateien geändert|Max · läuft als|vom Modell nicht getragen|von diesem Anbieter nicht geführt|Quelldatei öffnen|Als Vorschau öffnen|Für Vergleich auswählen|\"removed\": \"abgeräumt\"|Diesen Block auf HEAD|In HEAD standen|Höchstens zwei Editorgruppen|Umrisse auf ein",
+   "reason": "expected German output of the translation table (DE) and wordings of removed German texts that must not come back"
+  },
+  {
+   "file": "^(web/test/|client/test/)",
+   "pattern": "Die Kopie wird entfernt, sobald sie leer ist|Nebenher prüfen",
+   "reason": "the old confirmation wording of the copy pill (a guard against its return) and a German sample name"
+  },
+  {
+   "file": "^web/test/",
+   "pattern": "Jörg|ÄNDERN|Müller|ü\\.txt|ü \"x\"|Mein Prüf|\"prüf\"|/prüf|Läufe|Ä-Tab|ä-b\\b|kind 1/ä|\"ä\"|\"Ä\"|äöü|Grüße|Größe|Grün|Über uns|störung|ü😀|ü_ö_ä|chat:ü|\"ü\"|⌘-Hover kommt spät|über alles|Prüfe|ä-branch|ä-hash|\"ä\"\\.repeat|\"ä\"\\.repeat|\"é\"|\"ä\", \"z\"|\"Ä\"|\"ä\"|Ä ä äb|ä/ö\\.md",
+   "reason": "umlaut and non-ASCII test cases (UTF-8 handling, case folding, path encoding, name rules): the umlaut is the data"
+  },
+  {
+   "file": "^web/(src|test)/",
+   "pattern": "\\blöschen\\b|`löschen`",
+   "reason": "German alias of the /goal clear command, an accepted user input"
+  },
+  {
+   "file": "^web/src/(components/CodePane\\.tsx|lib/commandPalette\\.ts)$",
+   "pattern": "\"ß\"",
+   "reason": "English comment quoting the character that Alt+S produces on a German Mac keyboard"
+  },
+  {
+   "file": "^web/src/lib/thirdParty\\.ts$|^web/test/thirdParty\\.test\\.mjs$",
+   "pattern": "Raster umgerechnet",
+   "reason": "the test of web/public/THIRD_PARTY_NOTICES.txt removes a German translation entry (Codicons conversion notice) as a counter-probe"
+  },
+  {
+   "file": "^web/src/lib/zip-directory\\.ts$",
+   "pattern": "ÇüéâäàåçêëèïîìÄÅÉæÆôöòûù|ÿÖÜ¢£¥|αßΓπΣσ|\\[äöüß\\]",
+   "reason": "code page 437 table and umlaut transliteration of the ZIP reader: the characters are the data"
+  },
+  {
+   "file": "^web/test/(git-graph|git-bar-ios-binding)\\.test\\.mjs$",
+   "pattern": "else zu\\.push|const rowText = ",
+   "reason": "quotes source code whose field names (zu, aus, one) are identifiers of the lane computation"
+  },
+  {
+   "file": "^server/backend/electron/server/dedup\\.js$",
+   "pattern": "^\\s*(?:\"[a-zäöüß]+\", ?)+$|Wie buche ICH eine Fähre|\"Läuft\"|\"läuft\"",
+   "reason": "German (and English) stop-word list of the duplicate finder and the German example words of its comments: language data, not prose"
+  },
+  {
+   "file": "^server/backend/test/fixtures/clone-check/cases\\.json$",
+   "pattern": "\"müller\"|bücher\\.example",
+   "reason": "clone-URL cases with an umlaut user and host name: the umlaut is the data"
+  },
+  {
+   "file": "^server/backend/test/[^/]+\\.(?:test\\.js|mjs)$",
+   "pattern": "^(?!.*([\"'\\x60])(?:(?!\\1).)*[äöüÄÖÜß](?:(?!\\1).)*\\1)(?!.*\\/\\/\\s.*[äöüÄÖÜß])(?=.*(?:[(,=!&|?:\\[]|=>)\\s*(?:new RegExp\\()?\\/(?![/*\\s])(?:[^/\\\\\\n]|\\\\.)+\\/[dgimsuy]*\\s*(?:[,);\\]]|\\.test\\())",
+   "reason": "expected German server output in a regex literal (the suite runs with CBASE_UI_LANG=de, T() reads i18n-de.js); only when the line carries no German string literal and no German trailing comment, so a German assertion message written by the test author still shows"
+  },
+  {
+   "file": "^server/backend/test/[^/]+\\.(?:test\\.js|mjs)$",
+   "pattern": "Der Workflow „|„s2“ trägt ein Projekt|zurück in sie kommt der Chat|in der dieser Chat arbeitete|wartet auf Speicher|Ein Ordner lässt sich nicht in sich selbst kopieren|Der Projektordner selbst lässt sich nicht kopieren|Projektordner kann nicht gelöscht werden|\\} Einträge`|schließen sich aus|Ein Graph-Workflow läuft im Hintergrund|Der Mensch hat den Hintergrund-Lauf|Angenommen im Hintergrund|Der Worktree mit Änderungen bleibt|hat kein Git-Repository|Gelöscht: services/db|…\\[gekürzt\\]|nicht wählbar|Strecke übersprungen|Container nicht lesbar|nicht erreichbar \\(Container läuft nicht|gehört root|ließ sich nicht über den Projekt-Container|läuft bereits|Anbieter Nebius gibt es nicht mehr|nur noch lesbar|Nach 2 Versuchen aufgegeben|Täglich um 22:00|Wöchentlich|Sitzung \\$\\{SID\\} nicht gefunden|eine Kopie lebt noch|Serverende mitten im Aufbau|abgeräumt|gehört dem Original|nie gebaut, in ihr gibt es nichts zu sichern|ließ die Instanz-Zeile stehen|Sicherungen einer früheren Kopie",
+   "reason": "expected German server output quoted as a string (CBASE_UI_LANG=de): each phrase is a value of i18n-de.js the assertion compares against"
+  },
+  {
+   "file": "^server/backend/test/[^/]+\\.(?:test\\.js|mjs)$",
+   "pattern": "Übung|Müller|März|ü\\.txt|ü/new\\.md|new ü|\\(w, \"ü\"\\)|ü ä\\.txt|Ümlaut|Über created|Ärger|Größe|Straße|Maß|refs/heads/ä|\"ä1\"|Groß\"|r ü\"|Käss|Ärzte|böse quelle|Content äöü|\"für\"|Riesig|Übermaß|\"ö\"\\.repeat| Ä`",
+   "reason": "umlaut test data (UTF-8, NFC/NFD, cp437, quoting, sorting, transliteration): the umlaut is the data"
+  },
+  {
+   "file": "^server/backend/test/(?:context-dedup|context-search)\\.test\\.js$",
+   "pattern": "^\\s*(?:id: \\d+, )?(?:category: \"[\\w-]+\", )?(?:title|summary|body|text): \"|encodeURIComponent\\(\"",
+   "reason": "German knowledge entries and search queries: the duplicate finder and the retrieval are bilingual (German stop words in dedup.js), this corpus exercises the German side"
+  },
+  {
+   "file": "^server/backend/test/context-form\\.test\\.js$",
+   "pattern": "^\\s*(?:one|none)\\(\\{ body: \"|JSON\\.stringify\\(\\{ category: \"architecture\", title: \"",
+   "reason": "German context entries for the German status headings and commit words of the form check (projects/context-form.js STATUS_WORD)"
+  },
+  {
+   "file": "^server/backend/test/first-set\\.test\\.js$",
+   "pattern": "^\\s*\\[\"",
+   "reason": "German sentences for the first-sentence recognizer (German abbreviations u. a., ggf., inkl., z. B.)"
+  },
+  {
+   "file": "^server/backend/test/workflow-(?:review|loop-cap|open)\\.test\\.js$",
+   "pattern": "passt, aber|sieht gut aus|mach weiter|von mir aus|was hältst du davon",
+   "reason": "German user answers the workflow dialog understands (workflows.js OK_RE/BUT_RE): user input, language data"
+  },
+  {
+   "file": "^server/backend/test/engine-harness\\.test\\.js$",
+   "pattern": "const SET_FIRST = |Der zweite Satz bleibt draußen|\"Über ToolSearch laden\"|\"überBash\"",
+   "reason": "a German tool description for the first-sentence cut, and umlaut word boundaries of the tool-name detector"
+  },
+  {
+   "file": "^server/backend/test/notify\\.test\\.js$",
+   "pattern": "hint: \"Ein Manager-Agent will",
+   "reason": "the OLD German approval hint of the fixture gateway, planted as a counter-test"
+  },
+  {
+   "file": "^server/backend/test/golden-scenarios\\.mjs$",
+   "pattern": "text: \"",
+   "reason": "German user texts posted by the golden scenarios; they are recorded into the fixtures and read by the fake CLI"
+  },
+  {
+   "file": "^server/backend/test/fixtures/dynworkflows-journal/(.*/)?(script\\.js|stamp\\.json)$",
+   "pattern": ".",
+   "reason": "recorded generator input (script.js, its sha256 stands in the stamp) and frozen stamps of a real Claude Code run"
+  },
+  {
+   "file": "^server/backend/test/fixtures/code-scopes/responses\\.json$",
+   "pattern": "\"body\": \"PK",
+   "reason": "recorded ZIP bytes with umlaut file names"
+  },
+  {
+   "file": "^mobile/test-fixtures/chat-gateway/(state|seeds|routes-run|routes-chat|routes-scheduled)\\.mjs$",
+   "pattern": "[Pp]rüf|Aufräumen|Nachlauf|Der Subagent läuft|Täglich um|Wöchentlich|Der Dienst laeuft|Zusammenfassung|Kürze die|Befund|übersprungen|Absatz \\$\\{|Unabhängige|vollständig|Nötigste|Nächster Sprint|Abhängigkeiten|label: \"(Rückfrage|Freigabe|Antwort fertig|Workflow-Schritt|Workflow ausgelöst|Nutzungslimit|Zeitplan|Dienst)\"|Token ungültig|Zahlungs|Eine Rückfrage wartet|Umlaut: äöü|Wenn ein Merge Request",
+   "reason": "German sample chat content and German-locale server texts of the fixture gateway (notification kinds, schedule wording, error texts); the UI tests assert them"
+  },
+  {
+   "file": "^mobile/CbaseMobileUITests/Tests/(ChatRows|ChatStage|ChatComposer|ChatCards|Coding|Settings)UITests\\.swift$",
+   "pattern": "[Pp]rüf|Zahlungsfluss|Unabhängige|Während des Workflows|Nächster Sprint|Zusammenfassung kürzen|Der Subagent läuft|Text, der die Zeile füllt|\"Lesen\"|Das Modul lädt|Auflösung — der Pfad|Bildband|Auslieferungsadresse|Drei Läufe, derselbe Befund|947 Tests grün|Wenn ein Merge Request|Token ungültig",
+   "reason": "assertions on the German sample chat content and German-locale server texts of the fixture gateway"
+  },
+  {
+   "file": "^server/backend/test/(migrations|communication-teardown)\\.test\\.js$",
+   "pattern": "oldSentence|wenn eine Antwort erwartet wird",
+   "reason": "the OLD German sentence that the migration looks for in stored prompts, and the German tail it leaves in them: German by design"
+  },
+  {
+   "file": "^server/backend/test/(git-view-detail|preview-links|migrations)\\.test\\.js$",
+   "pattern": "geändert\\b|Kasse Süd|Offer Müller",
+   "reason": "umlaut test data (file content, project name)"
+  },
+  {
+   "file": "^server/backend/electron/server/(preview/names|workflows/shortName|workspaces/git-auth)\\.js$",
+   "pattern": "[äöüß]",
+   "reason": "transliteration of umlauts into ASCII names: the umlaut is the data"
+  },
+  {
+   "file": "^server/backend/electron/mcp/first-set\\.js$",
+   "pattern": "[ÄÖÜäöüß]",
+   "reason": "letter classes of a first-sentence recognizer: the umlaut is the data"
+  },
+  {
+   "file": "^server/backend/electron/server/channels/migration-communication-table\\.js$",
+   "pattern": "Antworte über cbase_channel_send",
+   "reason": "the OLD German sentence the migration looks for in stored prompts: German by design"
+  },
+  {
+   "file": "^server/backend/electron/server/(communication/search|git|retrieval|store/db)\\.js$",
+   "pattern": "\"für\"|Ärger\\.md|Warum braucht der Sauerteig|Läufe\"",
+   "reason": "German example words of case/diacritics folding and of a retrieval trap: the text is the example"
+  },
+  {
+   "file": "^server/backend/electron/server/projects/context-form\\.js$",
+   "pattern": "STATUS_WORD =",
+   "reason": "German (and English) status headings of project context entries: language data"
+  },
+  {
+   "file": "^server/backend/electron/server/workflows\\.js$",
+   "pattern": "\\b(STOP_RE|OK_RE|BUT_RE) =",
+   "reason": "German (and English) answer words the workflow dialog understands: user input, language data"
+  },
+  {
+   "file": "^server/gateway/index\\.test\\.js$",
+   "pattern": "Grüße",
+   "reason": "umlaut test data (UTF-8 body of a push event)"
+  },
+  {
+   "file": "^mobile/CbaseMobile/",
+   "pattern": "\"löschen\"|\"prüf\"|bücher\\.example",
+   "reason": "German user input (alias of the clear command), a keyword list and an umlaut domain example"
+  },
+  {
+   "file": "^server/backend/test/(git-commit-files|git-diff-content|git-graph-log|git-time-axis)\\.test\\.js$",
+   "pattern": "ümlaut ä/file ö\\.md|Jörg Müller|umbenannt ä\\.txt|of an \"ä\"|\"ü\\.txt\"|feat/ä,b\\+c|\"Über\\.md\"|\"Ärger\\.md\"",
+   "reason": "comments describing the umlaut file names, branch names and author of the git fixtures (UTF-8 and quoting cases): the umlaut is the data"
+  },
+  {
+   "file": "^server/backend/test/(graph-report|workflow-loop-cap)\\.test\\.js$",
+   "pattern": "abschließen",
+   "reason": "German answer word (\"abschließen\" = finish) that the workflow dialog accepts as user input (workflows.js STOP_RE)"
+  }
+ ]
+}

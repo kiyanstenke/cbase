@@ -1,0 +1,169 @@
+{
+  "start": "[]",
+  "history": [
+    {
+      "seq": 1,
+      "kind": "harness/connected",
+      "bubbles": 0,
+      "stream": {
+        "open": false,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 2,
+      "kind": "harness/user_message",
+      "bubbles": 1,
+      "stream": {
+        "open": false,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 3,
+      "kind": "harness/run_started",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 4,
+      "kind": "system",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 5,
+      "kind": "stream_event/message_start",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 6,
+      "kind": "stream_event/content_block_start:text",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 7,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 8,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 9,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 10,
+      "kind": "stream_event/content_block_stop",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 11,
+      "kind": "stream_event/message_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 12,
+      "kind": "stream_event/message_stop",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 13,
+      "kind": "assistant",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 14,
+      "kind": "result",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 15,
+      "kind": "harness/run_done",
+      "bubbles": 2,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    }
+  ],
+  "bubbles": [
+    {
+      "role": "user",
+      "blocks": [
+        {
+          "kind": "text",
+          "text": "Erklär mir den Ereignisstrom eines Chats."
+        }
+      ],
+      "attachments": []
+    },
+    {
+      "role": "assistant",
+      "blocks": [
+        {
+          "kind": "text",
+          "text": "Gern. Der Ereignisstrom eines Chats trägt drei Gattungen: Harness-Ereignisse des Servers, die stream-json-Events der CLI und das Ergebnis am Ende."
+        }
+      ],
+      "streaming": false,
+      "summary": {
+        "secs": 12,
+        "inTok": 120,
+        "outTok": 18,
+        "aborted": false,
+        "at": 1789646414000
+      }
+    }
+  ]
+}

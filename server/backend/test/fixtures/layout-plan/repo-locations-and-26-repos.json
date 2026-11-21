@@ -1,0 +1,677 @@
+{
+  "name": "repo-locations-and-26-repos",
+  "description": "26 code repos are one too many; a repo at depth 5 and one under vendor/ are not seen by the repo search.",
+  "mode": "creation",
+  "selection": [
+    {
+      "seq": 1,
+      "kind": "folder",
+      "name": "sammel",
+      "files": [
+        {
+          "rel": "r01/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "r02/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "r03/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "r04/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "r05/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "r06/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "r07/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "r08/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "r09/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "r10/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "r11/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "r12/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "r13/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "r14/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "r15/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "r16/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "r17/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "r18/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "r19/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "r20/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "r21/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "r22/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "r23/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "r24/.git/HEAD",
+          "size": 23
+        }
+      ]
+    },
+    {
+      "seq": 2,
+      "kind": "folder",
+      "name": "t",
+      "files": [
+        {
+          "rel": "a/b/c/d/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "vendor/lib/.git/HEAD",
+          "size": 23
+        }
+      ]
+    }
+  ],
+  "steps": [],
+  "expected": {
+    "tree": [
+      {
+        "path": "sammel",
+        "kind": "folder",
+        "source": 1,
+        "origin": "sammel",
+        "size": 552
+      },
+      {
+        "path": "sammel/r01",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r01",
+        "size": 23
+      },
+      {
+        "path": "sammel/r02",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r02",
+        "size": 23
+      },
+      {
+        "path": "sammel/r03",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r03",
+        "size": 23
+      },
+      {
+        "path": "sammel/r04",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r04",
+        "size": 23
+      },
+      {
+        "path": "sammel/r05",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r05",
+        "size": 23
+      },
+      {
+        "path": "sammel/r06",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r06",
+        "size": 23
+      },
+      {
+        "path": "sammel/r07",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r07",
+        "size": 23
+      },
+      {
+        "path": "sammel/r08",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r08",
+        "size": 23
+      },
+      {
+        "path": "sammel/r09",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r09",
+        "size": 23
+      },
+      {
+        "path": "sammel/r10",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r10",
+        "size": 23
+      },
+      {
+        "path": "sammel/r11",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r11",
+        "size": 23
+      },
+      {
+        "path": "sammel/r12",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r12",
+        "size": 23
+      },
+      {
+        "path": "sammel/r13",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r13",
+        "size": 23
+      },
+      {
+        "path": "sammel/r14",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r14",
+        "size": 23
+      },
+      {
+        "path": "sammel/r15",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r15",
+        "size": 23
+      },
+      {
+        "path": "sammel/r16",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r16",
+        "size": 23
+      },
+      {
+        "path": "sammel/r17",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r17",
+        "size": 23
+      },
+      {
+        "path": "sammel/r18",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r18",
+        "size": 23
+      },
+      {
+        "path": "sammel/r19",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r19",
+        "size": 23
+      },
+      {
+        "path": "sammel/r20",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r20",
+        "size": 23
+      },
+      {
+        "path": "sammel/r21",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r21",
+        "size": 23
+      },
+      {
+        "path": "sammel/r22",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r22",
+        "size": 23
+      },
+      {
+        "path": "sammel/r23",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r23",
+        "size": 23
+      },
+      {
+        "path": "sammel/r24",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r24",
+        "size": 23
+      },
+      {
+        "path": "t",
+        "kind": "folder",
+        "source": 2,
+        "origin": "t",
+        "size": 46
+      },
+      {
+        "path": "t/a",
+        "kind": "folder",
+        "source": 2,
+        "origin": "t/a",
+        "size": 23
+      },
+      {
+        "path": "t/a/b",
+        "kind": "folder",
+        "source": 2,
+        "origin": "t/a/b",
+        "size": 23
+      },
+      {
+        "path": "t/a/b/c",
+        "kind": "folder",
+        "source": 2,
+        "origin": "t/a/b/c",
+        "size": 23
+      },
+      {
+        "path": "t/a/b/c/d",
+        "kind": "code-repo",
+        "source": 2,
+        "origin": "t/a/b/c/d",
+        "size": 23
+      },
+      {
+        "path": "t/vendor",
+        "kind": "folder",
+        "source": 2,
+        "origin": "t/vendor",
+        "size": 23
+      },
+      {
+        "path": "t/vendor/lib",
+        "kind": "code-repo",
+        "source": 2,
+        "origin": "t/vendor/lib",
+        "size": 23
+      }
+    ],
+    "hints": [],
+    "omitted": 0,
+    "upload": {
+      "1": [
+        "sammel/r01/.git/HEAD",
+        "sammel/r02/.git/HEAD",
+        "sammel/r03/.git/HEAD",
+        "sammel/r04/.git/HEAD",
+        "sammel/r05/.git/HEAD",
+        "sammel/r06/.git/HEAD",
+        "sammel/r07/.git/HEAD",
+        "sammel/r08/.git/HEAD",
+        "sammel/r09/.git/HEAD",
+        "sammel/r10/.git/HEAD",
+        "sammel/r11/.git/HEAD",
+        "sammel/r12/.git/HEAD",
+        "sammel/r13/.git/HEAD",
+        "sammel/r14/.git/HEAD",
+        "sammel/r15/.git/HEAD",
+        "sammel/r16/.git/HEAD",
+        "sammel/r17/.git/HEAD",
+        "sammel/r18/.git/HEAD",
+        "sammel/r19/.git/HEAD",
+        "sammel/r20/.git/HEAD",
+        "sammel/r21/.git/HEAD",
+        "sammel/r22/.git/HEAD",
+        "sammel/r23/.git/HEAD",
+        "sammel/r24/.git/HEAD"
+      ],
+      "2": [
+        "t/a/b/c/d/.git/HEAD",
+        "t/vendor/lib/.git/HEAD"
+      ]
+    },
+    "finalTree": [
+      {
+        "path": "sammel",
+        "kind": "folder",
+        "source": 1,
+        "origin": "sammel",
+        "size": 552
+      },
+      {
+        "path": "sammel/r01",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r01",
+        "size": 23
+      },
+      {
+        "path": "sammel/r02",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r02",
+        "size": 23
+      },
+      {
+        "path": "sammel/r03",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r03",
+        "size": 23
+      },
+      {
+        "path": "sammel/r04",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r04",
+        "size": 23
+      },
+      {
+        "path": "sammel/r05",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r05",
+        "size": 23
+      },
+      {
+        "path": "sammel/r06",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r06",
+        "size": 23
+      },
+      {
+        "path": "sammel/r07",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r07",
+        "size": 23
+      },
+      {
+        "path": "sammel/r08",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r08",
+        "size": 23
+      },
+      {
+        "path": "sammel/r09",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r09",
+        "size": 23
+      },
+      {
+        "path": "sammel/r10",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r10",
+        "size": 23
+      },
+      {
+        "path": "sammel/r11",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r11",
+        "size": 23
+      },
+      {
+        "path": "sammel/r12",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r12",
+        "size": 23
+      },
+      {
+        "path": "sammel/r13",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r13",
+        "size": 23
+      },
+      {
+        "path": "sammel/r14",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r14",
+        "size": 23
+      },
+      {
+        "path": "sammel/r15",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r15",
+        "size": 23
+      },
+      {
+        "path": "sammel/r16",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r16",
+        "size": 23
+      },
+      {
+        "path": "sammel/r17",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r17",
+        "size": 23
+      },
+      {
+        "path": "sammel/r18",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r18",
+        "size": 23
+      },
+      {
+        "path": "sammel/r19",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r19",
+        "size": 23
+      },
+      {
+        "path": "sammel/r20",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r20",
+        "size": 23
+      },
+      {
+        "path": "sammel/r21",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r21",
+        "size": 23
+      },
+      {
+        "path": "sammel/r22",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r22",
+        "size": 23
+      },
+      {
+        "path": "sammel/r23",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r23",
+        "size": 23
+      },
+      {
+        "path": "sammel/r24",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "sammel/r24",
+        "size": 23
+      },
+      {
+        "path": "t",
+        "kind": "folder",
+        "source": 2,
+        "origin": "t",
+        "size": 46
+      },
+      {
+        "path": "t/a",
+        "kind": "folder",
+        "source": 2,
+        "origin": "t/a",
+        "size": 23
+      },
+      {
+        "path": "t/a/b",
+        "kind": "folder",
+        "source": 2,
+        "origin": "t/a/b",
+        "size": 23
+      },
+      {
+        "path": "t/a/b/c",
+        "kind": "folder",
+        "source": 2,
+        "origin": "t/a/b/c",
+        "size": 23
+      },
+      {
+        "path": "t/a/b/c/d",
+        "kind": "code-repo",
+        "source": 2,
+        "origin": "t/a/b/c/d",
+        "size": 23
+      },
+      {
+        "path": "t/vendor",
+        "kind": "folder",
+        "source": 2,
+        "origin": "t/vendor",
+        "size": 23
+      },
+      {
+        "path": "t/vendor/lib",
+        "kind": "code-repo",
+        "source": 2,
+        "origin": "t/vendor/lib",
+        "size": 23
+      }
+    ],
+    "mapping": {
+      "1": [
+        {
+          "from": "sammel",
+          "to": "sammel"
+        }
+      ],
+      "2": [
+        {
+          "from": "t",
+          "to": "t"
+        }
+      ]
+    },
+    "finalMapping": {
+      "ways": [],
+      "gone": [],
+      "codeRepos": []
+    },
+    "codeRepos": [],
+    "repos": [
+      "sammel/r01",
+      "sammel/r02",
+      "sammel/r03",
+      "sammel/r04",
+      "sammel/r05",
+      "sammel/r06",
+      "sammel/r07",
+      "sammel/r08",
+      "sammel/r09",
+      "sammel/r10",
+      "sammel/r11",
+      "sammel/r12",
+      "sammel/r13",
+      "sammel/r14",
+      "sammel/r15",
+      "sammel/r16",
+      "sammel/r17",
+      "sammel/r18",
+      "sammel/r19",
+      "sammel/r20",
+      "sammel/r21",
+      "sammel/r22",
+      "sammel/r23",
+      "sammel/r24",
+      "t/a/b/c/d",
+      "t/vendor/lib"
+    ],
+    "error": [
+      {
+        "code": "CODE_REPO_LOCATION",
+        "path": "t/a/b/c/d"
+      },
+      {
+        "code": "CODE_REPO_LOCATION",
+        "path": "t/vendor/lib"
+      },
+      {
+        "code": "TOO_MANY_REPOS"
+      }
+    ],
+    "warnings": [],
+    "targets": []
+  }
+}

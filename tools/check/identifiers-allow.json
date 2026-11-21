@@ -1,0 +1,141 @@
+{
+  "hint": "What the German identifier guard lets through: names that must stay German for a stated reason. Every entry carries a reason. A file entry covers a whole file (a trailing / covers a directory, * matches inside one path segment). An identifier entry needs a pattern (regex on the whole name) and optionally a file regex and a kind (code | key). Keep it small: the way to fix a German name is to rename it. Wire and stored names that are only DEFERRED (not decided to stay) are NOT listed here: they stay in the ratchet count until they are renamed.",
+  "files": [
+    {
+      "path": "tools/check/identifiers-vocab.json",
+      "reason": "the vocabulary: German words are its data"
+    },
+    {
+      "path": "tools/check/identifiers-allow.json",
+      "reason": "the allowlist quotes the German patterns it lets through"
+    },
+    {
+      "path": "tools/check/identifiers.test.mjs",
+      "reason": "the guard's counter-test plants German identifiers on purpose"
+    },
+    {
+      "path": "server/backend/electron/server/preview/names.js",
+      "reason": "transliteration table: the umlaut letters are the data"
+    },
+    {
+      "path": "web/src/lib/zip-directory.ts",
+      "reason": "character-set table of the ZIP file-name encoding: the umlaut letters are the data"
+    },
+    {
+      "path": "server/backend/test/fixtures/dynworkflows-journal/script.js",
+      "reason": "recorded fixture input: the real CLI ran exactly this script (German fixture prompts), the stamp holds its sha256 and the journal was written from it; never edited"
+    },
+    {
+      "path": "server/backend/test/fixtures/dynworkflows-journal/*/script.js",
+      "reason": "recorded fixture input per CLI pin: the real CLI ran exactly this script, the stamp holds its sha256; never edited"
+    },
+    {
+      "path": "server/backend/electron/server/dedup.js",
+      "reason": "German (and English) stop-word list of the duplicate finder: language data as string literals, not identifiers"
+    }
+  ],
+  "identifiers": [
+    {
+      "pattern": "[äöüÄÖÜß]",
+      "file": "^(web/test|server/backend/test|client/test|mobile/test-fixtures)/",
+      "kind": "key",
+      "reason": "German test data in quoted names (umlaut file names, branch names, slugs) that exercise Unicode handling"
+    },
+    {
+      "pattern": "^(voll|vollzugriff|fragen)$",
+      "file": "^web/src/components/chat/ChatCatalog\\.tsx$",
+      "kind": "code",
+      "reason": "German aliases of the /mode command accepted as user input (full access, ask); the web twin of the iOS entry"
+    },
+    {
+      "pattern": "^(voll|vollzugriff|fragen|löschen)$",
+      "file": "^mobile/CbaseMobile/Chat/ChatViewModel\\+Slash\\.swift$",
+      "kind": "key",
+      "reason": "German aliases of the /mode and /goal commands accepted as user input (full access, ask, delete); the iOS twin of the web entry"
+    },
+    {
+      "pattern": "^(fallstrick|fehler|frage|entscheid|architektur|aufbau|struktur|einricht|betrieb|konfig|datenbank|daten|zugang|sicherheit|kunde|kontakt|domaene|fachlich|glossar|begriff|wissen|produkt|termin|protokoll|referenz|uebersicht|allgemein|notiz|offen|quelle|doku)$",
+      "file": "^mobile/CbaseMobile/Code/ContextPanes\\.swift$",
+      "kind": "key",
+      "reason": "keyword prefixes that classify the category names of context items; the names are user-written and can be German, the English words sit beside them"
+    },
+    {
+      "pattern": "^prüf$",
+      "file": "^mobile/CbaseMobile/Code/AgentsSkillsPanes\\.swift$",
+      "kind": "key",
+      "reason": "keyword prefix that picks an icon from user-written agent names; German names exist next to the English prefixes"
+    },
+    {
+      "pattern": "^zahlungs$",
+      "file": "^mobile/CbaseMobileUITests/Tests/ShellUITests\\.swift$",
+      "kind": "key",
+      "reason": "search term typed in the UI test: matches the German fixture chat title \"Zahlungs-Bug im Checkout\""
+    },
+    {
+      "pattern": "^(sonntags|montags|dienstags|mittwochs|donnerstags|freitags|samstags)$",
+      "file": "^mobile/test-fixtures/chat-gateway/routes-scheduled\\.mjs$",
+      "kind": "key",
+      "reason": "weekday words of the German schedule label the fixture sends like the server in German UI language; ScheduledUITests reads that German text"
+    },
+    {
+      "pattern": "^jetzt$",
+      "file": "^web/test/git-card\\.test\\.mjs$",
+      "kind": "key",
+      "reason": "expected German output (\"now\") of the de-DE relative-time formatter under test"
+    },
+    {
+      "pattern": "^(passt|weiter|freigegeben)$",
+      "file": "^server/backend/test/(graph-report|workflow-engine-e2e|workflow-loop-cap|workflow-repairs|workflow-review-e2e|workflow-review)\\.test\\.js$",
+      "kind": "key",
+      "reason": "German reply words the review and loop-cap engines recognise as approval or continue (OK_RE, capIntent); the tests feed exactly those words"
+    },
+    {
+      "pattern": "^(usw|zzgl|abzgl)$",
+      "file": "^server/backend/electron/mcp/first-set\\.js$",
+      "kind": "key",
+      "reason": "German abbreviations (usw., zzgl., abzgl.) the first-sentence splitter must not treat as sentence ends in German text"
+    },
+    {
+      "pattern": "^notiz\\.txt$",
+      "file": "^server/backend/test/code-scopes\\.test\\.js$",
+      "kind": "key",
+      "reason": "file name inside recorded anchors: the commit hashes of the recorded responses depend on it"
+    },
+    {
+      "pattern": "^groesse-",
+      "file": "^server/backend/test/(graph-short-name|hosts-file)\\.test\\.js$",
+      "kind": "key",
+      "reason": "expected slug of a German input name (Größe -> groesse): the transliteration of umlauts is what these tests check"
+    },
+    {
+      "pattern": "^(nachgeholt|gestoppt)$",
+      "file": "^server/backend/test/scheduled-run\\.test\\.js$",
+      "kind": "key",
+      "reason": "German output of T() under the default UI language (de) that the test asserts"
+    },
+    {
+      "pattern": "^(eins|zwei|drei|vier|fuenf|sechs|sieben|acht|neun|zehn|zwoelf(-[XY])?|dreizehn|vierzehn|fuenfzehn|wort|zahl)$",
+      "file": "^server/backend/test/(dynworkflows-journal\\.test\\.js|fixtures/dynworkflows-journal/.*)$",
+      "reason": "agent labels and schema fields of the recorded dynamic-workflow journal fixtures: the journal keys of the pinned CLI are derived from them, re-recording needs the real CLI",
+      "kind": "code"
+    },
+    {
+      "pattern": "^(eins|zwei|drei|vier|fuenf|sechs|sieben|acht|neun|zehn|zwoelf(-[XY])?|dreizehn|vierzehn|fuenfzehn|wort|zahl)$",
+      "file": "^server/backend/test/(dynworkflows-journal\\.test\\.js|fixtures/dynworkflows-journal/.*)$",
+      "reason": "agent labels and schema fields of the recorded dynamic-workflow journal fixtures: the journal keys of the pinned CLI are derived from them, re-recording needs the real CLI",
+      "kind": "key"
+    },
+    {
+      "pattern": "^(das|wie)$",
+      "file": "^server/backend/test/context-search\\.test\\.js$",
+      "kind": "key",
+      "reason": "German stop words as test input: the search must drop them from a German query"
+    },
+    {
+      "pattern": "^nr$",
+      "file": "^server/backend/electron/mcp/first-set\\.js$",
+      "kind": "key",
+      "reason": "German abbreviation table (Nr. = number): a sentence splitter must not end a sentence after it"
+    }
+  ]
+}

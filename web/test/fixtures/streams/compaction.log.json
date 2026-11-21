@@ -1,0 +1,51 @@
+[
+  {
+    "id": "<msg-1>",
+    "role": "user",
+    "text": "Erste Nachricht vor der Verdichtung.",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-2>",
+    "role": "assistant",
+    "text": "Antwort auf: Erste Nachricht vor der Verdichtung.",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-3>",
+    "role": "meta",
+    "text": "{\"secs\":\"<secs>\",\"inTok\":120,\"outTok\":18}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-4>",
+    "role": "meta",
+    "text": "{\"compacted\":true,\"at\":\"<t>\",\"chars\":105}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-5>",
+    "role": "user",
+    "text": "Zweite Nachricht nach der Verdichtung.",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-6>",
+    "role": "assistant",
+    "text": "Antwort auf: [Zusammenfassung des bisherigen, komprimierten Gesprächs — nutze sie als Kontext",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-7>",
+    "role": "meta",
+    "text": "{\"secs\":\"<secs>\",\"inTok\":120,\"outTok\":18}",
+    "ts": "<t>",
+    "attachments": null
+  }
+]

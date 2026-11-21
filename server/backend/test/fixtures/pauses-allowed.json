@@ -1,0 +1,35 @@
+{
+  "hint": "The named bare pauses of the test trees - guard \"bare pauses\" in server/backend/test/clock-counts.test.js (kind 3; what counts and what does not is in its header). Per entry: file (repo-relative), count (that many bare pauses the guard counts there) and the reason from the code. The list may only SHRINK: red are a new file with a pause, a risen count, a count above the measured one (shrink along, delete at 0), an entry without a reason and one without a file.",
+  "entries": [
+    {
+      "file": "server/backend/test/dynworkflows-harness.mjs",
+      "count": 2,
+      "reason": "Two `setTimeout(r, 0)` before the \"alive\" line: one ROUND of the event loop, not a duration. An unhandled rejection is processed at the end of the microtask round, i.e. before any timer; load shifts when the round comes, not the order (comment at the spot)."
+    },
+    {
+      "file": "server/backend/test/hooks.test.js",
+      "count": 6,
+      "reason": "Five are the subject under test: a SLOW hook or switch (5-20 ms in the registered callback) at which wait:true/false show whether it is serialized - what is checked are order and a lower bound (>= 15 ms), never an upper bound. The sixth (`await sleep(20)` in the test \"rejected promise with wait:false\") waits for the log line of the 5 ms rejection: load-proof only because Node fires the earlier timer first and the line arises in its microtasks; replaceable by an event on the log."
+    },
+    {
+      "file": "server/backend/test/stdin-epipe.test.js",
+      "count": 4,
+      "reason": "`reverb()` (400 ms) at the end of four tests: an absence window in which an ASYNCHRONOUS stream error (EPIPE) should still attach to its own test instead of the next (comment at `reverb`). If it comes later under load it may land at the neighbor. Left open; replaceable by waiting for the end of the stream instead of the clock."
+    },
+    {
+      "file": "web/test/streams/record.mjs",
+      "count": 1,
+      "reason": "`LINGER_MS` (400 ms) after quiet and the `quiet()` hook, before the recorder reads the history. Does NOT run in the gate (called by hand); a too short linger shows as a deviation of the flutter probe, not as a green test. Replaceable by the stream barrier as in the golden harness."
+    },
+    {
+      "file": "web/test/streams/scenarios.mjs",
+      "count": 1,
+      "reason": "200 ms in the scenario \"join\" between the mark \"deltas-out\" and the second message: the server reads the fake CLI's pipe asynchronously. Runs only in the recorder (the gate reads only the table `SCENARIOS`), and the `connected` after it is CHECKED - if the time does not suffice, the scenario aborts loudly instead of recording wrongly (comment at the spot)."
+    },
+    {
+      "file": "tools/check/sh-deadline.test.mjs",
+      "count": 3,
+      "reason": "Three synchronizations over the clock before a process count (pgrep): 400 ms after the deadline, then \"no grandchild\"; 700 ms after the start of the helper, then \"grandchild runs\"; 1,200 ms after SIGINT, then \"no grandchild\". Under load each of them can turn red (kill or start not through yet) - exactly what the rule forbids; replaceable by pgrep in a wait loop until the expected count."
+    }
+  ]
+}

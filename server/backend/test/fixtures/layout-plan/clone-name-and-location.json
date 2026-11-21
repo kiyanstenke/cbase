@@ -1,0 +1,198 @@
+{
+  "name": "clone-name-and-location",
+  "description": "Slice 5: a clone is ONE block without files. Default name from the URL, supplemented when it equals a folder of an earlier source (NAME_SUPPLEMENTED); moved into a normal folder and renamed; nothing to upload. A folder inside a clone is not allowed (IN_CODE_REPO).",
+  "mode": "creation",
+  "selection": [
+    {
+      "seq": 1,
+      "kind": "files",
+      "name": "",
+      "files": [
+        {
+          "rel": "README.md",
+          "size": 10
+        },
+        {
+          "rel": "docs/a.md",
+          "size": 20
+        }
+      ]
+    },
+    {
+      "seq": 2,
+      "kind": "clone",
+      "name": "werkzeug",
+      "files": []
+    },
+    {
+      "seq": 3,
+      "kind": "clone",
+      "name": "docs",
+      "files": []
+    }
+  ],
+  "steps": [
+    {
+      "kind": "move",
+      "from": "werkzeug",
+      "to": "docs/werkzeug"
+    },
+    {
+      "kind": "move",
+      "from": "docs-2",
+      "to": "bibliothek"
+    },
+    {
+      "kind": "move",
+      "from": "README.md",
+      "to": "bibliothek/README.md"
+    }
+  ],
+  "expected": {
+    "tree": [
+      {
+        "path": "README.md",
+        "kind": "file",
+        "source": 1,
+        "origin": "README.md",
+        "size": 10
+      },
+      {
+        "path": "docs",
+        "kind": "folder",
+        "source": 1,
+        "origin": "docs",
+        "size": 20
+      },
+      {
+        "path": "docs/a.md",
+        "kind": "file",
+        "source": 1,
+        "origin": "docs/a.md",
+        "size": 20
+      },
+      {
+        "path": "werkzeug",
+        "kind": "clone",
+        "source": 2,
+        "origin": "werkzeug"
+      },
+      {
+        "path": "docs-2",
+        "kind": "clone",
+        "source": 3,
+        "origin": "docs"
+      }
+    ],
+    "hints": [
+      {
+        "code": "NAME_SUPPLEMENTED",
+        "path": "docs-2",
+        "second": "docs"
+      }
+    ],
+    "omitted": 0,
+    "upload": {
+      "1": [
+        "README.md",
+        "docs/a.md"
+      ],
+      "2": [],
+      "3": []
+    },
+    "finalTree": [
+      {
+        "path": "README.md",
+        "kind": "file",
+        "source": 1,
+        "origin": "README.md",
+        "size": 10
+      },
+      {
+        "path": "bibliothek",
+        "kind": "clone",
+        "source": 3,
+        "origin": "docs"
+      },
+      {
+        "path": "docs",
+        "kind": "folder",
+        "source": 1,
+        "origin": "docs",
+        "size": 20
+      },
+      {
+        "path": "docs/a.md",
+        "kind": "file",
+        "source": 1,
+        "origin": "docs/a.md",
+        "size": 20
+      },
+      {
+        "path": "docs/werkzeug",
+        "kind": "clone",
+        "source": 2,
+        "origin": "werkzeug"
+      }
+    ],
+    "mapping": {
+      "1": [
+        {
+          "from": "README.md",
+          "to": "README.md"
+        },
+        {
+          "from": "docs",
+          "to": "docs"
+        }
+      ],
+      "2": [
+        {
+          "from": "werkzeug",
+          "to": "docs/werkzeug"
+        }
+      ],
+      "3": [
+        {
+          "from": "docs",
+          "to": "bibliothek"
+        }
+      ]
+    },
+    "finalMapping": {
+      "ways": [],
+      "gone": [],
+      "codeRepos": []
+    },
+    "codeRepos": [],
+    "repos": [
+      "bibliothek",
+      "docs/werkzeug"
+    ],
+    "error": [
+      {
+        "code": "IN_CODE_REPO",
+        "step": 2,
+        "path": "bibliothek/README.md"
+      }
+    ],
+    "warnings": [],
+    "targets": [
+      {
+        "source": 2,
+        "origin": "werkzeug",
+        "target": "docs/werkzeug"
+      },
+      {
+        "source": 3,
+        "origin": "docs",
+        "target": "bibliothek"
+      },
+      {
+        "source": 1,
+        "origin": "docs/a.md",
+        "target": "docs/a.md"
+      }
+    ]
+  }
+}

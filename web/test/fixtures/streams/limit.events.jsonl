@@ -1,0 +1,12 @@
+{"type":"init","running":[],"browsers":[]}
+{"type":"chat_title","chatId":"<chat-1>","title":"Strom limit"}
+{"type":"run","chatId":"<chat-1>","running":true}
+{"type":"limit_wait","chatId":"<chat-1>","waiting":false}
+{"type":"notice","notice":{"id":1,"at":"<t>","native":false,"kind":"limit","title":"Wartet: Strom limit","body":"Nutzungslimit erreicht. Der Lauf wird um <clock> automatisch fortgesetzt.","chatTitle":"Strom limit","chatId":"<chat-1>","managerChatId":null,"projectId":null,"projectName":null,"workspaceId":"<ws-1>","port":null,"collapseId":"<chat-1>-limit-park","kind":"limit","push":true,"pushTitle":"Strom limit","pushSubtitle":"Nutzungslimit"}}
+{"type":"limit_wait","chatId":"<chat-1>","waiting":true}
+{"type":"run","chatId":"<chat-1>","running":false,"answered":false,"title":"Strom limit","workspaceId":"<ws-1>","projectId":"","kind":"finished","pushTitle":"Strom limit","pushSubtitle":"Antwort fertig","pushBody":"","push":false}
+{"type":"notice","notice":{"id":2,"at":"<t>","native":false,"kind":"limit","title":"Läuft weiter: Strom limit","body":"Nutzungslimit zurückgesetzt — der Lauf wird fortgesetzt.","chatTitle":"Strom limit","chatId":"<chat-1>","managerChatId":null,"projectId":null,"projectName":null,"workspaceId":"<ws-1>","port":null,"collapseId":"<chat-1>-limit-continue","kind":"limit","push":true,"pushTitle":"Strom limit","pushSubtitle":"Nutzungslimit"}}
+{"type":"limit_wait","chatId":"<chat-1>","waiting":false}
+{"type":"run","chatId":"<chat-1>","running":true}
+{"type":"limit_wait","chatId":"<chat-1>","waiting":false}
+{"type":"run","chatId":"<chat-1>","running":false,"answered":true,"title":"Strom limit","workspaceId":"<ws-1>","projectId":"","kind":"finished","pushTitle":"Strom limit","pushSubtitle":"Antwort fertig","pushBody":"FINISHED","push":false}

@@ -1,0 +1,345 @@
+{
+  "start": "[]",
+  "history": [
+    {
+      "seq": 1,
+      "kind": "harness/connected",
+      "bubbles": 0,
+      "stream": {
+        "open": false,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 2,
+      "kind": "harness/user_message",
+      "bubbles": 1,
+      "stream": {
+        "open": false,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 3,
+      "kind": "harness/run_started",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 4,
+      "kind": "system",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 5,
+      "kind": "stream_event/message_start",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 6,
+      "kind": "stream_event/content_block_start:text",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 7,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 8,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 9,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 10,
+      "kind": "stream_event/content_block_stop",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 11,
+      "kind": "stream_event/message_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 12,
+      "kind": "stream_event/message_stop",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 13,
+      "kind": "assistant",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 14,
+      "kind": "result",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 15,
+      "kind": "harness/run_done",
+      "bubbles": 2,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 16,
+      "kind": "harness/compacting",
+      "bubbles": 2,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 17,
+      "kind": "harness/compacted",
+      "bubbles": 3,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 18,
+      "kind": "harness/user_message",
+      "bubbles": 4,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 19,
+      "kind": "harness/run_started",
+      "bubbles": 5,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 20,
+      "kind": "system",
+      "bubbles": 5,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 21,
+      "kind": "stream_event/message_start",
+      "bubbles": 5,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 22,
+      "kind": "stream_event/content_block_start:text",
+      "bubbles": 5,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 23,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 5,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 24,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 5,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 25,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 5,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 26,
+      "kind": "stream_event/content_block_stop",
+      "bubbles": 5,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 27,
+      "kind": "stream_event/message_delta",
+      "bubbles": 5,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 28,
+      "kind": "stream_event/message_stop",
+      "bubbles": 5,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 29,
+      "kind": "assistant",
+      "bubbles": 5,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 30,
+      "kind": "result",
+      "bubbles": 5,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 31,
+      "kind": "harness/run_done",
+      "bubbles": 5,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    }
+  ],
+  "bubbles": [
+    {
+      "role": "user",
+      "blocks": [
+        {
+          "kind": "text",
+          "text": "Erste Nachricht vor der Verdichtung."
+        }
+      ],
+      "attachments": []
+    },
+    {
+      "role": "assistant",
+      "blocks": [
+        {
+          "kind": "text",
+          "text": "Antwort auf: Erste Nachricht vor der Verdichtung."
+        }
+      ],
+      "streaming": false,
+      "summary": {
+        "secs": 12,
+        "inTok": 120,
+        "outTok": 18,
+        "aborted": false,
+        "at": 1789646414000
+      }
+    },
+    {
+      "role": "divider",
+      "blocks": [],
+      "label": "Context compacted"
+    },
+    {
+      "role": "user",
+      "blocks": [
+        {
+          "kind": "text",
+          "text": "Zweite Nachricht nach der Verdichtung."
+        }
+      ],
+      "attachments": []
+    },
+    {
+      "role": "assistant",
+      "blocks": [
+        {
+          "kind": "text",
+          "text": "Antwort auf: [Zusammenfassung des bisherigen, komprimierten Gesprächs — nutze sie als Kontext"
+        }
+      ],
+      "streaming": false,
+      "summary": {
+        "secs": 12,
+        "inTok": 120,
+        "outTok": 18,
+        "aborted": false,
+        "at": 1789646430000
+      }
+    }
+  ]
+}

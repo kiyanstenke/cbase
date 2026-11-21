@@ -1,0 +1,28 @@
+# systemd USER unit of the cbase gateway. Written by `./deploy init` from this template; root, port, image and node are filled in
+# from deploy.local.json (remote.root, remote.gatewayPort, remote.image, remote.node). The unit is NOT started and NOT enabled by init: the first
+# `./deploy server --gateway` brings the gateway code, the start is a decision of its own.
+[Unit]
+Description=cbase gateway (@ROOT@)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=@ROOT@
+Environment=GW_PORT=@PORT@
+Environment=GW_HOST=127.0.0.1
+Environment=GW_DATA=@ROOT@/data
+Environment=GW_WEB_DIR=@ROOT@/web-out
+Environment=GW_IMAGE=@IMAGE@
+Environment=GW_RUNTIME=sysbox-runc
+# Default limits of a new user container (4 GiB, CPU weight 512); the administration can change them per user.
+Environment=GW_CONTAINER_MEM=4g
+Environment=GW_CONTAINER_CPU_SHARES=512
+# Set once the TLS-terminating tunnel stands in front:
+# Environment=GW_SECURE=1
+ExecStart=@NODE@ @ROOT@/gateway/index.js
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

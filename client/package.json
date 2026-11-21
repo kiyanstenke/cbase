@@ -1,0 +1,42 @@
+{
+  "name": "cbase-client",
+  "version": "0.1.0",
+  "description": "cbase client — desktop app in remote mode (connects to a cbase gateway)",
+  "private": true,
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/kiyanstenke/cbase#readme",
+  "repository": { "type": "git", "url": "git+https://github.com/kiyanstenke/cbase.git", "directory": "client" },
+  "engines": { "node": ">=22" },
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --dir"
+  },
+  "devDependencies": {
+    "electron": "44.4.4",
+    "electron-builder": "26.16.1"
+  },
+  "build": {
+    "appId": "dev.cbase.client",
+    "productName": "cbase Client",
+    "directories": { "output": "dist" },
+    "files": ["main.js", "browser.js", "browser-rules.js", "forwarding-rules.js", "shell-rules.js", "preload.cjs", "connect.html", "package.json"],
+    "mac": {
+      "target": "dir",
+      "category": "public.app-category.developer-tools",
+      "icon": "build/icon.icns",
+      "extendInfo": {
+        "CFBundleIconName": "cbase"
+      },
+      "signIgnore": ["\\.framework/(?!Versions/A/)", "\\.(pak|dat|bin|nib|asar|icns|car|onnx)$"],
+      "timestamp": "none"
+    },
+    "extraResources": [
+      {
+        "from": "build/Assets.car",
+        "to": "Assets.car"
+      }
+    ]
+  }
+}

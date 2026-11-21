@@ -1,0 +1,4 @@
+{"type":"init","running":[],"browsers":[]}
+{"type":"chat_title","chatId":"<chat-1>","title":"Strom lauf"}
+{"type":"run","chatId":"<chat-1>","running":true}
+{"type":"run","chatId":"<chat-1>","running":false,"answered":true,"title":"Strom lauf","workspaceId":"<ws-1>","projectId":"","kind":"finished","pushTitle":"Strom lauf","pushSubtitle":"Antwort fertig","pushBody":"Gern. Der Ereignisstrom eines Chats trägt drei Gattungen.","push":false}

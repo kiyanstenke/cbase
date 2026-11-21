@@ -1,0 +1,308 @@
+{
+  "name": "same-names",
+  "description": "Two folders \"src\" and two \"README.md\" from different sources: from the second on with a supplement; renamed back a duplicate arises, a step on the path hits the FIRST node and takes only ITS children along; the README duplicate stays TARGET_DUPLICATE.",
+  "mode": "creation",
+  "selection": [
+    {
+      "seq": 1,
+      "kind": "folder",
+      "name": "src",
+      "files": [
+        {
+          "rel": "a.js",
+          "size": 10
+        }
+      ]
+    },
+    {
+      "seq": 2,
+      "kind": "folder",
+      "name": "src",
+      "files": [
+        {
+          "rel": "b.js",
+          "size": 10
+        }
+      ]
+    },
+    {
+      "seq": 3,
+      "kind": "files",
+      "name": "",
+      "files": [
+        {
+          "rel": "README.md",
+          "size": 10
+        },
+        {
+          "rel": ".env",
+          "size": 10
+        }
+      ]
+    },
+    {
+      "seq": 4,
+      "kind": "files",
+      "name": "",
+      "files": [
+        {
+          "rel": "README.md",
+          "size": 10
+        },
+        {
+          "rel": ".env",
+          "size": 10
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "kind": "move",
+      "from": "src-2",
+      "to": "src"
+    },
+    {
+      "kind": "move",
+      "from": "README-2.md",
+      "to": "README.md"
+    },
+    {
+      "kind": "move",
+      "from": "src",
+      "to": "lib"
+    }
+  ],
+  "expected": {
+    "tree": [
+      {
+        "path": "src",
+        "kind": "folder",
+        "source": 1,
+        "origin": "src",
+        "size": 10,
+        "codeRepo": true
+      },
+      {
+        "path": "src/a.js",
+        "kind": "file",
+        "source": 1,
+        "origin": "src/a.js",
+        "size": 10
+      },
+      {
+        "path": "src-2",
+        "kind": "folder",
+        "source": 2,
+        "origin": "src",
+        "size": 10,
+        "codeRepo": true
+      },
+      {
+        "path": "src-2/b.js",
+        "kind": "file",
+        "source": 2,
+        "origin": "src/b.js",
+        "size": 10
+      },
+      {
+        "path": ".env",
+        "kind": "file",
+        "source": 3,
+        "origin": ".env",
+        "size": 10
+      },
+      {
+        "path": "README.md",
+        "kind": "file",
+        "source": 3,
+        "origin": "README.md",
+        "size": 10
+      },
+      {
+        "path": ".env-2",
+        "kind": "file",
+        "source": 4,
+        "origin": ".env",
+        "size": 10
+      },
+      {
+        "path": "README-2.md",
+        "kind": "file",
+        "source": 4,
+        "origin": "README.md",
+        "size": 10
+      }
+    ],
+    "hints": [
+      {
+        "code": "NAME_SUPPLEMENTED",
+        "path": "src-2",
+        "second": "src"
+      },
+      {
+        "code": "NAME_SUPPLEMENTED",
+        "path": "README-2.md",
+        "second": "README.md"
+      },
+      {
+        "code": "NAME_SUPPLEMENTED",
+        "path": ".env-2",
+        "second": ".env"
+      }
+    ],
+    "omitted": 0,
+    "upload": {
+      "1": [
+        "src/a.js"
+      ],
+      "2": [
+        "src/b.js"
+      ],
+      "3": [
+        "README.md",
+        ".env"
+      ],
+      "4": [
+        "README.md",
+        ".env"
+      ]
+    },
+    "finalTree": [
+      {
+        "path": ".env",
+        "kind": "file",
+        "source": 3,
+        "origin": ".env",
+        "size": 10
+      },
+      {
+        "path": ".env-2",
+        "kind": "file",
+        "source": 4,
+        "origin": ".env",
+        "size": 10
+      },
+      {
+        "path": "README.md",
+        "kind": "file",
+        "source": 3,
+        "origin": "README.md",
+        "size": 10
+      },
+      {
+        "path": "README.md",
+        "kind": "file",
+        "source": 4,
+        "origin": "README.md",
+        "size": 10
+      },
+      {
+        "path": "lib",
+        "kind": "folder",
+        "source": 1,
+        "origin": "src",
+        "size": 10,
+        "codeRepo": true
+      },
+      {
+        "path": "lib/a.js",
+        "kind": "file",
+        "source": 1,
+        "origin": "src/a.js",
+        "size": 10
+      },
+      {
+        "path": "src",
+        "kind": "folder",
+        "source": 2,
+        "origin": "src",
+        "size": 10,
+        "codeRepo": true
+      },
+      {
+        "path": "src/b.js",
+        "kind": "file",
+        "source": 2,
+        "origin": "src/b.js",
+        "size": 10
+      }
+    ],
+    "mapping": {
+      "1": [
+        {
+          "from": "src",
+          "to": "lib"
+        }
+      ],
+      "2": [
+        {
+          "from": "src",
+          "to": "src"
+        }
+      ],
+      "3": [
+        {
+          "from": ".env",
+          "to": ".env"
+        },
+        {
+          "from": "README.md",
+          "to": "README.md"
+        }
+      ],
+      "4": [
+        {
+          "from": ".env",
+          "to": ".env-2"
+        },
+        {
+          "from": "README.md",
+          "to": "README.md"
+        }
+      ]
+    },
+    "finalMapping": {
+      "ways": [],
+      "gone": [],
+      "codeRepos": []
+    },
+    "codeRepos": [
+      "lib",
+      "src"
+    ],
+    "repos": [
+      "lib",
+      "src"
+    ],
+    "error": [
+      {
+        "code": "TARGET_DUPLICATE",
+        "path": "README.md"
+      }
+    ],
+    "warnings": [],
+    "targets": [
+      {
+        "source": 1,
+        "origin": "src/a.js",
+        "target": "lib/a.js"
+      },
+      {
+        "source": 2,
+        "origin": "src/b.js",
+        "target": "src/b.js"
+      },
+      {
+        "source": 4,
+        "origin": "README.md",
+        "target": "README.md"
+      },
+      {
+        "source": 4,
+        "origin": ".env",
+        "target": ".env-2"
+      }
+    ]
+  }
+}

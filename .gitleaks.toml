@@ -1,0 +1,30 @@
+# gitleaks configuration of the public tree: the second, independent secret scanner next to tools/check/cleanliness.mjs.
+# The gate (`./check`, also `--quick` and so the pre-push hook) and the export tool run it through tools/check/secrets.mjs.
+#
+# gitleaks' own rules apply in full. The allowlist below names the made-up values that tests use as secrets, each one EXACTLY
+# (by value, never by path): a real key planted into any file, a test included, is still found. A new placeholder in a test is
+# either written so no rule matches it, or listed here with the test that uses it. Counter-proof: tools/check/secrets.test.mjs.
+title = "cbase"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "made-up secrets of the test suites (values, not paths)"
+regexTarget = "secret"
+regexes = [
+  # server/backend/test/project-clone.test.js, projectbox-git-scenario.mjs: clone credentials of the fake hosts
+  '''^SECRET-AN13-(main-5e1d|sub-a90c)$''',
+  '''^SECRET-S1-29-7f3a$''',
+  # server/backend/test/project-clone.test.js: an environment assignment in a comment, not a key
+  '''^SKIP_SMUDGE=0$''',
+  # the sample nonce of RFC 6455 section 1.3 (Sec-WebSocket-Key) in the WebSocket handshake tests
+  '''^dGhlIHNhbXBsZSBub25jZQ==$''',
+  # server/backend/test/preview-links.test.js: API key and token of the fake tunnel service
+  '''^key-(SECRET-3b8f20|wrong-a07c34)$''',
+  '''^tok-SECRET-7c1e9a$''',
+  # server/backend/test/relocation-plan.test.js, relocation-collect.test.js: a database password in a fixture compose file
+  '''^pw-secret-0815$''',
+  # server/backend/test/only-three-provider.test.js: an OpenRouter-shaped key that must never reach the output
+  '''^sk-or-v1-secret-0815$''',
+]

@@ -1,0 +1,226 @@
+{
+  "start": "buildBubbles(history up to the join)",
+  "history": [
+    {
+      "seq": 1,
+      "kind": "harness/connected",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 2,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 3,
+      "kind": "stream_event/content_block_stop",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 4,
+      "kind": "stream_event/message_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 5,
+      "kind": "stream_event/message_stop",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 6,
+      "kind": "assistant",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 7,
+      "kind": "result",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 8,
+      "kind": "harness/message_injected",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 9,
+      "kind": "system",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 10,
+      "kind": "stream_event/message_start",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 11,
+      "kind": "stream_event/content_block_start:text",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 12,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 13,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 14,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 15,
+      "kind": "stream_event/content_block_stop",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 16,
+      "kind": "stream_event/message_delta",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 17,
+      "kind": "stream_event/message_stop",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 18,
+      "kind": "assistant",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 19,
+      "kind": "result",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 20,
+      "kind": "harness/run_done",
+      "bubbles": 4,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    }
+  ],
+  "bubbles": [
+    {
+      "role": "user",
+      "blocks": [
+        {
+          "kind": "text",
+          "text": "Erzähl etwas Längeres."
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "blocks": [
+        {
+          "kind": "text",
+          "text": "Ich fange an und schreibe weiter, bis der Block endet."
+        }
+      ],
+      "streaming": false
+    },
+    {
+      "role": "user",
+      "blocks": [
+        {
+          "kind": "text",
+          "text": "Und noch etwas hinterher."
+        }
+      ],
+      "attachments": []
+    },
+    {
+      "role": "assistant",
+      "blocks": [
+        {
+          "kind": "text",
+          "text": "Antwort auf: Und noch etwas hinterher."
+        }
+      ],
+      "streaming": false
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{"stream":"global","type":"init","running":[],"dynWorkflows":[],"browsers":[]}
+{"stream":"global","type":"scheduled","workspaceId":"<ws-1>","jobId":"<job-1>","runId":null,"chatId":"<chat-1>","status":"created"}
+{"stream":"global","type":"scheduled","workspaceId":"<ws-1>","jobId":"<job-1>","runId":1,"chatId":"<chat-1>","status":"running"}
+{"stream":"global","type":"run","chatId":"<chat-1>","running":true}
+{"stream":"global","type":"limit_wait","chatId":"<chat-1>","waiting":false}
+{"stream":"global","type":"notice","notice":{"id":1,"at":"<t>","native":false,"kind":"limit","title":"Wartet: Tages-Briefing","body":"Nutzungslimit erreicht. Der Lauf wird um <clock> automatisch fortgesetzt.","chatTitle":"Tages-Briefing","chatId":"<chat-1>","projectId":null,"projectName":null,"workspaceId":"<ws-1>","port":null,"collapseId":"<chat-1>-limit-park","category":"limit","push":true,"pushTitle":"Tages-Briefing","pushSubtitle":"Nutzungslimit"}}
+{"stream":"global","type":"limit_wait","chatId":"<chat-1>","waiting":true}
+{"stream":"global","type":"run","chatId":"<chat-1>","running":false,"answered":false,"title":"Tages-Briefing","workspaceId":"<ws-1>","projectId":"","category":"finished","pushTitle":"Tages-Briefing","pushSubtitle":"Antwort fertig","pushBody":"","push":false}
+{"stream":"global","type":"limit_wait","chatId":"<chat-1>","waiting":false}
+{"stream":"global","type":"scheduled","workspaceId":"<ws-1>","jobId":"<job-1>","runId":1,"chatId":"<chat-1>","status":"aborted"}
+{"stream":"<chat-1>","type":"harness","subtype":"connected","lastId":0,"total":0,"running":false,"compacting":false,"waiting":false,"monitors":[],"agents":[],"tasks":[],"wakeupAt":0,"wakeupReason":"","wakeupPrompt":"","contextTokens":0,"streamText":"","streamTextTruncated":false,"queued":[]}
+{"stream":"<chat-1>","type":"harness","subtype":"user_message","text":"Geplanter Lauf „Tages-Briefing“ — <walltime> (Europe/Berlin) · von Hand gestartet","attachments":[]}
+{"stream":"<chat-1>","type":"harness","subtype":"run_started","resume":false,"provider":"claude"}
+{"stream":"<chat-1>","type":"harness","subtype":"limit_line","line":{"at":"<t>","kind":"wait","group":"","label":"","evidence":"usage limit reached","limitText":"Nutzungslimit","waitFor":"run","reason":"reset","resetsAt":"<t>","dueAt":"<t>","text":"Nutzungslimit erreicht. Der Lauf wird um <clock> automatisch fortgesetzt."}}
+{"stream":"<chat-1>","type":"harness","subtype":"limit_wait","wait":null}
+{"stream":"<chat-1>","type":"harness","subtype":"limit_wait","wait":{"chatId":"<chat-1>","kind":"run","provider":"claude","group":"","label":"","limitText":"Nutzungslimit","reason":"reset","gate":false,"resetsAt":"<t>","dueAt":"<t>","attempts":0,"probes":0,"maxAttempts":12,"evidence":"usage limit reached","workflow":false,"createdAt":"<t>","updatedAt":"<t>","text":"Fortsetzung um <clock>"}}
+{"stream":"<chat-1>","type":"harness","subtype":"limit_line","line":{"at":"<t>","kind":"cancel","group":"","label":"","text":"Warten auf den Limit-Reset abgebrochen."}}
+{"stream":"<chat-1>","type":"harness","subtype":"limit_wait","wait":null}

@@ -1,0 +1,72 @@
+[
+  {
+    "id": "<msg-1>",
+    "role": "user",
+    "text": "Wir planen ein neues Repo-Layout.",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-2>",
+    "role": "tool",
+    "text": "{\"name\":\"mcp__cbase__cbase_ask\",\"detail\":\"\",\"id\":\"toolu_ask_01\",\"input\":{\"questions\":[{\"header\":\"Layout\",\"question\":\"Monorepo oder getrennte Repos?\",\"options\":[{\"label\":\"Monorepo (Empfehlung)\",\"description\":\"Ein Repo, geteilte Tooling-Basis.\"},{\"label\":\"Getrennte Repos\",\"description\":\"Unabhängige Release-Zyklen.\"}]}]},\"parent\":null}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-3>",
+    "role": "ask",
+    "text": "{\"requestId\":\"<id-1>\",\"questions\":[{\"header\":\"Layout\",\"question\":\"Monorepo oder getrennte Repos?\",\"multiSelect\":false,\"options\":[{\"label\":\"Monorepo (Empfehlung)\",\"description\":\"Ein Repo, geteilte Tooling-Basis.\"},{\"label\":\"Getrennte Repos\",\"description\":\"Unabhängige Release-Zyklen.\"}]}]}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-4>",
+    "role": "tool_result",
+    "text": "{\"id\":\"toolu_ask_01\",\"result\":\"{\\\"ok\\\":true,\\\"requestId\\\":\\\"<id-1>\\\",\\\"note\\\":\\\"Die Frage steht jetzt als anklickbare Karte im Chat. BEENDE JETZT DEINEN TURN — höchstens ein kurzer Satz, keine weitere Arbeit und keine weitere Frage. Die Auswahl des Nutzers erreicht dich als nächste Nachricht.\\\"}\",\"isError\":false}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-5>",
+    "role": "assistant",
+    "text": "Ich habe eine Rückfrage gestellt und warte auf deine Auswahl.",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-6>",
+    "role": "meta",
+    "text": "{\"secs\":\"<secs>\",\"inTok\":160,\"outTok\":42}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-7>",
+    "role": "ask_answer",
+    "text": "{\"requestId\":\"<id-1>\",\"answers\":[{\"header\":\"Layout\",\"question\":\"Monorepo oder getrennte Repos?\",\"selected\":[\"Getrennte Repos\"],\"text\":\"wegen der Release-Zyklen\"}]}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-8>",
+    "role": "user",
+    "text": "Getrennte Repos — wegen der Release-Zyklen",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-9>",
+    "role": "assistant",
+    "text": "Verstanden — getrennte Repos, wegen der Release-Zyklen. Ich lege die Struktur so an.",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-10>",
+    "role": "meta",
+    "text": "{\"secs\":\"<secs>\",\"inTok\":120,\"outTok\":18}",
+    "ts": "<t>",
+    "attachments": null
+  }
+]

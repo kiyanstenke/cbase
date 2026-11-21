@@ -1,0 +1,446 @@
+{
+  "start": "[]",
+  "history": [
+    {
+      "seq": 1,
+      "kind": "harness/connected",
+      "bubbles": 0,
+      "stream": {
+        "open": false,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 2,
+      "kind": "harness/user_message",
+      "bubbles": 1,
+      "stream": {
+        "open": false,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 3,
+      "kind": "harness/run_started",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 4,
+      "kind": "system",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 5,
+      "kind": "stream_event/message_start",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 6,
+      "kind": "stream_event/content_block_start:tool_use",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 7,
+      "kind": "stream_event/content_block_delta:input_json_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 8,
+      "kind": "stream_event/content_block_stop",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 9,
+      "kind": "stream_event/message_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 10,
+      "kind": "stream_event/message_stop",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 11,
+      "kind": "assistant",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 12,
+      "kind": "harness/workflow_approval",
+      "bubbles": 3,
+      "stream": {
+        "open": false,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 13,
+      "kind": "user",
+      "bubbles": 3,
+      "stream": {
+        "open": false,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 14,
+      "kind": "stream_event/message_start",
+      "bubbles": 3,
+      "stream": {
+        "open": false,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 15,
+      "kind": "stream_event/content_block_start:text",
+      "bubbles": 3,
+      "stream": {
+        "open": false,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 16,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 17,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 18,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 19,
+      "kind": "stream_event/content_block_stop",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 20,
+      "kind": "stream_event/message_delta",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 21,
+      "kind": "stream_event/message_stop",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 22,
+      "kind": "assistant",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 23,
+      "kind": "result",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 24,
+      "kind": "harness/run_done",
+      "bubbles": 4,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 25,
+      "kind": "harness/workflow_approval_decided",
+      "bubbles": 4,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 26,
+      "kind": "harness/user_message",
+      "bubbles": 5,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 27,
+      "kind": "harness/run_started",
+      "bubbles": 6,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 28,
+      "kind": "system",
+      "bubbles": 6,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 29,
+      "kind": "stream_event/message_start",
+      "bubbles": 6,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 30,
+      "kind": "stream_event/content_block_start:text",
+      "bubbles": 6,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 31,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 6,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 32,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 6,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 33,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 6,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 34,
+      "kind": "stream_event/content_block_stop",
+      "bubbles": 6,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 35,
+      "kind": "stream_event/message_delta",
+      "bubbles": 6,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 36,
+      "kind": "stream_event/message_stop",
+      "bubbles": 6,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 37,
+      "kind": "assistant",
+      "bubbles": 6,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 38,
+      "kind": "result",
+      "bubbles": 6,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 39,
+      "kind": "harness/run_done",
+      "bubbles": 6,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    }
+  ],
+  "bubbles": [
+    {
+      "role": "user",
+      "blocks": [
+        {
+          "kind": "text",
+          "text": "Prüf die zwei Befunde mit einem Workflow."
+        }
+      ],
+      "attachments": []
+    },
+    {
+      "role": "assistant",
+      "blocks": [
+        {
+          "kind": "tool",
+          "id": "toolu_wffrei",
+          "name": "mcp__cbase__cbase_dynamic_workflow",
+          "detail": "",
+          "count": 1,
+          "input": {
+            "script": "export const meta = { name: 'findings-check', description: 'Zwei Befunde gegenlesen', phases: [{ title: 'Lesen' }, { title: 'Urteilen', detail: 'je Befund' }] }\nreturn await agent('Lies A');\n"
+          },
+          "result": "{\n  \"status\": \"awaiting_approval\",\n  \"requestId\": \"<id-1>\",\n  \"name\": \"findings-check\",\n  \"note\": \"Der Workflow „findings-check“ wartet auf die Freigabe des Nutzers — der Nutzer hat Multi-Agenten-Orchestrierung in diesem Turn nicht gewählt (kein Modus Ultracode, kein „ultracode“ in seiner Nachricht). Im Chat steht eine Karte mit Name, Beschreibung und Phasen. Nichts läuft. Beende jetzt deinen Turn und rufe das Werkzeug nicht erneut: nimmt er an, startet der Workflow, und am Ende kommt eine <task-notification>; lehnt er ab, erfährst du es als Systemmeldung.\"\n}",
+          "resultIsError": false,
+          "done": true
+        }
+      ],
+      "streaming": false
+    },
+    {
+      "role": "workflow_approval",
+      "blocks": [],
+      "wfApproval": {
+        "requestId": "<id-1>",
+        "name": "findings-check",
+        "description": "Zwei Befunde gegenlesen",
+        "phases": [
+          {
+            "title": "Lesen"
+          },
+          {
+            "title": "Urteilen",
+            "detail": "je Befund"
+          }
+        ],
+        "decision": "rejected"
+      }
+    },
+    {
+      "role": "assistant",
+      "blocks": [
+        {
+          "kind": "text",
+          "text": "Der Workflow wartet auf deine Freigabe."
+        }
+      ],
+      "streaming": false,
+      "summary": {
+        "secs": 21,
+        "inTok": 210,
+        "outTok": 48,
+        "aborted": false,
+        "at": 1789646423000
+      }
+    },
+    {
+      "role": "divider",
+      "blocks": [],
+      "kind": "completionNotice",
+      "label": "System message"
+    },
+    {
+      "role": "assistant",
+      "blocks": [
+        {
+          "kind": "text",
+          "text": "Verstanden, ohne Workflow."
+        }
+      ],
+      "streaming": false,
+      "summary": {
+        "secs": 12,
+        "inTok": 240,
+        "outTok": 7,
+        "aborted": false,
+        "at": 1789646438000
+      }
+    }
+  ]
+}

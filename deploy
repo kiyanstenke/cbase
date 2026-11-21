@@ -1,0 +1,31 @@
+#!/bin/sh
+# One deploy path for web, server, client and mobile.
+#
+# Dev-tree lock: a development tree never rolls out by accident. By default only the reading and local targets are free
+# (check, status). The rollout commands (server, web, client, rollback, all, init) run ONLY from a rollout checkout:
+#   (a) deploy.local.json exists in the repo root (gitignored: it holds the host, the root and the port of the installation), AND
+#   (b) the file .cbase-rollout-checkout exists in the repo root (gitignored, never tracked) and its content is exactly the
+#       real path of this checkout (pwd -P).
+# Why (b) is a positive marker and not "not the dev tree": a clone has every tracked file of the dev tree, so a tracked
+# dev-tree marker would be in the rollout checkout too. A marker that is untracked AND bound to the real path cannot be
+# carried over by a clone or a copy, and it does not exist in the dev tree unless someone writes it there on purpose —
+# a stray deploy.local.json alone (a) never unlocks anything. Create it in the rollout checkout once:
+#   pwd -P > .cbase-rollout-checkout
+# The same rule runs once more in node (tools/deploy/lib/rollout-checkout.mjs), because `node tools/deploy/deploy.mjs server`
+# would bypass this shell file. mobile and baseline stay locked everywhere.
+here=$(cd "$(dirname "$0")" && pwd -P) || exit 2
+unlocked() {
+  [ -f "$here/deploy.local.json" ] && [ -f "$here/.cbase-rollout-checkout" ] \
+    && [ "$(cat "$here/.cbase-rollout-checkout")" = "$here" ]
+}
+for word in "$@"; do
+  case "$word" in
+    check|status|-*|[0-9]*) ;;
+    server|web|client|rollback|all|init)
+      unlocked || { echo "deploy: locked in the dev tree — '$word' is a rollout command. It needs a rollout checkout: deploy.local.json plus the marker .cbase-rollout-checkout (content: the real path of the checkout). Free here: check, status." >&2
+        exit 2; } ;;
+    *) echo "deploy: locked — target '$word' has no installation of its own. Free: check, status; from a rollout checkout also server, web, client, rollback, all, init." >&2
+       exit 2 ;;
+  esac
+done
+exec node "$here/tools/deploy/deploy.mjs" "$@"

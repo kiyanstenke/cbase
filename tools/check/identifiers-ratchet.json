@@ -1,0 +1,5 @@
+{
+ "hint": "Today's count of German identifier occurrences and distinct identifiers in the public tree. The test fails above either number. Both MUST reach 0 before publication; lower them in the same change that renames.",
+ "maxFindings": 0,
+ "maxIdentifiers": 0
+}

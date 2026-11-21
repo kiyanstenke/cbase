@@ -1,0 +1,658 @@
+{
+ "cases": [
+  {
+   "url": "https://gitlab.com/gruppe/repo.git",
+   "branch": "",
+   "client": {
+    "host": "gitlab.com",
+    "name": "repo"
+   },
+   "server": {
+    "host": "gitlab.com"
+   }
+  },
+  {
+   "url": "https://gitlab.com/gruppe/repo",
+   "branch": "main",
+   "client": {
+    "host": "gitlab.com",
+    "name": "repo"
+   },
+   "server": {
+    "host": "gitlab.com"
+   }
+  },
+  {
+   "url": "  https://gitlab.com/gruppe/repo.git  ",
+   "branch": "feature/x-1",
+   "client": {
+    "host": "gitlab.com",
+    "name": "repo"
+   },
+   "server": {
+    "host": "gitlab.com"
+   }
+  },
+  {
+   "url": "HTTPS://GitLab.com/g/r.git",
+   "branch": "",
+   "client": {
+    "host": "gitlab.com",
+    "name": "r"
+   },
+   "server": {
+    "host": "gitlab.com"
+   }
+  },
+  {
+   "url": "https://git.company.example:8443/g/r.git",
+   "branch": "",
+   "client": {
+    "host": "git.company.example",
+    "name": "r"
+   },
+   "server": {
+    "host": "git.company.example"
+   }
+  },
+  {
+   "url": "https://git.company.example:443/g/r.git",
+   "branch": "",
+   "client": {
+    "host": "git.company.example",
+    "name": "r"
+   },
+   "server": {
+    "host": "git.company.example"
+   }
+  },
+  {
+   "url": "https://xn--bcher-kva.example/g/r.git",
+   "branch": "",
+   "client": {
+    "host": "xn--bcher-kva.example",
+    "name": "r"
+   },
+   "server": {
+    "host": "xn--bcher-kva.example"
+   }
+  },
+  {
+   "url": "https://10.1.2.3/g/r.git",
+   "branch": "",
+   "client": {
+    "host": "10.1.2.3",
+    "name": "r"
+   },
+   "server": {
+    "host": "10.1.2.3"
+   }
+  },
+  {
+   "url": "https://a..b/g/r.git",
+   "branch": "",
+   "client": {
+    "host": "a..b",
+    "name": "r"
+   },
+   "server": {
+    "host": "a..b"
+   }
+  },
+  {
+   "url": "https://gitlab.com/g/r.git/",
+   "branch": "",
+   "client": {
+    "host": "gitlab.com",
+    "name": "r"
+   },
+   "server": {
+    "host": "gitlab.com"
+   }
+  },
+  {
+   "url": "https://gitlab.com/g/repo/.",
+   "branch": "",
+   "client": {
+    "host": "gitlab.com",
+    "name": "repo"
+   },
+   "server": {
+    "host": "gitlab.com"
+   }
+  },
+  {
+   "url": "https://gitlab.com/g/repo/x/..",
+   "branch": "",
+   "client": {
+    "host": "gitlab.com",
+    "name": "repo"
+   },
+   "server": {
+    "host": "gitlab.com"
+   }
+  },
+  {
+   "url": "https://gitlab.com/g/m%C3%BCller.git",
+   "branch": "",
+   "client": {
+    "host": "gitlab.com",
+    "name": "müller"
+   },
+   "server": {
+    "host": "gitlab.com"
+   }
+  },
+  {
+   "url": "https://gitlab.com/g/mu%CC%88ller.git",
+   "branch": "",
+   "client": {
+    "host": "gitlab.com",
+    "name": "müller"
+   },
+   "server": {
+    "host": "gitlab.com"
+   }
+  },
+  {
+   "url": "",
+   "branch": "",
+   "client": {
+    "code": "EMPTY"
+   },
+   "server": {
+    "code": "ONLY_HTTPS"
+   }
+  },
+  {
+   "url": "   ",
+   "branch": "",
+   "client": {
+    "code": "EMPTY"
+   },
+   "server": {
+    "code": "ONLY_HTTPS"
+   }
+  },
+  {
+   "url": "git@gitlab.com:g/r.git",
+   "branch": "",
+   "client": {
+    "code": "ONLY_HTTPS"
+   },
+   "server": {
+    "code": "ONLY_HTTPS"
+   }
+  },
+  {
+   "url": "ssh://git@gitlab.com/g/r.git",
+   "branch": "",
+   "client": {
+    "code": "ONLY_HTTPS"
+   },
+   "server": {
+    "code": "ONLY_HTTPS"
+   }
+  },
+  {
+   "url": "SSH://git@gitlab.com/g/r.git",
+   "branch": "",
+   "client": {
+    "code": "ONLY_HTTPS"
+   },
+   "server": {
+    "code": "ONLY_HTTPS"
+   }
+  },
+  {
+   "url": "http://gitlab.com/g/r.git",
+   "branch": "",
+   "client": {
+    "code": "ONLY_HTTPS"
+   },
+   "server": {
+    "code": "ONLY_HTTPS"
+   }
+  },
+  {
+   "url": "file:///home/agent/.claude-login",
+   "branch": "",
+   "client": {
+    "code": "ONLY_HTTPS"
+   },
+   "server": {
+    "code": "ONLY_HTTPS"
+   }
+  },
+  {
+   "url": "ext::sh -c touch% /tmp/x",
+   "branch": "",
+   "client": {
+    "code": "CHARACTER"
+   },
+   "server": {
+    "code": "CHARACTER"
+   }
+  },
+  {
+   "url": "https://gitlab.com/g/r e.git",
+   "branch": "",
+   "client": {
+    "code": "CHARACTER"
+   },
+   "server": {
+    "code": "CHARACTER"
+   }
+  },
+  {
+   "url": "https://gitlab.com/g/re%po.git",
+   "branch": "",
+   "client": {
+    "code": "CHARACTER"
+   },
+   "server": {
+    "code": "CHARACTER"
+   }
+  },
+  {
+   "url": "https://gitlab.com/g/x%",
+   "branch": "",
+   "client": {
+    "code": "CHARACTER"
+   },
+   "server": {
+    "code": "CHARACTER"
+   }
+  },
+  {
+   "url": "https://gitlab.com/g/a%zz",
+   "branch": "",
+   "client": {
+    "code": "CHARACTER"
+   },
+   "server": {
+    "code": "CHARACTER"
+   }
+  },
+  {
+   "url": "https://bücher.example/g/r.git",
+   "branch": "",
+   "client": {
+    "code": "CHARACTER"
+   },
+   "server": {
+    "code": "CHARACTER"
+   }
+  },
+  {
+   "url": "https:gitlab.com/g/r.git",
+   "branch": "",
+   "client": {
+    "code": "INVALID"
+   },
+   "server": {
+    "code": "ONLY_HTTPS"
+   }
+  },
+  {
+   "url": "https:/gitlab.com/g/r.git",
+   "branch": "",
+   "client": {
+    "code": "INVALID"
+   },
+   "server": {
+    "code": "ONLY_HTTPS"
+   }
+  },
+  {
+   "url": "http:gitlab.com",
+   "branch": "",
+   "client": {
+    "code": "ONLY_HTTPS"
+   },
+   "server": {
+    "code": "ONLY_HTTPS"
+   }
+  },
+  {
+   "url": "https://oauth2:glpat-xyz@gitlab.com/g/r.git",
+   "branch": "",
+   "client": {
+    "code": "WITH_USER"
+   },
+   "server": {
+    "code": "WITH_USER"
+   }
+  },
+  {
+   "url": "https://maintainer@gitlab.com/g/r.git",
+   "branch": "",
+   "client": {
+    "code": "WITH_USER"
+   },
+   "server": {
+    "code": "WITH_USER"
+   }
+  },
+  {
+   "url": "https://@gitlab.com/g/r.git",
+   "branch": "",
+   "client": {
+    "code": "WITH_USER"
+   },
+   "server": {
+    "code": "WITH_USER"
+   }
+  },
+  {
+   "url": "https://:@gitlab.com/g/r.git",
+   "branch": "",
+   "client": {
+    "code": "WITH_USER"
+   },
+   "server": {
+    "code": "WITH_USER"
+   }
+  },
+  {
+   "url": "https://gitlab.com/g/r.git?private_token=x",
+   "branch": "",
+   "client": {
+    "code": "WITH_QUERY"
+   },
+   "server": {
+    "code": "WITH_QUERY"
+   }
+  },
+  {
+   "url": "https://gitlab.com/g/r.git?",
+   "branch": "",
+   "client": {
+    "code": "WITH_QUERY"
+   },
+   "server": {
+    "code": "WITH_QUERY"
+   }
+  },
+  {
+   "url": "https://gitlab.com/g/r.git#main",
+   "branch": "",
+   "client": {
+    "code": "WITH_FRAGMENT"
+   },
+   "server": {
+    "code": "WITH_FRAGMENT"
+   }
+  },
+  {
+   "url": "https://gitlab.com/g/r.git#",
+   "branch": "",
+   "client": {
+    "code": "WITH_FRAGMENT"
+   },
+   "server": {
+    "code": "WITH_FRAGMENT"
+   }
+  },
+  {
+   "url": "https://git%2Eexample.com/g/r.git",
+   "branch": "",
+   "client": {
+    "code": "HOST_UNCLEAR"
+   },
+   "server": {
+    "code": "HOST_UNCLEAR"
+   }
+  },
+  {
+   "url": "https://ho%73t/g/r.git",
+   "branch": "",
+   "client": {
+    "code": "HOST_UNCLEAR"
+   },
+   "server": {
+    "code": "HOST_UNCLEAR"
+   }
+  },
+  {
+   "url": "https://git_lab.company.example/g/r.git",
+   "branch": "",
+   "client": {
+    "code": "HOST_UNCLEAR"
+   },
+   "server": {
+    "code": "HOST_UNCLEAR"
+   }
+  },
+  {
+   "url": "https://gitlab.com./g/r.git",
+   "branch": "",
+   "client": {
+    "code": "HOST_UNCLEAR"
+   },
+   "server": {
+    "code": "HOST_UNCLEAR"
+   }
+  },
+  {
+   "url": "https://-host/g/r.git",
+   "branch": "",
+   "client": {
+    "code": "HOST_UNCLEAR"
+   },
+   "server": {
+    "code": "HOST_UNCLEAR"
+   }
+  },
+  {
+   "url": "https://[fd00::1]/g/r.git",
+   "branch": "",
+   "client": {
+    "code": "HOST_UNCLEAR"
+   },
+   "server": {
+    "code": "HOST_UNCLEAR"
+   }
+  },
+  {
+   "url": "https://0x7f.1/g/r.git",
+   "branch": "",
+   "client": {
+    "code": "HOST_UNCLEAR"
+   },
+   "server": {
+    "code": "HOST_UNCLEAR"
+   }
+  },
+  {
+   "url": "https://127.1/g/r.git",
+   "branch": "",
+   "client": {
+    "code": "HOST_UNCLEAR"
+   },
+   "server": {
+    "code": "HOST_UNCLEAR"
+   }
+  },
+  {
+   "url": "https://010.1.2.3/g/r.git",
+   "branch": "",
+   "client": {
+    "code": "HOST_UNCLEAR"
+   },
+   "server": {
+    "code": "HOST_UNCLEAR"
+   }
+  },
+  {
+   "url": "https://1.2.3.256/g/r.git",
+   "branch": "",
+   "client": {
+    "code": "HOST_UNCLEAR"
+   },
+   "server": {
+    "code": "HOST_UNCLEAR"
+   }
+  },
+  {
+   "url": "https://gitlab.com:/g/r.git",
+   "branch": "",
+   "client": {
+    "code": "HOST_UNCLEAR"
+   },
+   "server": {
+    "code": "HOST_UNCLEAR"
+   }
+  },
+  {
+   "url": "https://gitlab.com:99999/g/r.git",
+   "branch": "",
+   "client": {
+    "code": "HOST_UNCLEAR"
+   },
+   "server": {
+    "code": "HOST_UNCLEAR"
+   }
+  },
+  {
+   "url": "https://gitlab.com:123456/g/r.git",
+   "branch": "",
+   "client": {
+    "code": "HOST_UNCLEAR"
+   },
+   "server": {
+    "code": "HOST_UNCLEAR"
+   }
+  },
+  {
+   "url": "https://gitlab.com/g/r.git",
+   "branch": "-x",
+   "client": {
+    "code": "BRANCH"
+   },
+   "server": {
+    "code": "BRANCH"
+   }
+  },
+  {
+   "url": "https://gitlab.com/g/r.git",
+   "branch": "a b",
+   "client": {
+    "code": "BRANCH"
+   },
+   "server": {
+    "code": "BRANCH"
+   }
+  },
+  {
+   "url": "https://gitlab.com/g/r.git",
+   "branch": "a..b~",
+   "client": {
+    "code": "BRANCH"
+   },
+   "server": {
+    "code": "BRANCH"
+   }
+  },
+  {
+   "url": "https://gitlab.com",
+   "branch": "",
+   "client": {
+    "code": "INVALID"
+   },
+   "server": {
+    "code": "HOST_UNCLEAR"
+   }
+  },
+  {
+   "url": "https://gitlab.com/",
+   "branch": "",
+   "client": {
+    "code": "INVALID"
+   },
+   "server": {
+    "code": "HOST_UNCLEAR"
+   }
+  },
+  {
+   "url": "https://gitlab.com/x/..",
+   "branch": "",
+   "client": {
+    "code": "INVALID"
+   },
+   "server": {
+    "code": "HOST_UNCLEAR"
+   }
+  },
+  {
+   "url": "https://gitlab.com/%2e%2e",
+   "branch": "",
+   "client": {
+    "code": "INVALID"
+   },
+   "server": {
+    "code": "HOST_UNCLEAR"
+   }
+  },
+  {
+   "url": "https://gitlab.com/g/.git",
+   "branch": "",
+   "client": {
+    "code": "INVALID"
+   },
+   "server": {
+    "code": "HOST_UNCLEAR"
+   }
+  },
+  {
+   "url": "https://gitlab.com/g/a%5Cb.git",
+   "branch": "",
+   "client": {
+    "code": "INVALID"
+   },
+   "server": {
+    "code": "HOST_UNCLEAR"
+   }
+  },
+  {
+   "url": "https://gitlab.com/g/%2Fx.git",
+   "branch": "",
+   "client": {
+    "code": "INVALID"
+   },
+   "server": {
+    "code": "HOST_UNCLEAR"
+   }
+  },
+  {
+   "url": "https://gitlab.com/g/x%2F.git",
+   "branch": "",
+   "client": {
+    "code": "INVALID"
+   },
+   "server": {
+    "code": "HOST_UNCLEAR"
+   }
+  },
+  {
+   "url": "https://gitlab.com/g/%FF.git",
+   "branch": "",
+   "client": {
+    "code": "INVALID"
+   },
+   "server": {
+    "code": "HOST_UNCLEAR"
+   }
+  },
+  {
+   "url": "https://gitlab.com/g/%C3.git",
+   "branch": "",
+   "client": {
+    "code": "INVALID"
+   },
+   "server": {
+    "code": "HOST_UNCLEAR"
+   }
+  }
+ ]
+}

@@ -1,0 +1,303 @@
+{
+  "name": "steps-and-names",
+  "description": "Invalid steps stand there with their number and are not applied; name rules; ABHAENGIGKEIT and GEDAECHTNIS only warn.",
+  "mode": "creation",
+  "selection": [
+    {
+      "seq": 1,
+      "kind": "folder",
+      "name": "w",
+      "files": [
+        {
+          "rel": "a/1.txt",
+          "size": 10
+        },
+        {
+          "rel": "b/2.txt",
+          "size": 10
+        },
+        {
+          "rel": "c.txt",
+          "size": 10
+        }
+      ]
+    },
+    {
+      "seq": 2,
+      "kind": "files",
+      "name": "",
+      "files": [
+        {
+          "rel": "CLAUDE.md",
+          "size": 10
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "kind": "move",
+      "from": "nonexistent",
+      "to": "x"
+    },
+    {
+      "kind": "move",
+      "from": "w/a",
+      "to": "w/a/inside"
+    },
+    {
+      "kind": "move",
+      "from": "w/b",
+      "to": "w/c.txt/b"
+    },
+    {
+      "kind": "move",
+      "from": "w/b",
+      "to": "missing/b"
+    },
+    {
+      "kind": "code-repo",
+      "path": "w/c.txt"
+    },
+    {
+      "kind": "code-repo-off",
+      "path": "w/a"
+    },
+    {
+      "kind": "move",
+      "from": "w/b",
+      "to": "w/node_modules"
+    },
+    {
+      "kind": "move",
+      "from": "w/a",
+      "to": "w/.cbase-a"
+    },
+    {
+      "kind": "move",
+      "from": "CLAUDE.md",
+      "to": "w/CLAUDE.md"
+    },
+    {
+      "kind": "code-repo-off",
+      "path": "w"
+    },
+    {
+      "kind": "code-repo",
+      "path": "w/a"
+    }
+  ],
+  "expected": {
+    "tree": [
+      {
+        "path": "w",
+        "kind": "folder",
+        "source": 1,
+        "origin": "w",
+        "size": 30,
+        "codeRepo": true
+      },
+      {
+        "path": "w/a",
+        "kind": "folder",
+        "source": 1,
+        "origin": "w/a",
+        "size": 10
+      },
+      {
+        "path": "w/a/1.txt",
+        "kind": "file",
+        "source": 1,
+        "origin": "w/a/1.txt",
+        "size": 10
+      },
+      {
+        "path": "w/b",
+        "kind": "folder",
+        "source": 1,
+        "origin": "w/b",
+        "size": 10
+      },
+      {
+        "path": "w/b/2.txt",
+        "kind": "file",
+        "source": 1,
+        "origin": "w/b/2.txt",
+        "size": 10
+      },
+      {
+        "path": "w/c.txt",
+        "kind": "file",
+        "source": 1,
+        "origin": "w/c.txt",
+        "size": 10
+      },
+      {
+        "path": "CLAUDE.md",
+        "kind": "file",
+        "source": 2,
+        "origin": "CLAUDE.md",
+        "size": 10
+      }
+    ],
+    "hints": [],
+    "omitted": 0,
+    "upload": {
+      "1": [
+        "w/a/1.txt",
+        "w/b/2.txt",
+        "w/c.txt"
+      ],
+      "2": [
+        "CLAUDE.md"
+      ]
+    },
+    "finalTree": [
+      {
+        "path": "w",
+        "kind": "folder",
+        "source": 1,
+        "origin": "w",
+        "size": 30
+      },
+      {
+        "path": "w/.cbase-a",
+        "kind": "folder",
+        "source": 1,
+        "origin": "w/a",
+        "size": 10
+      },
+      {
+        "path": "w/.cbase-a/1.txt",
+        "kind": "file",
+        "source": 1,
+        "origin": "w/a/1.txt",
+        "size": 10
+      },
+      {
+        "path": "w/CLAUDE.md",
+        "kind": "file",
+        "source": 2,
+        "origin": "CLAUDE.md",
+        "size": 10
+      },
+      {
+        "path": "w/c.txt",
+        "kind": "file",
+        "source": 1,
+        "origin": "w/c.txt",
+        "size": 10
+      },
+      {
+        "path": "w/node_modules",
+        "kind": "folder",
+        "source": 1,
+        "origin": "w/b",
+        "size": 10
+      },
+      {
+        "path": "w/node_modules/2.txt",
+        "kind": "file",
+        "source": 1,
+        "origin": "w/b/2.txt",
+        "size": 10
+      }
+    ],
+    "mapping": {
+      "1": [
+        {
+          "from": "w",
+          "to": "w"
+        },
+        {
+          "from": "w/a",
+          "to": "w/.cbase-a"
+        },
+        {
+          "from": "w/b",
+          "to": "w/node_modules"
+        }
+      ],
+      "2": [
+        {
+          "from": "CLAUDE.md",
+          "to": "w/CLAUDE.md"
+        }
+      ]
+    },
+    "finalMapping": {
+      "ways": [],
+      "gone": [],
+      "codeRepos": []
+    },
+    "codeRepos": [],
+    "repos": [],
+    "error": [
+      {
+        "code": "STEP_UNKNOWN",
+        "step": 0,
+        "path": "nonexistent"
+      },
+      {
+        "code": "STEP_INVALID",
+        "step": 1,
+        "path": "w/a/inside"
+      },
+      {
+        "code": "STEP_INVALID",
+        "step": 2,
+        "path": "w/c.txt/b"
+      },
+      {
+        "code": "STEP_INVALID",
+        "step": 3,
+        "path": "missing/b"
+      },
+      {
+        "code": "STEP_INVALID",
+        "step": 4,
+        "path": "w/c.txt"
+      },
+      {
+        "code": "STEP_INVALID",
+        "step": 5,
+        "path": "w/a"
+      },
+      {
+        "code": "STEP_UNKNOWN",
+        "step": 10,
+        "path": "w/a"
+      },
+      {
+        "code": "NAME_INVALID",
+        "path": "w/.cbase-a"
+      },
+      {
+        "code": "NAME_INVALID",
+        "path": "w/.cbase-a/1.txt"
+      }
+    ],
+    "warnings": [
+      {
+        "code": "MEMORY",
+        "path": "w/CLAUDE.md"
+      },
+      {
+        "code": "DEPENDENCY",
+        "path": "w/node_modules"
+      }
+    ],
+    "targets": [
+      {
+        "source": 1,
+        "origin": "w/a/1.txt",
+        "target": "w/.cbase-a/1.txt"
+      },
+      {
+        "source": 2,
+        "origin": "CLAUDE.md",
+        "target": "w/CLAUDE.md"
+      }
+    ]
+  }
+}

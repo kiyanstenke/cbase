@@ -1,0 +1,533 @@
+#!/usr/bin/env node
+// cbase-project — from a terminal of the user container (B) into the project container of a project. The VS Code tunnel,
+// workspace terminal and workspace browser stay outside — this is the one way in.
+//
+//   cbase-project <project>[/<copy>] [-- <command…>]
+//
+// <project>   the id, the name or the name `<slug>.cbase` (with or without the suffix). Ambiguous ⇒ the workspace of the current
+//             folder is preferred, otherwise an error with the candidate list (exit 2). Not converted ⇒ message, exit 2.
+// /<copy>     a copy of the project, its name without "copy-" (`till/k1`). It must be listed in `instance.copies` of the project
+//             (projectbox/names.js projectInstanceField), otherwise exit 2 with the list of its copies. The container is found via
+//             the labels `cbase.project=<id>` and `cbase.instance=copy-<copy>` (exactly one); the working folder as for the main from
+//             the roots — the project folder (the copy carries it as an overlay at the original path) and the rows `<id>/<copy>` of
+//             the list of cbase-git: the worktree folder of the copy in the runtime folder, which hangs at the same path in the copy
+//             (without it every git from a worktree of the copy ended with exit 128).
+// --          mandatory before the command; without a command `bash -l`.
+//
+// Resolution via `GET /api/projects` of the backend (fixed 127.0.0.1:7718; only `CBASE_PROJECT_API` changes that — NOT `PORT`: a
+// user easily sets the image's variable in their shell for a dev server of their own) — the field `instance` (projectbox/names.js
+// projectInstanceField) carries name, container and whether the project is converted. If the backend is not reachable, only the
+// id works: `docker ps --filter label=cbase.project=<id> --filter label=cbase.instance=main` (`<id>/<copy>`:
+// `cbase.instance=copy-<copy>`).
+//
+// Call: `docker exec -i [-t] -u agent -w <cwd> -e TERM <container> <command…>` — `-t` ONLY if stdin AND stdout are a terminal
+// (otherwise docker spoils every pipe: "the input device is not a TTY", CRLF in the output); `-e TERM` without `=` (the value
+// comes from this environment, never from a string); stdio inherited, the exit code passed through (signal ⇒ 128 + n).
+// cwd = $PWD if it lies PHYSICALLY (after realpath — the wrapper cbase-git changes with `pwd -P`) in a root of the project,
+// converted to the path at which this root hangs in the container (the store form — if a path in B lies behind a link, the
+// physical form does not exist in the container); otherwise the project folder. The roots: the project folder and the rows of
+// THIS project from the list of cbase-git (`git-projects`, projectbox/git-assignment.js — this includes the worktree folder of
+// its runtime folder: without it a call from a subagent worktree would silently set `-w` to the project folder, and git would
+// run in the project repo instead of the worktree). Without backend $PWD only if it lies in a bind mount with the same path,
+// otherwise without `-w`.
+// docker: `CBASE_DOCKER_BIN` or `docker` (the same knob as projectbox/docker.js).
+//
+// THE ACCESS FROM VS CODE (`--git-access`; only the wrapper cbase-git sets it). If a call from VS Code goes through cbase-git
+// into the project container, a NETWORK COMMAND (`git push`, `pull`, `fetch`, `ls-remote`, `remote update` — not `submodule
+// update`: there it stays without access as today in the container) gets ONLY the stored git access of the workspace — the same
+// source and set as the git view (workspaces/git-auth.js gitAuthCtx → store.getGitCred) —, never the access of VS Code
+// (GIT_ASKPASS, VSCODE_GIT_*), of the global helper of B or of the Mac. In B no `git credential` (fill, approve, reject) runs
+// for this any more: nothing is asked, stored or discarded (the container determines targets AND output — it could otherwise
+// fetch a foreign access or have a stored one deleted).
+//   1. the targets IN the container (the project container knows the remotes): the explicit remote argument, otherwise
+//      `branch.<b>.pushRemote` / `remote.pushDefault` (push only) / `branch.<b>.remote` like git, otherwise `origin`; `--all` and
+//      `remote update` without names: every remote (or `remotes.default`), groups resolved. The URL including `insteadOf`
+//      (`git ls-remote --get-url`, for push `git remote get-url --push`). ONE `docker exec … sh -c`.
+//   2. the host names of the http(s) targets to the backend: `POST /api/workspaces/<wid>/git-access` (same address as above) with
+//      the key from `$CBASE_GIT_KEY` or `${CBASE_DATA_ROOT:-$HOME/cbase}/data/git-access.key` in the header `x-cbase-git-key`
+//      (projectbox/git-assignment.js gitAccessResponse: only with the operating mark, only from loopback, only with the key of
+//      this backend start; from a project network the fence rejects it). The answer is the stored accesses of EXACTLY these hosts.
+//      If the container sets a remote to a foreign host, this file asks for THAT host — without a stored access there it gets
+//      none, never that of another host.
+//   3. the values as environment (runtime/git-run.js accessAsEnvironment): `-e NAME` without value, the value in the environment
+//      of the docker child (`ps` in B shows only names). In the container `credential.helper=` empties the inherited list, then
+//      per target a helper answers that applies ONLY to its `<protocol>://<host>` (`credential.<url>.helper`): a remote on another
+//      host gets nothing. The text of the helper contains only variable names. The ONE empty-valued, non-secret line
+//      (`GIT_CONFIG_VALUE_0`, the empty helper) stands as `-e GIT_CONFIG_VALUE_0=` in the argv — whether docker passes an empty
+//      value from the environment through is unmeasured, so nothing depends on it.
+// No key, no backend, no stored access, no http(s) ⇒ without (with a line on stderr if key or backend are missing); git reports the
+// auth error as today. Knowingly accepted: during the command the access is readable for every process of the project as agent
+// (`/proc/<pid>/environ`).
+// THE WORKING FOLDER with `--git-access`: $PWD MUST lie in the container (a root, see above), otherwise exit 128 with a message and
+// no docker call — never silently the project folder (a linked worktree outside whose shared `.git` lies in the project comes
+// here via cbase-git; in B it must not run, in the project folder git would run in the wrong repo). Guard:
+// tools/check/cbase-git.test.mjs, the route in server/backend/test/fence.test.js.
+//
+// Only node:* — lives in the backend image under /usr/bin (NOT /usr/local/bin: that is mounted into every project container).
+// The local server does not have the command. Guard: tools/check/cbase-project.test.mjs.
+//
+// ES module WITHOUT suffix, on purpose: in the repo it lies under `"type": "module"` (server/backend/package.json — `require`
+// would be a ReferenceError there), in the image under /usr/bin without package.json; there Node 22 recognizes the import syntax
+// itself (syntax detection, default from 22.7). The Dockerfile step `node --check` checks exactly this way.
+import { spawn, spawnSync } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const NAMES_SUFFIX = ".cbase";
+const LABEL_PROJECT = "cbase.project";
+const LABEL_INSTANCE = "cbase.instance";
+const MAIN = "main";
+const COPY_PREFIX = "copy-"; // projectbox/creation.js COPY_PREFIX
+const COPY_NAME = /^[a-z0-9]([a-z0-9-]{0,22}[a-z0-9])?$/; // projectbox/creation.js COPY_NAME
+const API_DEADLINE_MS = 5000; // one question to the own backend on loopback; without an answer by then it counts as not reachable
+
+const HELP = `cbase-project — into the project container of a project
+
+  cbase-project <project>[/<copy>] [-- <command…>]
+
+  <project>  id, name or <name>.cbase of a converted project
+  <copy>     the name of a copy of the project (without “copy-”)
+  --         mandatory before the command; without a command: bash -l
+
+Examples:
+  cbase-project till
+  cbase-project till.cbase -- docker compose ps
+  cbase-project till/k1 -- git status
+`;
+
+class Abort extends Error {
+  constructor(notice, code = 2) {
+    super(notice);
+    this.code = code;
+  }
+}
+
+/** The arguments: `{ help }` or `{ target, command[, gitAccess] }`. Throws Abort (exit 2) on a wrong form. `--git-access`
+ *  between project and `--` (see header "THE ACCESS FROM VS CODE"). */
+function readArgs(argv) {
+  const args = [...argv];
+  if (!args.length || args[0] === "-h" || args[0] === "--help") return { help: true, empty: !args.length };
+  const target = args.shift();
+  if (target === "--" || target.startsWith("-")) throw new Abort(`first the project, then “--” — not “${target}”\n\n${HELP}`);
+  const gitAccess = args[0] === GIT_ACCESS;
+  if (gitAccess) args.shift();
+  if (args.length && args[0] !== "--") throw new Abort(`“--” comes before the command: cbase-project ${target} -- ${args.join(" ")}`);
+  const command = args.slice(1);
+  return { target, command: command.length ? command : ["bash", "-l"], ...(gitAccess ? { gitAccess: true } : {}) };
+}
+
+const liesIn = (kind, parent) => {
+  if (!kind || !parent) return false;
+  const rel = path.relative(path.resolve(parent), path.resolve(kind));
+  return rel === "" || (!rel.startsWith("..") && !path.isAbsolute(rel));
+};
+const withoutSuffix = (s) => (s.toLowerCase().endsWith(NAMES_SUFFIX) ? s.slice(0, -NAMES_SUFFIX.length) : s);
+const describe = (p) => `  ${p.name}${p.workspaceName ? ` (workspace ${p.workspaceName})` : ""} — ${p.instance?.name || p.id}${p.instance?.name ? `, id ${p.id}` : ""}`;
+
+/** `<project>/<copy>` → `{ part, copy }` (split at the LAST slash), otherwise null. Throws Abort for a name outside the form —
+ *  a typo should not end as "no project". */
+function copyParts(raw) {
+  const i = raw.lastIndexOf("/");
+  if (i < 0) return null;
+  const part = raw.slice(0, i).trim();
+  const copy = raw.slice(i + 1).trim();
+  if (!part) throw new Abort(`“${raw}”: the project is missing before the slash`);
+  if (!COPY_NAME.test(copy)) throw new Abort(`“${raw}”: “${copy}” is not a copy name (lower-case letters, digits, hyphen; at most 24 characters)`);
+  return { part, copy };
+}
+
+/**
+ * The pure resolution: `{ project }` — with `/<copy>` `{ project, copy }`, `copy` the entry from `instance.copies` with `short`
+ * (the name without "copy-") — or throws Abort (exit 2): unknown, ambiguous, no such copy, not converted. `projects` as
+ * `GET /api/projects`, `workspaces` as `GET /api/workspaces` (may be missing), `pwd` the folder.
+ */
+function resolve({ projects, workspaces = [], target, pwd }) {
+  const raw = String(target || "").trim();
+  if (!raw) throw new Abort("which project?");
+  const list = Array.isArray(projects) ? projects : [];
+  // 1. the id — unambiguous, and it takes precedence over every name (no prefix: half an id would eventually hit another project).
+  let hits = list.filter((p) => p.id === raw);
+  if (!hits.length) {
+    const small = withoutSuffix(raw.toLowerCase());
+    hits = list.filter((p) => String(p.name || "").trim().toLowerCase() === raw.toLowerCase()
+      || (p.instance?.name && withoutSuffix(String(p.instance.name).toLowerCase()) === small));
+  }
+  const parts = !hits.length ? copyParts(raw) : null;
+  if (parts) {
+    // The project as usual, then its copy — only one that the backend names in `instance.copies`.
+    const { project } = resolve({ projects: list, workspaces, target: parts.part, pwd });
+    const copies = Array.isArray(project.instance?.copies) ? project.instance.copies : [];
+    const copy = copies.find((k) => k?.identifier === `${project.id}/${COPY_PREFIX}${parts.copy}`);
+    if (!copy) {
+      const names = copies.map((k) => `  ${String(k.identifier).slice(project.id.length + 1 + COPY_PREFIX.length)}${k.name ? ` — ${k.name}` : ""} (${k.state})`);
+      throw new Abort(`${project.name} has no copy “${parts.copy}”${names.length ? `.\nCopies:\n${names.join("\n")}` : " — it has no copies."}`);
+    }
+    return { project, copy: { ...copy, short: parts.copy } };
+  }
+  if (!hits.length) {
+    const um = list.filter((p) => p.instance?.converted);
+    throw new Abort(`no project “${raw}”.${um.length ? `\nConverted projects:\n${um.map(describe).join("\n")}` : "\nNo project is converted yet."}`);
+  }
+  if (hits.length > 1 && pwd) {
+    // Preferred is what contains the current folder: first the project itself, then its workspace.
+    const inProject = hits.filter((p) => liesIn(pwd, p.path));
+    const wsHere = new Set(workspaces.filter((w) => liesIn(pwd, w.path)).map((w) => w.id));
+    const inWorkspace = hits.filter((p) => wsHere.has(p.workspaceId));
+    if (inProject.length === 1) hits = inProject;
+    else if (inWorkspace.length === 1) hits = inWorkspace;
+  }
+  if (hits.length > 1) {
+    throw new Abort(`“${raw}” is ambiguous — call it from the folder of a workspace or take the id:\n${hits.map(describe).join("\n")}`);
+  }
+  const [project] = hits;
+  if (!project.instance?.converted) {
+    throw new Abort(`${project.name} is not converted — it runs in the user container itself, a project container ${project.instance ? `does not exist yet (state “${project.instance.state}”)` : "does not exist"}.`);
+  }
+  return { project };
+}
+
+// Physical — also for a path that does not exist: the nearest existing ancestor after realpath, the rest behind it.
+function real(p) {
+  const abs = path.resolve(String(p));
+  let header = abs;
+  const rest = [];
+  for (;;) {
+    try { return path.join(fs.realpathSync.native(header), ...rest.reverse()); } catch { /* go further up */ }
+    const top = path.dirname(header);
+    if (top === header) return abs;
+    rest.push(path.basename(header));
+    header = top;
+  }
+}
+
+/**
+ * The folder in the container: `pwd` if it lies PHYSICALLY in one of the `roots` (the longest wins), converted to the form of
+ * this root — that is how it hangs in the container. Among physical hits of equal length a form that is not already physical
+ * wins (the store form; the list carries both), otherwise the first. Otherwise null. PURE except for realpath.
+ */
+function inContainer(pwd, roots) {
+  if (!pwd) return null;
+  const p = real(pwd);
+  let best = null;
+  for (const w of roots || []) {
+    if (!w || !path.isAbsolute(String(w))) continue;
+    const form = path.resolve(String(w));
+    const e = real(form);
+    if (!liesIn(p, e)) continue;
+    if (!best || e.length > best.e.length || (e.length === best.e.length && best.form === best.e && form !== e)) best = { form, e };
+  }
+  if (!best) return null;
+  const rel = path.relative(best.e, p);
+  return rel ? path.join(best.form, rel) : best.form;
+}
+
+/** The working folder: $PWD if it lies (physically) in the project folder or one of the `additional` roots — in their form —,
+ *  otherwise the project folder. */
+const workingFolder = (pwd, projectPath, additional = []) => inContainer(pwd, [projectPath, ...additional]) ?? projectPath;
+
+/** Without backend: $PWD if a bind mount carries it at the same path, otherwise none (docker takes that of the image). */
+function folderFromMounts(pwd, mounts) {
+  const equal = (mounts || []).filter((m) => m && m.Type === "bind" && m.Source && m.Source === m.Destination);
+  return inContainer(pwd, equal.map((m) => m.Source));
+}
+
+// The data folder of the backend in B (server/backend/headless.js) — the same place cbase-git reads.
+const dataFolder = (env) => path.join(env.CBASE_DATA_ROOT || path.join(env.HOME || os.homedir(), "cbase"), "data");
+const GIT_PROJECTS_FILE = "git-projects"; // projectbox/git-assignment.js GIT_PROJECTS_FILE
+const listPath = (env) => env.CBASE_GIT_PROJECTS || path.join(dataFolder(env), GIT_PROJECTS_FILE);
+
+/** The roots of a project from the list of cbase-git (see header): the paths of its rows, without a list none. */
+function listRoots(env, projectId) {
+  let text = "";
+  try { text = fs.readFileSync(listPath(env), "utf8"); } catch { return []; }
+  const front = `${projectId}\t`;
+  return text.split("\n").filter((z) => z.startsWith(front)).map((z) => z.slice(front.length)).filter((p) => path.isAbsolute(p));
+}
+
+/** The arguments to docker — pure, so that the guard can test both cases of `-t` without a terminal. `envNames`: the names of the
+ *  access — only names, the values stand in the environment of the docker child; `NAME=` (empty, not secret) only
+ *  for the empty helper. */
+function dockerArgs({ container, cwd, command, tty, envNames = [] }) {
+  return ["exec", "-i", ...(tty ? ["-t"] : []), "-u", "agent", ...(cwd ? ["-w", cwd] : []), "-e", "TERM",
+    ...envNames.flatMap((n) => ["-e", n]), container, ...command];
+}
+
+// ── the access of a network command from VS Code (see header "THE ACCESS FROM VS CODE") ───────────────────────────────────
+const GIT_ACCESS = "--git-access";
+// Global options of git with a separate value (as in cbase-git) — they stand BEFORE the subcommand.
+const GIT_GLOBAL_WITH_VALUE = new Set(["-C", "-c", "--config-env", "--git-dir", "--work-tree", "--namespace", "--super-prefix", "--list-cmds", "--attr-source"]);
+// Options of the network commands with a separate value — otherwise the search for the remote argument would take their value for it.
+const NETWORK_WITH_VALUE = {
+  fetch: ["--depth", "--deepen", "--shallow-since", "--shallow-exclude", "--upload-pack", "-j", "--jobs", "-o", "--server-option", "--negotiation-tip", "--refmap", "--filter", "--recurse-submodules-default", "--submodule-prefix"],
+  push: ["--repo", "--receive-pack", "--exec", "-o", "--push-option"],
+  "ls-remote": ["--upload-pack", "-o", "--server-option", "--sort"],
+};
+NETWORK_WITH_VALUE.pull = [...NETWORK_WITH_VALUE.fetch, "-s", "--strategy", "-X", "--strategy-option", "--cleanup"];
+
+/**
+ * Is `command` a network command of git? → null or `{ mode, remotes }` — `mode` "push" | "fetch" | "all" | "group"
+ * (`remote update`), `remotes` the explicitly named ones (empty: the default as git). PURE.
+ */
+function networkCommand(command) {
+  if (!Array.isArray(command) || path.basename(String(command[0] || "")) !== "git") return null;
+  let i = 1;
+  while (i < command.length) {
+    const a = String(command[i]);
+    if (GIT_GLOBAL_WITH_VALUE.has(a)) { i += 2; continue; }
+    if (a.startsWith("-")) { i += 1; continue; }
+    break;
+  }
+  const under = command[i];
+  let rest = command.slice(i + 1).map(String);
+  if (under === "remote") {
+    if (rest[0] !== "update") return null;
+    return { mode: "group", remotes: rest.slice(1).filter((a) => !a.startsWith("-")) };
+  }
+  if (!NETWORK_WITH_VALUE[under]) return null;
+  const withValue = new Set(NETWORK_WITH_VALUE[under]);
+  const pos = [];
+  let repo = "";
+  let all = false;
+  let several = false;
+  for (let k = 0; k < rest.length; k++) {
+    const a = rest[k];
+    if (a === "--") { pos.push(...rest.slice(k + 1)); break; }
+    if (a === "--all" && under !== "push") { all = true; continue; }
+    if (a === "--multiple") { several = true; continue; }
+    if (under === "push" && a.startsWith("--repo=")) { repo = a.slice(7); continue; }
+    if (withValue.has(a)) { if (under === "push" && a === "--repo") repo = rest[k + 1] || ""; k++; continue; }
+    if (a.startsWith("-")) continue;
+    pos.push(a);
+  }
+  if (all) return { mode: "all", remotes: [] };
+  const remotes = several ? pos : pos.slice(0, 1);
+  if (!remotes.length && repo) remotes.push(repo);
+  return { mode: under === "push" ? "push" : "fetch", remotes };
+}
+
+// The targets in the container: one URL line per remote. Arguments: mode, then the remotes. Only git read commands, no hook.
+const TARGETS_SCRIPT = `mode=$1; shift
+b=$(git symbolic-ref --short -q HEAD 2>/dev/null)
+if [ "$mode" = all ]; then
+  set -- $(git remote 2>/dev/null)
+elif [ "$mode" = group ]; then
+  if [ $# -eq 0 ]; then
+    g=$(git config --get remotes.default 2>/dev/null)
+    if [ -n "$g" ]; then set -- $g; else set -- $(git remote 2>/dev/null); fi
+  else
+    expanded=
+    for a in "$@"; do g=$(git config --get "remotes.$a" 2>/dev/null); if [ -n "$g" ]; then expanded="$expanded $g"; else expanded="$expanded $a"; fi; done
+    set -- $expanded
+  fi
+elif [ $# -eq 0 ]; then
+  r=
+  if [ "$mode" = push ] && [ -n "$b" ]; then r=$(git config --get "branch.$b.pushRemote" 2>/dev/null); fi
+  if [ "$mode" = push ] && [ -z "$r" ]; then r=$(git config --get remote.pushDefault 2>/dev/null); fi
+  if [ -z "$r" ] && [ -n "$b" ]; then r=$(git config --get "branch.$b.remote" 2>/dev/null); fi
+  set -- "\${r:-origin}"
+fi
+for r in "$@"; do
+  if [ "$mode" = push ]; then u=$(git remote get-url --push "$r" 2>/dev/null) || u=$(git ls-remote --get-url "$r" 2>/dev/null)
+  else u=$(git ls-remote --get-url "$r" 2>/dev/null); fi
+  [ -n "$u" ] && printf '%s\\n' "$u"
+done
+exit 0`;
+
+const GIT_ACCESS_FILE = "git-access.key"; // projectbox/git-assignment.js GIT_ACCESS_FILE
+const GIT_ACCESS_HEADER = "x-cbase-git-key"; // projectbox/git-assignment.js GIT_ACCESS_HEADER
+const keyPath = (env) => env.CBASE_GIT_KEY || path.join(dataFolder(env), GIT_ACCESS_FILE);
+
+const rowOk = (v) => typeof v === "string" && !/[\n\r\0]/.test(v);
+/** A target: `{ area: "<protocol>://<host[:port]>", host }` — null without http(s), with a password in the URL (then git asks
+ *  nobody) or with a host that is not a simple name. */
+function targetOf(url) {
+  let u;
+  try { u = new URL(url); } catch { return null; }
+  if (u.protocol !== "https:" && u.protocol !== "http:") return null;
+  if (u.password || !/^[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?$/.test(u.hostname)) return null;
+  return { area: `${u.protocol}//${u.host}`, host: u.hostname };
+}
+
+/** The stored accesses of the workspace for `hosts` at the backend (see header, step 2) → `{ <host>: { username, secret } }`.
+ *  Throws with a reason (cap as for /api/projects). */
+async function fetchAccesses({ env, workspaceId, key, hosts }) {
+  const base = apiBase(env);
+  const deadline = Number(env.CBASE_PROJECT_API_MS) > 0 ? Number(env.CBASE_PROJECT_API_MS) : API_DEADLINE_MS;
+  const r = await fetch(`${base}/api/workspaces/${encodeURIComponent(workspaceId)}/git-access`, {
+    method: "POST", signal: AbortSignal.timeout(deadline),
+    headers: { Accept: "application/json", "Content-Type": "application/json", [GIT_ACCESS_HEADER]: key },
+    body: JSON.stringify({ hosts }),
+  });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const j = await r.json();
+  return j && typeof j.accesses === "object" && j.accesses ? j.accesses : {};
+}
+
+/**
+ * The access of a network command (see header) → null (no network command, no target, no access) or `{ names, values }` — `names`
+ * for `-e` (a name ends in `=` only if its value is empty and not secret), `values` for the environment of the
+ * docker child. Never throws; without key or backend a line on stderr.
+ */
+async function fetchAccess({ command, docker, container, cwd, env, workspaceId }) {
+  const network = networkCommand(command);
+  if (!network || !workspaceId) return null;
+  const warn = (reason) => { process.stderr.write(`cbase-project: without git access — ${reason}\n`); return null; };
+  let key = "";
+  try { key = fs.readFileSync(keyPath(env), "utf8").trim(); } catch (e) {
+    return warn(`key ${keyPath(env)} not readable (${e?.code || e?.message || e})`);
+  }
+  if (!key || !rowOk(key)) return warn(`key ${keyPath(env)} empty`);
+  const resolve = spawnSync(docker, ["exec", "-u", "agent", ...(cwd ? ["-w", cwd] : []), container, "sh", "-c", TARGETS_SCRIPT, "sh", network.mode, ...network.remotes],
+    { env, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  if (resolve.error || resolve.status !== 0) return null;
+  const targets = new Map(); // area → host
+  for (const url of String(resolve.stdout || "").split("\n").map((z) => z.trim()).filter(Boolean)) {
+    const z = targetOf(url);
+    if (z && !targets.has(z.area)) targets.set(z.area, z.host);
+  }
+  if (!targets.size) return null;
+  let accesses;
+  try { accesses = await fetchAccesses({ env, workspaceId, key, hosts: [...new Set(targets.values())] }); } catch (e) {
+    return warn(`backend at ${apiBase(env)}: ${e?.name === "TimeoutError" ? "no answer" : e?.message || e}`);
+  }
+  const values = {};
+  const helper = [];
+  for (const [area, host] of targets) {
+    const z = accesses[host];
+    if (!z || !z.username || !rowOk(z.username) || !rowOk(String(z.secret ?? ""))) continue;
+    const n = helper.length;
+    values[`CBASE_GIT_USERNAME_${n}`] = z.username;
+    values[`CBASE_GIT_PASSWORD_${n}`] = String(z.secret ?? "");
+    helper.push([`credential.${area}.helper`, `!f() { printf 'username=%s\\npassword=%s\\n' "$CBASE_GIT_USERNAME_${n}" "$CBASE_GIT_PASSWORD_${n}"; }; f`]);
+  }
+  if (!helper.length) return null;
+  values.GIT_CONFIG_COUNT = String(helper.length + 1);
+  values.GIT_CONFIG_KEY_0 = "credential.helper";
+  helper.forEach(([k, v], i) => { values[`GIT_CONFIG_KEY_${i + 1}`] = k; values[`GIT_CONFIG_VALUE_${i + 1}`] = v; });
+  // The empty helper as `-e GIT_CONFIG_VALUE_0=` (see header): empty-valued, not secret.
+  return { names: [...Object.keys(values), "GIT_CONFIG_VALUE_0="], values };
+}
+
+const BACKEND_PORT = 7718; // the port of the backend in B (Dockerfile EXPOSE, gateway) — fixed, not from `PORT` (see header)
+const apiBase = (env) => String(env.CBASE_PROJECT_API || `http://127.0.0.1:${BACKEND_PORT}`).replace(/\/+$/, "");
+
+async function fetchJson(url, deadlineMs) {
+  const r = await fetch(url, { signal: AbortSignal.timeout(deadlineMs), headers: { Accept: "application/json" } });
+  if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
+  return r.json();
+}
+
+/** The ONE container of an instance via its labels (`instance` = "main" or "copy-<name>"). Throws Abort: none (exit 2,
+ *  with `none` as the sentence) or several (exit 1). */
+function containerTheInstance({ docker, projectId, instance, none }) {
+  const ps = spawnSync(docker, ["ps", "-a", "-q", "--no-trunc", "--filter", `label=${LABEL_PROJECT}=${projectId}`, "--filter", `label=${LABEL_INSTANCE}=${instance}`], { encoding: "utf8" });
+  if (ps.error || ps.status !== 0) throw new Abort(`docker ps: ${(ps.error?.message || ps.stderr || "").trim() || `Exit ${ps.status}`}`, 1);
+  const ids = ps.stdout.split(/\s+/).filter(Boolean);
+  if (!ids.length) throw new Abort(none);
+  if (ids.length > 1) throw new Abort(`several containers with ${LABEL_PROJECT}=${projectId} and ${LABEL_INSTANCE}=${instance}: ${ids.map((x) => x.slice(0, 12)).join(", ")}`, 1);
+  return ids[0];
+}
+
+/** Without backend: the container with the label of exactly this id (`<id>/<copy>`: that of the copy). */
+function fromDocker({ docker, target, pwd }) {
+  const parts = copyParts(String(target || "").trim());
+  const projectId = parts ? parts.part : target;
+  const instance = parts ? `${COPY_PREFIX}${parts.copy}` : MAIN;
+  const id = containerTheInstance({ docker, projectId, instance,
+    none: `without a backend only the project id works — no project container with ${LABEL_PROJECT}=${projectId}${parts ? ` and ${LABEL_INSTANCE}=${instance}` : ""}` });
+  let mounts = [];
+  const insp = spawnSync(docker, ["inspect", id], { encoding: "utf8" });
+  try { mounts = JSON.parse(insp.stdout)[0]?.Mounts || []; } catch { /* without mounts: without -w */ }
+  const cwd = folderFromMounts(pwd, mounts);
+  if (!cwd) process.stderr.write(`cbase-project: ${pwd} is not mounted in the project container — working folder of the image\n`);
+  return { container: id, cwd, outside: !cwd, name: target };
+}
+
+async function target({ target: z, env, pwd, docker }) {
+  const base = apiBase(env);
+  const deadline = Number(env.CBASE_PROJECT_API_MS) > 0 ? Number(env.CBASE_PROJECT_API_MS) : API_DEADLINE_MS;
+  let projects;
+  try {
+    projects = await fetchJson(`${base}/api/projects`, deadline);
+  } catch (e) {
+    const reason = e?.name === "TimeoutError" ? `no answer within ${deadline} ms` : e?.cause?.code || e?.cause?.errors?.[0]?.code || e?.cause?.message || e?.message || String(e);
+    process.stderr.write(`cbase-project: backend at ${base} not reachable (${reason}) — only by project id\n`);
+    return fromDocker({ docker, target: z, pwd });
+  }
+  let workspaces = [];
+  try { workspaces = await fetchJson(`${base}/api/workspaces`, deadline); } catch { /* only for the preference */ }
+  const { project, copy } = resolve({ projects, workspaces, target: z, pwd });
+  if (copy) {
+    // The container of the copy via its labels; the project folder lies in it as an overlay at the original path.
+    if (copy.state && copy.state !== "ready") process.stderr.write(`cbase-project: the copy ${copy.short} of ${project.name} is in state “${copy.state}”\n`);
+    const container = containerTheInstance({ docker, projectId: project.id, instance: `${COPY_PREFIX}${copy.short}`,
+      none: `the copy ${copy.short} of ${project.name} has no container (state “${copy.state}”)` });
+    // The roots of the copy: the project folder (overlay at the original path) and the rows `<pid>/<copy>` of the list of cbase-git —
+    // the worktree folder of the copy `<runtime>/copy-worktrees/<copy>` (projectbox/git-assignment.js; the runtime folder hangs at
+    // the same path in the copy). Without them every git from a worktree of the copy ended with exit 128.
+    const inside = inContainer(pwd, [project.path, ...listRoots(env, `${project.id}/${copy.short}`)]);
+    return { container, cwd: inside ?? project.path, outside: !inside, name: `${project.name}/${copy.short}`, workspaceId: project.workspaceId || null };
+  }
+  if (project.instance.state && project.instance.state !== "ready") {
+    process.stderr.write(`cbase-project: the project container of ${project.name} is in state “${project.instance.state}”\n`);
+  }
+  // The roots: the project folder and its rows from the list of cbase-git (see header).
+  const inside = inContainer(pwd, [project.path, ...listRoots(env, project.id)]);
+  return { container: project.instance.container, cwd: inside ?? project.path, outside: !inside, name: project.name, workspaceId: project.workspaceId || null };
+}
+
+async function main(argv = process.argv.slice(2), env = process.env) {
+  let a;
+  try { a = readArgs(argv); } catch (e) {
+    process.stderr.write(`cbase-project: ${e.message}\n`);
+    return e.code ?? 2;
+  }
+  if (a.help) {
+    (a.empty ? process.stderr : process.stdout).write(HELP);
+    return a.empty ? 2 : 0;
+  }
+  const docker = env.CBASE_DOCKER_BIN || "docker";
+  const pwd = env.PWD && path.isAbsolute(env.PWD) ? env.PWD : process.cwd();
+  let whereTo;
+  try { whereTo = await target({ target: a.target, env, pwd, docker }); } catch (e) {
+    process.stderr.write(`cbase-project: ${e.message}\n`);
+    return e instanceof Abort ? e.code : 1;
+  }
+  const tty = Boolean(process.stdin.isTTY && process.stdout.isTTY);
+  // Only with --git-access (see header): the folder must lie in the container, a network command gets the
+  // stored access of the workspace — otherwise everything as before.
+  if (a.gitAccess && whereTo.outside) {
+    process.stderr.write(`cbase-project: ${pwd} is not in the project container of ${whereTo.name} (neither in the project folder nor in one of its roots) — no git: it must not run in B, in the project folder it would run in the wrong repo\n`);
+    return 128;
+  }
+  const { container, cwd } = whereTo;
+  const access = a.gitAccess ? await fetchAccess({ command: a.command, docker, container, cwd, env, workspaceId: whereTo.workspaceId }) : null;
+  const subprocess = spawn(docker, dockerArgs({ container, cwd, command: a.command, tty, envNames: access?.names }), { stdio: "inherit", env: access ? { ...env, ...access.values } : env });
+  // Ctrl-C and the like belong to the command: the terminal sends them to the whole foreground group (docker gets them itself),
+  // this wrapper only waits and passes the code through. A SIGTERM/SIGHUP to it alone is passed on to docker.
+  for (const s of ["SIGINT", "SIGQUIT"]) process.on(s, () => {});
+  for (const s of ["SIGTERM", "SIGHUP"]) process.on(s, () => { try { subprocess.kill(s); } catch { /* already gone */ } });
+  return new Promise((resolveValue) => {
+    subprocess.once("error", (e) => {
+      process.stderr.write(`cbase-project: ${docker}: ${e.message}\n`);
+      resolveValue(127);
+    });
+    subprocess.once("exit", (code, signal) => resolveValue(code ?? 128 + (os.constants.signals[signal] || 0)));
+  });
+}
+
+export { Abort, HELP, apiBase, workingFolder, dockerArgs, fetchAccess, inContainer, readArgs, resolve, main, networkCommand, folderFromMounts, targetOf };
+
+// Started as a command (not imported by the guard): argv[1] is this file — via realpath, because the call may come through a
+// link or /usr/bin/….
+const asCommand = (() => {
+  try { return fs.realpathSync(process.argv[1] || "") === fs.realpathSync(fileURLToPath(import.meta.url)); } catch { return false; }
+})();
+if (asCommand) {
+  main().then((code) => { process.exitCode = code; }, (e) => {
+    process.stderr.write(`cbase-project: ${e?.stack || e}\n`);
+    process.exitCode = 1;
+  });
+}

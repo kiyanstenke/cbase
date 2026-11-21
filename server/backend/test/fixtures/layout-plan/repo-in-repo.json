@@ -1,0 +1,159 @@
+{
+  "name": "repo-in-repo",
+  "description": "A collection folder with a repo inside stays without a mark; if one marks it anyway, it is a repo in a repo. Pushing a file into a code-repo block is rejected.",
+  "mode": "creation",
+  "selection": [
+    {
+      "seq": 1,
+      "kind": "folder",
+      "name": "mono",
+      "files": [
+        {
+          "rel": "a/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "a/.git/config",
+          "size": 50
+        },
+        {
+          "rel": "a/main.go",
+          "size": 70
+        },
+        {
+          "rel": "b/x.txt",
+          "size": 10
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "kind": "code-repo",
+      "path": "mono"
+    },
+    {
+      "kind": "move",
+      "from": "mono/b/x.txt",
+      "to": "mono/a/x.txt"
+    }
+  ],
+  "expected": {
+    "tree": [
+      {
+        "path": "mono",
+        "kind": "folder",
+        "source": 1,
+        "origin": "mono",
+        "size": 153
+      },
+      {
+        "path": "mono/a",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "mono/a",
+        "size": 143
+      },
+      {
+        "path": "mono/b",
+        "kind": "folder",
+        "source": 1,
+        "origin": "mono/b",
+        "size": 10
+      },
+      {
+        "path": "mono/b/x.txt",
+        "kind": "file",
+        "source": 1,
+        "origin": "mono/b/x.txt",
+        "size": 10
+      }
+    ],
+    "hints": [],
+    "omitted": 0,
+    "upload": {
+      "1": [
+        "mono/a/.git/HEAD",
+        "mono/a/.git/config",
+        "mono/a/main.go",
+        "mono/b/x.txt"
+      ]
+    },
+    "finalTree": [
+      {
+        "path": "mono",
+        "kind": "folder",
+        "source": 1,
+        "origin": "mono",
+        "size": 153,
+        "codeRepo": true
+      },
+      {
+        "path": "mono/a",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "mono/a",
+        "size": 143
+      },
+      {
+        "path": "mono/b",
+        "kind": "folder",
+        "source": 1,
+        "origin": "mono/b",
+        "size": 10
+      },
+      {
+        "path": "mono/b/x.txt",
+        "kind": "file",
+        "source": 1,
+        "origin": "mono/b/x.txt",
+        "size": 10
+      }
+    ],
+    "mapping": {
+      "1": [
+        {
+          "from": "mono",
+          "to": "mono"
+        }
+      ]
+    },
+    "finalMapping": {
+      "ways": [],
+      "gone": [],
+      "codeRepos": []
+    },
+    "codeRepos": [
+      "mono"
+    ],
+    "repos": [
+      "mono",
+      "mono/a"
+    ],
+    "error": [
+      {
+        "code": "IN_CODE_REPO",
+        "step": 1,
+        "path": "mono/a/x.txt"
+      },
+      {
+        "code": "REPO_IN_REPO",
+        "path": "mono/a",
+        "second": "mono"
+      }
+    ],
+    "warnings": [],
+    "targets": [
+      {
+        "source": 1,
+        "origin": "mono/a/.git/HEAD",
+        "target": "mono/a/.git/HEAD"
+      },
+      {
+        "source": 1,
+        "origin": "mono/b/x.txt",
+        "target": "mono/b/x.txt"
+      }
+    ]
+  }
+}

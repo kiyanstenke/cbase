@@ -1,0 +1,801 @@
+{
+  "rows": [
+    {
+      "role": "user",
+      "text": "Wir planen ein neues Repo-Layout.",
+      "markers": [],
+      "dom": {
+        "t": "div",
+        "a": {
+          "data-contain": "",
+          "class": "cb-contain-bleed"
+        },
+        "k": [
+          {
+            "t": "div",
+            "a": {
+              "class": "transition-opacity duration-200 "
+            },
+            "k": [
+              {
+                "t": "div",
+                "a": {
+                  "class": "flex flex-col items-end"
+                },
+                "k": [
+                  {
+                    "t": "div",
+                    "a": {
+                      "class": "cb-kit-pane cb-bubble max-w-[85%] min-w-0 rounded-[20px] px-4 py-2.5"
+                    },
+                    "k": [
+                      {
+                        "t": "div",
+                        "a": {
+                          "class": "whitespace-pre-wrap break-words"
+                        },
+                        "k": [
+                          "Wir planen ein neues Repo-Layout."
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "t": "div",
+                    "a": {
+                      "class": "mt-1 flex items-center gap-0.5",
+                      "data-message-actions": "true"
+                    },
+                    "k": [
+                      {
+                        "t": "button",
+                        "a": {
+                          "type": "button",
+                          "title": "Nachricht kopieren",
+                          "aria-label": "Nachricht kopieren",
+                          "class": "grid h-7 w-7 place-items-center rounded-lg transition-colors text-dim hover:bg-hover hover:text-fg"
+                        },
+                        "k": [
+                          {
+                            "t": "svg",
+                            "a": {
+                              "width": "14",
+                              "height": "14",
+                              "viewBox": "0 0 24 24",
+                              "aria-hidden": "true"
+                            },
+                            "k": [
+                              {
+                                "t": "rect",
+                                "a": {
+                                  "x": "9",
+                                  "y": "9",
+                                  "width": "11",
+                                  "height": "11"
+                                }
+                              },
+                              {
+                                "t": "path",
+                                "a": {
+                                  "d": "M15 5.5A2.5 2.5 0 0 0 12.5 3H6.5A3.5 3.5 0 0 0 3 6.5v6A2.5 2.5 0 0 0 5.5 15"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "t": "button",
+                        "a": {
+                          "type": "button",
+                          "title": "Vorlesen",
+                          "aria-label": "Vorlesen",
+                          "class": "grid h-7 w-7 place-items-center rounded-lg transition-colors text-dim hover:bg-hover hover:text-fg"
+                        },
+                        "k": [
+                          {
+                            "t": "svg",
+                            "a": {
+                              "width": "14",
+                              "height": "14",
+                              "viewBox": "0 0 24 24",
+                              "aria-hidden": "true"
+                            },
+                            "k": [
+                              {
+                                "t": "path",
+                                "a": {
+                                  "d": "M11 5 6.5 9H3v6h3.5L11 19z"
+                                }
+                              },
+                              {
+                                "t": "path",
+                                "a": {
+                                  "d": "M15.5 8.5a5 5 0 0 1 0 7"
+                                }
+                              },
+                              {
+                                "t": "path",
+                                "a": {
+                                  "d": "M18.5 5.5a9 9 0 0 1 0 13"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "role": "assistant",
+      "text": "1 Befehl ausgeführtcbase_ask{\"ok\":true,\"requestId\":\"<id-1>\",\"note\":\"Die Frage steht jetzt als anklickbare Karte im Chat. BEENDE JETZT DEINEN TURN — höchstens ein kurzer Satz, keine weitere Arbeit und keine weitere Frage. Die Auswahl des Nutzers erreicht dich als nächste Nachricht.\"}",
+      "markers": [
+        "tool-row:done!"
+      ],
+      "dom": {
+        "t": "div",
+        "a": {
+          "data-contain": "",
+          "class": "cb-contain-bleed"
+        },
+        "k": [
+          {
+            "t": "div",
+            "a": {
+              "class": "transition-opacity duration-200 "
+            },
+            "k": [
+              {
+                "t": "div",
+                "a": {
+                  "class": "group relative"
+                },
+                "k": [
+                  {
+                    "t": "div",
+                    "a": {
+                      "data-contain": "",
+                      "class": "cb-contain-bleed"
+                    },
+                    "k": [
+                      {
+                        "t": "div",
+                        "a": {
+                          "class": "py-0.5",
+                          "data-tool-row": "done",
+                          "data-tool-error": "0"
+                        },
+                        "k": [
+                          {
+                            "t": "button",
+                            "a": {
+                              "type": "button",
+                              "class": "flex w-full items-center gap-1.5 text-left text-tool text-dim hover:text-fg"
+                            },
+                            "k": [
+                              {
+                                "t": "span",
+                                "a": {
+                                  "class": "flex min-w-0 flex-1 items-center gap-1.5"
+                                },
+                                "k": [
+                                  {
+                                    "t": "span",
+                                    "a": {
+                                      "class": "min-w-0 truncate "
+                                    },
+                                    "k": [
+                                      "1 Befehl ausgeführt"
+                                    ]
+                                  },
+                                  {
+                                    "t": "span",
+                                    "a": {
+                                      "class": "shrink-0"
+                                    },
+                                    "k": [
+                                      {
+                                        "t": "span",
+                                        "a": {
+                                          "class": "inline-flex transition-transform duration-150 rotate-90"
+                                        },
+                                        "k": [
+                                          {
+                                            "t": "svg",
+                                            "a": {
+                                              "width": "12",
+                                              "height": "12",
+                                              "viewBox": "0 0 24 24",
+                                              "aria-hidden": "true"
+                                            },
+                                            "k": [
+                                              {
+                                                "t": "path",
+                                                "a": {
+                                                  "d": "M9 18l6-6-6-6"
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "t": "div",
+                            "a": {
+                              "class": "mt-1 border-l border-edge pl-3"
+                            },
+                            "k": [
+                              {
+                                "t": "div",
+                                "a": {
+                                  "class": "py-0.5"
+                                },
+                                "k": [
+                                  {
+                                    "t": "div",
+                                    "a": {
+                                      "class": "min-w-0 text-tool"
+                                    },
+                                    "k": [
+                                      {
+                                        "t": "button",
+                                        "a": {
+                                          "type": "button",
+                                          "class": "flex w-full items-center gap-1.5 text-left hover:text-fg"
+                                        },
+                                        "k": [
+                                          {
+                                            "t": "span",
+                                            "a": {
+                                              "class": "min-w-0 truncate "
+                                            },
+                                            "k": [
+                                              "cbase_ask"
+                                            ]
+                                          },
+                                          {
+                                            "t": "span",
+                                            "a": {
+                                              "class": "ml-auto shrink-0 text-dim"
+                                            },
+                                            "k": [
+                                              {
+                                                "t": "span",
+                                                "a": {
+                                                  "class": "inline-flex transition-transform duration-150 rotate-90"
+                                                },
+                                                "k": [
+                                                  {
+                                                    "t": "svg",
+                                                    "a": {
+                                                      "width": "12",
+                                                      "height": "12",
+                                                      "viewBox": "0 0 24 24",
+                                                      "aria-hidden": "true"
+                                                    },
+                                                    "k": [
+                                                      {
+                                                        "t": "path",
+                                                        "a": {
+                                                          "d": "M9 18l6-6-6-6"
+                                                        }
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "t": "div",
+                                        "a": {
+                                          "class": "mt-1.5 flex flex-col gap-1.5"
+                                        },
+                                        "k": [
+                                          {
+                                            "t": "div",
+                                            "a": {
+                                              "class": "overflow-x-auto rounded-lg border border-edge bg-code px-2.5 py-1.5"
+                                            },
+                                            "k": [
+                                              {
+                                                "t": "pre",
+                                                "a": {
+                                                  "class": "whitespace-pre-wrap break-words cb-cs-12 leading-[1.5] text-fg/80"
+                                                },
+                                                "k": [
+                                                  "{\"ok\":true,\"requestId\":\"<id-1>\",\"note\":\"Die Frage steht jetzt als anklickbare Karte im Chat. BEENDE JETZT DEINEN TURN — höchstens ein kurzer Satz, keine weitere Arbeit und keine weitere Frage. Die Auswahl des Nutzers erreicht dich als nächste Nachricht.\"}"
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "role": "ask",
+      "text": "RückfrageLayoutMonorepo oder getrennte Repos?Monorepo (Empfehlung)Ein Repo, geteilte Tooling-Basis.Getrennte ReposUnabhängige Release-Zyklen.Eigene Antwort",
+      "markers": [
+        "ask-question"
+      ],
+      "dom": {
+        "t": "div",
+        "a": {
+          "data-contain": "",
+          "class": "cb-contain-bleed"
+        },
+        "k": [
+          {
+            "t": "div",
+            "a": {
+              "class": "transition-opacity duration-200 "
+            },
+            "k": [
+              {
+                "t": "div",
+                "a": {
+                  "class": "cb-kit-pane rounded-2xl p-3 cb-kit-pane-accent"
+                },
+                "k": [
+                  {
+                    "t": "div",
+                    "a": {
+                      "class": "mb-2 flex items-center gap-2"
+                    },
+                    "k": [
+                      {
+                        "t": "span",
+                        "a": {
+                          "class": "text-accent"
+                        },
+                        "k": [
+                          {
+                            "t": "svg",
+                            "a": {
+                              "width": "15",
+                              "height": "15",
+                              "viewBox": "0 0 24 24",
+                              "aria-hidden": "true"
+                            },
+                            "k": [
+                              {
+                                "t": "path",
+                                "a": {
+                                  "d": "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                                }
+                              },
+                              {
+                                "t": "path",
+                                "a": {
+                                  "d": "M9.2 8.6a2.8 2.8 0 0 1 5.4 1c0 1.9-2.7 2.3-2.7 2.3"
+                                }
+                              },
+                              {
+                                "t": "path",
+                                "a": {
+                                  "d": "M12 15h.01"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "t": "span",
+                        "a": {
+                          "class": "text-[12.5px] font-semibold text-fg"
+                        },
+                        "k": [
+                          "Rückfrage"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "t": "div",
+                    "a": {
+                      "class": "flex flex-col gap-3"
+                    },
+                    "k": [
+                      {
+                        "t": "div",
+                        "a": {
+                          "class": "flex flex-col gap-1.5",
+                          "data-ask-question": "0"
+                        },
+                        "k": [
+                          {
+                            "t": "div",
+                            "a": {
+                              "class": "flex items-start gap-2"
+                            },
+                            "k": [
+                              {
+                                "t": "span",
+                                "a": {
+                                  "class": "mt-[3px] shrink-0 rounded-full bg-bg px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-dim"
+                                },
+                                "k": [
+                                  "Layout"
+                                ]
+                              },
+                              {
+                                "t": "div",
+                                "a": {
+                                  "class": "cb-chat-text min-w-0 flex-1 text-[13px] font-medium text-fg"
+                                },
+                                "k": [
+                                  {
+                                    "t": "p",
+                                    "a": {
+                                      "class": "my-1.5 whitespace-pre-wrap break-words leading-relaxed first:mt-0 last:mb-0"
+                                    },
+                                    "k": [
+                                      "Monorepo oder getrennte Repos?"
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "t": "div",
+                            "a": {
+                              "class": "flex flex-col gap-1"
+                            },
+                            "k": [
+                              {
+                                "t": "button",
+                                "a": {
+                                  "type": "button",
+                                  "data-ask-option": "Monorepo (Empfehlung)",
+                                  "class": "flex items-start gap-2.5 rounded-xl border px-2.5 py-1.5 text-left transition-colors border-transparent bg-bg hover:border-accent/60 hover:bg-accent/10 "
+                                },
+                                "k": [
+                                  {
+                                    "t": "span",
+                                    "a": {
+                                      "class": "mt-[3px] grid h-3.5 w-3.5 shrink-0 place-items-center border text-white rounded-full border-edge"
+                                    }
+                                  },
+                                  {
+                                    "t": "span",
+                                    "a": {
+                                      "class": "min-w-0 flex-1"
+                                    },
+                                    "k": [
+                                      {
+                                        "t": "span",
+                                        "a": {
+                                          "class": "block text-[12.5px] font-medium text-fg"
+                                        },
+                                        "k": [
+                                          "Monorepo (Empfehlung)"
+                                        ]
+                                      },
+                                      {
+                                        "t": "span",
+                                        "a": {
+                                          "class": "mt-0.5 block text-[11.5px] leading-snug text-dim"
+                                        },
+                                        "k": [
+                                          "Ein Repo, geteilte Tooling-Basis."
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              },
+                              {
+                                "t": "button",
+                                "a": {
+                                  "type": "button",
+                                  "data-ask-option": "Getrennte Repos",
+                                  "class": "flex items-start gap-2.5 rounded-xl border px-2.5 py-1.5 text-left transition-colors border-transparent bg-bg hover:border-accent/60 hover:bg-accent/10 "
+                                },
+                                "k": [
+                                  {
+                                    "t": "span",
+                                    "a": {
+                                      "class": "mt-[3px] grid h-3.5 w-3.5 shrink-0 place-items-center border text-white rounded-full border-edge"
+                                    }
+                                  },
+                                  {
+                                    "t": "span",
+                                    "a": {
+                                      "class": "min-w-0 flex-1"
+                                    },
+                                    "k": [
+                                      {
+                                        "t": "span",
+                                        "a": {
+                                          "class": "block text-[12.5px] font-medium text-fg"
+                                        },
+                                        "k": [
+                                          "Getrennte Repos"
+                                        ]
+                                      },
+                                      {
+                                        "t": "span",
+                                        "a": {
+                                          "class": "mt-0.5 block text-[11.5px] leading-snug text-dim"
+                                        },
+                                        "k": [
+                                          "Unabhängige Release-Zyklen."
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "t": "button",
+                            "a": {
+                              "type": "button",
+                              "class": "flex items-center gap-1.5 self-start rounded-full px-1 py-0.5 text-[11.5px] font-medium text-dim hover:text-fg"
+                            },
+                            "k": [
+                              {
+                                "t": "svg",
+                                "a": {
+                                  "width": "12",
+                                  "height": "12",
+                                  "viewBox": "0 0 24 24",
+                                  "aria-hidden": "true"
+                                },
+                                "k": [
+                                  {
+                                    "t": "path",
+                                    "a": {
+                                      "d": "M12 20h9"
+                                    }
+                                  },
+                                  {
+                                    "t": "path",
+                                    "a": {
+                                      "d": "M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"
+                                    }
+                                  }
+                                ]
+                              },
+                              "Eigene Antwort"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "role": "assistant",
+      "text": "Ich habe eine Rückfrage gestellt und warte auf deine Auswahl.<verb> für <secs> · ↑ 160 · ↓ 42 Tokens",
+      "markers": [
+        "text"
+      ],
+      "dom": {
+        "t": "div",
+        "a": {
+          "data-contain": "",
+          "class": "cb-contain-bleed"
+        },
+        "k": [
+          {
+            "t": "div",
+            "a": {
+              "class": "transition-opacity duration-200 "
+            },
+            "k": [
+              {
+                "t": "div",
+                "a": {
+                  "class": "group relative"
+                },
+                "k": [
+                  {
+                    "t": "div",
+                    "a": {
+                      "data-contain": "",
+                      "class": "cb-contain-bleed"
+                    },
+                    "k": [
+                      {
+                        "t": "div",
+                        "a": {
+                          "class": "min-w-0 py-1",
+                          "data-text-block": "true"
+                        },
+                        "k": [
+                          {
+                            "t": "p",
+                            "a": {
+                              "class": "my-1.5 whitespace-pre-wrap break-words leading-relaxed first:mt-0 last:mb-0"
+                            },
+                            "k": [
+                              "Ich habe eine Rückfrage gestellt und warte auf deine Auswahl."
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "t": "div",
+                    "a": {
+                      "class": "mt-1 flex items-center gap-1.5 text-dim",
+                      "data-metric-row": "true"
+                    },
+                    "k": [
+                      {
+                        "t": "span",
+                        "a": {
+                          "class": "inline-flex size-[1em] shrink-0 text-accent/70",
+                          "data-metric-hex": "true"
+                        },
+                        "k": [
+                          {
+                            "t": "svg",
+                            "a": {
+                              "width": "1em",
+                              "height": "1em",
+                              "viewBox": "0 0 24 24",
+                              "aria-hidden": "true"
+                            },
+                            "k": [
+                              {
+                                "t": "path",
+                                "a": {
+                                  "d": "M12 2.5l8.2 4.75v9.5L12 21.5l-8.2-4.75v-9.5L12 2.5z"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "t": "span",
+                        "k": [
+                          "<verb> für <secs>",
+                          " · ↑ ",
+                          "160",
+                          " · ↓ ",
+                          "42",
+                          "Tokens"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "t": "div",
+                    "a": {
+                      "class": "mt-1 flex items-center gap-0.5",
+                      "data-message-actions": "true"
+                    },
+                    "k": [
+                      {
+                        "t": "button",
+                        "a": {
+                          "type": "button",
+                          "title": "Nachricht kopieren",
+                          "aria-label": "Nachricht kopieren",
+                          "class": "grid h-7 w-7 place-items-center rounded-lg transition-colors text-dim hover:bg-hover hover:text-fg"
+                        },
+                        "k": [
+                          {
+                            "t": "svg",
+                            "a": {
+                              "width": "14",
+                              "height": "14",
+                              "viewBox": "0 0 24 24",
+                              "aria-hidden": "true"
+                            },
+                            "k": [
+                              {
+                                "t": "rect",
+                                "a": {
+                                  "x": "9",
+                                  "y": "9",
+                                  "width": "11",
+                                  "height": "11"
+                                }
+                              },
+                              {
+                                "t": "path",
+                                "a": {
+                                  "d": "M15 5.5A2.5 2.5 0 0 0 12.5 3H6.5A3.5 3.5 0 0 0 3 6.5v6A2.5 2.5 0 0 0 5.5 15"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "t": "button",
+                        "a": {
+                          "type": "button",
+                          "title": "Vorlesen",
+                          "aria-label": "Vorlesen",
+                          "class": "grid h-7 w-7 place-items-center rounded-lg transition-colors text-dim hover:bg-hover hover:text-fg"
+                        },
+                        "k": [
+                          {
+                            "t": "svg",
+                            "a": {
+                              "width": "14",
+                              "height": "14",
+                              "viewBox": "0 0 24 24",
+                              "aria-hidden": "true"
+                            },
+                            "k": [
+                              {
+                                "t": "path",
+                                "a": {
+                                  "d": "M11 5 6.5 9H3v6h3.5L11 19z"
+                                }
+                              },
+                              {
+                                "t": "path",
+                                "a": {
+                                  "d": "M15.5 8.5a5 5 0 0 1 0 7"
+                                }
+                              },
+                              {
+                                "t": "path",
+                                "a": {
+                                  "d": "M18.5 5.5a9 9 0 0 1 0 13"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "attachment": []
+}

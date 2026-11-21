@@ -1,0 +1,16 @@
+cbase
+Copyright 2026 Kiyan Stenke
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product includes material from third parties. The attributions, licenses and sources are listed in
+web/public/THIRD_PARTY_NOTICES.txt, including code ported from microsoft/vscode (MIT License, Copyright (c) Microsoft Corporation).
+Each ported file carries a header comment that names its origin.
+
+cbase does not bundle the Claude Code or Codex command line tools. A deployment installs them from their own packages under their own
+licenses and terms, and every user brings their own subscription.
+
+Trademarks: Claude and Anthropic, OpenAI and Codex, GitHub, GitLab, ngrok, Microsoft Teams, Visual Studio Code and the other product
+names and logos shown in cbase are trademarks of their respective owners. cbase uses them only to name the service a feature connects
+to; it is not affiliated with, sponsored or endorsed by any of them. The logos that ship, with owner, source and terms, are listed in TRADEMARKS.md. The cbase lens logo is original work of the author. The cbase name and lens logo are not covered by the Apache
+License grant for use as a mark (Apache-2.0, section 6).

@@ -1,0 +1,234 @@
+{
+  "claudeVersion": "2.1.322",
+  "pack": "@anthropic-ai/claude-code-darwin-arm64@2.1.322",
+  "binarySha256": "a9d237949db816a0b7afd88a9a8e1df36b3a597a30f5a41d1c0539eb180a3450",
+  "platform": "darwin-arm64",
+  "way": "api-mock",
+  "generatedWith": "server/backend/test/fixtures/dynworkflows-journal/generate.mjs",
+  "conditions": "claude -p im bypassPermissions-Mode, leeres HOME und CLAUDE_CONFIG_DIR, API-Mock auf 127.0.0.1; der Hauptlauf ruft Workflow({ script }) mit script.js und nach dessen Fertigmeldung Workflow({ script, resumeFromRunId }) gegen dasselbe Journal; Exit 0",
+  "responses": {
+    "1": "ALPHA",
+    "2": "BETA",
+    "3": {
+      "wort": "GAMMA",
+      "count": 3
+    },
+    "4": "ALPHA+BETA",
+    "5": "HTTP 400 invalid_request_error",
+    "6": "DELTA",
+    "7": "EPSILON",
+    "8": "ZETA",
+    "9": "ETA",
+    "10": "THETA",
+    "11": "IOTA",
+    "12": "KAPPA",
+    "13": "LAMBDA",
+    "14": "MY",
+    "15": "NY",
+    "5 (zweiter Durchgang)": "FIVE"
+  },
+  "passes": 2,
+  "runId": "wf_e3b72b6d-0e4",
+  "requests": [
+    {
+      "main": true,
+      "response": "Workflow"
+    },
+    {
+      "seq": 1,
+      "pass": 1,
+      "response": "ALPHA"
+    },
+    {
+      "main": true,
+      "response": "Der Workflow läuft."
+    },
+    {
+      "seq": 3,
+      "pass": 1,
+      "response": "StructuredOutput"
+    },
+    {
+      "seq": 2,
+      "pass": 1,
+      "response": "BETA"
+    },
+    {
+      "seq": 4,
+      "pass": 1,
+      "response": "ALPHA+BETA"
+    },
+    {
+      "seq": 5,
+      "pass": 1,
+      "response": "HTTP 400"
+    },
+    {
+      "seq": 5,
+      "pass": 1,
+      "response": "HTTP 400"
+    },
+    {
+      "seq": 5,
+      "pass": 1,
+      "response": "HTTP 400"
+    },
+    {
+      "seq": 5,
+      "pass": 1,
+      "response": "HTTP 400"
+    },
+    {
+      "seq": 5,
+      "pass": 1,
+      "response": "HTTP 400"
+    },
+    {
+      "seq": 5,
+      "pass": 1,
+      "response": "HTTP 400"
+    },
+    {
+      "seq": 6,
+      "pass": 1,
+      "response": "DELTA"
+    },
+    {
+      "seq": 8,
+      "pass": 1,
+      "response": "ZETA"
+    },
+    {
+      "seq": 9,
+      "pass": 1,
+      "response": "ETA"
+    },
+    {
+      "seq": 7,
+      "pass": 1,
+      "response": "EPSILON"
+    },
+    {
+      "seq": 10,
+      "pass": 1,
+      "response": "THETA"
+    },
+    {
+      "seq": 11,
+      "pass": 1,
+      "response": "IOTA"
+    },
+    {
+      "seq": 11,
+      "pass": 1,
+      "response": "IOTA"
+    },
+    {
+      "seq": 12,
+      "pass": 1,
+      "response": "KAPPA"
+    },
+    {
+      "seq": 12,
+      "pass": 1,
+      "response": "KAPPA"
+    },
+    {
+      "seq": 14,
+      "pass": 1,
+      "response": "MY"
+    },
+    {
+      "seq": 13,
+      "pass": 1,
+      "response": "LAMBDA"
+    },
+    {
+      "seq": 15,
+      "pass": 1,
+      "response": "NY"
+    },
+    {
+      "main": true,
+      "response": "Workflow (resumeFromRunId)"
+    },
+    {
+      "main": true,
+      "response": "Der Workflow läuft."
+    },
+    {
+      "seq": 5,
+      "pass": 2,
+      "response": "FIVE"
+    },
+    {
+      "seq": 6,
+      "pass": 2,
+      "response": "DELTA"
+    },
+    {
+      "seq": 8,
+      "pass": 2,
+      "response": "ZETA"
+    },
+    {
+      "seq": 9,
+      "pass": 2,
+      "response": "ETA"
+    },
+    {
+      "seq": 7,
+      "pass": 2,
+      "response": "EPSILON"
+    },
+    {
+      "seq": 10,
+      "pass": 2,
+      "response": "THETA"
+    },
+    {
+      "seq": 11,
+      "pass": 2,
+      "response": "IOTA"
+    },
+    {
+      "seq": 11,
+      "pass": 2,
+      "response": "IOTA"
+    },
+    {
+      "seq": 12,
+      "pass": 2,
+      "response": "KAPPA"
+    },
+    {
+      "seq": 12,
+      "pass": 2,
+      "response": "KAPPA"
+    },
+    {
+      "seq": 14,
+      "pass": 2,
+      "response": "MY"
+    },
+    {
+      "seq": 13,
+      "pass": 2,
+      "response": "LAMBDA"
+    },
+    {
+      "seq": 15,
+      "pass": 2,
+      "response": "NY"
+    },
+    {
+      "main": true,
+      "response": "Fertig."
+    }
+  ],
+  "files": {
+    "journal.jsonl": "7241a0b8165134e13bf36e45a0a9022e1c42c57367ccc0ba0f4e147544b471b9",
+    "script.js": "cdd1db504bada1c0d3facd6e1cc1b69cd985c5a241ff3785822bdb005021e03b"
+  },
+  "filesHint": "script.js: sha256 taken anew on 12.11.2026 with the rename to cbase; the only difference to the old anchor is the name (one word in meta.description, held against the recorded state at the branch point 07417c18). journal.jsonl is unchanged — it was run with the script from before the rename."
+}

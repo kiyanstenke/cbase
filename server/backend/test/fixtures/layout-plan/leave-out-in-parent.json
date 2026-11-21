@@ -1,0 +1,209 @@
+{
+  "name": "leave-out-in-parent",
+  "description": "A child is pulled out beforehand, then the parent folder is dropped - the child stays, everything else below it falls.",
+  "mode": "creation",
+  "selection": [
+    {
+      "seq": 1,
+      "kind": "folder",
+      "name": "p",
+      "files": [
+        {
+          "rel": "keep/k.txt",
+          "size": 10
+        },
+        {
+          "rel": "drop/d.txt",
+          "size": 10
+        },
+        {
+          "rel": "drop/inner/i.txt",
+          "size": 10
+        },
+        {
+          "rel": "drop/sub/s.txt",
+          "size": 10
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "kind": "move",
+      "from": "p/drop/inner",
+      "to": "p/keep/inner"
+    },
+    {
+      "kind": "leaveOut",
+      "path": "p/drop"
+    },
+    {
+      "kind": "leaveOut",
+      "path": "p/keep/k.txt"
+    }
+  ],
+  "expected": {
+    "tree": [
+      {
+        "path": "p",
+        "kind": "folder",
+        "source": 1,
+        "origin": "p",
+        "size": 40,
+        "codeRepo": true
+      },
+      {
+        "path": "p/drop",
+        "kind": "folder",
+        "source": 1,
+        "origin": "p/drop",
+        "size": 30
+      },
+      {
+        "path": "p/drop/d.txt",
+        "kind": "file",
+        "source": 1,
+        "origin": "p/drop/d.txt",
+        "size": 10
+      },
+      {
+        "path": "p/drop/inner",
+        "kind": "folder",
+        "source": 1,
+        "origin": "p/drop/inner",
+        "size": 10
+      },
+      {
+        "path": "p/drop/inner/i.txt",
+        "kind": "file",
+        "source": 1,
+        "origin": "p/drop/inner/i.txt",
+        "size": 10
+      },
+      {
+        "path": "p/drop/sub",
+        "kind": "folder",
+        "source": 1,
+        "origin": "p/drop/sub",
+        "size": 10
+      },
+      {
+        "path": "p/drop/sub/s.txt",
+        "kind": "file",
+        "source": 1,
+        "origin": "p/drop/sub/s.txt",
+        "size": 10
+      },
+      {
+        "path": "p/keep",
+        "kind": "folder",
+        "source": 1,
+        "origin": "p/keep",
+        "size": 10
+      },
+      {
+        "path": "p/keep/k.txt",
+        "kind": "file",
+        "source": 1,
+        "origin": "p/keep/k.txt",
+        "size": 10
+      }
+    ],
+    "hints": [],
+    "omitted": 0,
+    "upload": {
+      "1": [
+        "p/keep/k.txt",
+        "p/drop/d.txt",
+        "p/drop/inner/i.txt",
+        "p/drop/sub/s.txt"
+      ]
+    },
+    "finalTree": [
+      {
+        "path": "p",
+        "kind": "folder",
+        "source": 1,
+        "origin": "p",
+        "size": 40,
+        "codeRepo": true
+      },
+      {
+        "path": "p/keep",
+        "kind": "folder",
+        "source": 1,
+        "origin": "p/keep",
+        "size": 10
+      },
+      {
+        "path": "p/keep/inner",
+        "kind": "folder",
+        "source": 1,
+        "origin": "p/drop/inner",
+        "size": 10
+      },
+      {
+        "path": "p/keep/inner/i.txt",
+        "kind": "file",
+        "source": 1,
+        "origin": "p/drop/inner/i.txt",
+        "size": 10
+      }
+    ],
+    "mapping": {
+      "1": [
+        {
+          "from": "p",
+          "to": "p"
+        },
+        {
+          "from": "p/drop",
+          "to": null
+        },
+        {
+          "from": "p/drop/inner",
+          "to": "p/keep/inner"
+        },
+        {
+          "from": "p/keep/k.txt",
+          "to": null
+        }
+      ]
+    },
+    "finalMapping": {
+      "ways": [],
+      "gone": [],
+      "codeRepos": []
+    },
+    "codeRepos": [
+      "p"
+    ],
+    "repos": [
+      "p"
+    ],
+    "error": [],
+    "warnings": [],
+    "targets": [
+      {
+        "source": 1,
+        "origin": "p/drop/d.txt",
+        "target": null
+      },
+      {
+        "source": 1,
+        "origin": "p/drop/sub/s.txt",
+        "target": null
+      },
+      {
+        "source": 1,
+        "origin": "p/drop/inner/i.txt",
+        "target": "p/keep/inner/i.txt"
+      },
+      {
+        "source": 1,
+        "origin": "p/keep/k.txt",
+        "target": null
+      }
+    ]
+  }
+}

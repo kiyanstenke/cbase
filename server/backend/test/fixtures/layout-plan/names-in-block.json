@@ -1,0 +1,144 @@
+{
+ "name": "names-in-block",
+ "description": "Second reading, slice 3 (#5, #11): an uploaded repo with a directly cloned repo inside (no submodule) stays ONE block - the inner one is content, no repo in a repo; a file in the block with a control character in the name (macOS \"Icon\\r\") is not accepted by the server and stays out with hint NAME_OMITTED instead of failing the whole batch; the same file outside a block is a node and carries NAME_INVALID.",
+ "mode": "creation",
+ "selection": [
+  {
+   "seq": 1,
+   "kind": "folder",
+   "name": "web",
+   "files": [
+    {
+     "rel": "site/.git/HEAD",
+     "size": 23
+    },
+    {
+     "rel": "site/index.html",
+     "size": 10
+    },
+    {
+     "rel": "site/Icon\r",
+     "size": 5
+    },
+    {
+     "rel": "site/themes/t/.git/HEAD",
+     "size": 23
+    },
+    {
+     "rel": "site/themes/t/x.css",
+     "size": 4
+    },
+    {
+     "rel": "Icon\r",
+     "size": 7
+    }
+   ]
+  }
+ ],
+ "steps": [],
+ "expected": {
+  "tree": [
+   {
+    "path": "web",
+    "kind": "folder",
+    "source": 1,
+    "origin": "web",
+    "size": 67
+   },
+   {
+    "path": "web/Icon\r",
+    "kind": "file",
+    "source": 1,
+    "origin": "web/Icon\r",
+    "size": 7
+   },
+   {
+    "path": "web/site",
+    "kind": "code-repo",
+    "source": 1,
+    "origin": "web/site",
+    "size": 60
+   }
+  ],
+  "hints": [
+   {
+    "code": "NAME_OMITTED",
+    "path": "web/site/Icon\r"
+   }
+  ],
+  "omitted": 1,
+  "upload": {
+   "1": [
+    "web/site/.git/HEAD",
+    "web/site/index.html",
+    "web/site/themes/t/.git/HEAD",
+    "web/site/themes/t/x.css",
+    "web/Icon\r"
+   ]
+  },
+  "finalTree": [
+   {
+    "path": "web",
+    "kind": "folder",
+    "source": 1,
+    "origin": "web",
+    "size": 67
+   },
+   {
+    "path": "web/Icon\r",
+    "kind": "file",
+    "source": 1,
+    "origin": "web/Icon\r",
+    "size": 7
+   },
+   {
+    "path": "web/site",
+    "kind": "code-repo",
+    "source": 1,
+    "origin": "web/site",
+    "size": 60
+   }
+  ],
+  "mapping": {
+   "1": [
+    {
+     "from": "web",
+     "to": "web"
+    }
+   ]
+  },
+  "finalMapping": {
+   "ways": [],
+   "gone": [],
+   "codeRepos": []
+  },
+  "codeRepos": [],
+  "repos": [
+   "web/site"
+  ],
+  "error": [
+   {
+    "code": "NAME_INVALID",
+    "path": "web/Icon\r"
+   }
+  ],
+  "warnings": [],
+  "targets": [
+   {
+    "source": 1,
+    "origin": "web/site/index.html",
+    "target": "web/site/index.html"
+   },
+   {
+    "source": 1,
+    "origin": "web/site/themes/t/x.css",
+    "target": "web/site/themes/t/x.css"
+   },
+   {
+    "source": 1,
+    "origin": "web/site/themes/t/.git/HEAD",
+    "target": "web/site/themes/t/.git/HEAD"
+   }
+  ]
+ }
+}

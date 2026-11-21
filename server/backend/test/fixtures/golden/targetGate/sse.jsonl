@@ -1,0 +1,38 @@
+{"stream":"global","type":"init","running":[],"dynWorkflows":[],"browsers":[]}
+{"stream":"global","type":"chat_title","chatId":"<chat-1>","title":"Golden zielgate"}
+{"stream":"global","type":"run","chatId":"<chat-1>","running":true}
+{"stream":"global","type":"run","chatId":"<chat-1>","running":false,"answered":true,"title":"Golden zielgate","workspaceId":"<ws-1>","projectId":"","category":"finished","pushTitle":"Golden zielgate","pushSubtitle":"Antwort fertig","pushBody":"Antwort auf die erste Frage.","push":false}
+{"stream":"global","type":"run","chatId":"<chat-1>","running":true}
+{"stream":"global","type":"run","chatId":"<chat-1>","running":false,"answered":true,"title":"Golden zielgate","workspaceId":"<ws-1>","projectId":"","category":"finished","pushTitle":"Golden zielgate","pushSubtitle":"Antwort fertig","pushBody":"Fortsetzung: alles zu Ende gebracht.","push":false}
+{"stream":"<chat-1>","type":"harness","subtype":"connected","lastId":0,"total":0,"running":false,"compacting":false,"waiting":false,"monitors":[],"agents":[],"tasks":[],"wakeupAt":0,"wakeupReason":"","wakeupPrompt":"","contextTokens":0,"streamText":"","streamTextTruncated":false,"queued":[]}
+{"stream":"<chat-1>","type":"harness","subtype":"user_message","text":"Erste Frage","attachments":[]}
+{"stream":"<chat-1>","type":"harness","subtype":"run_started","resume":false,"provider":"claude"}
+{"stream":"<chat-1>","type":"system","subtype":"init","session_id":"sess-targetGate","cwd":"<path>/workspace","model":"claude-haiku-4-5-20251001","tools":["Bash","Read","Edit","Agent"],"mcp_servers":[{"name":"cbase","status":"connected"}],"permissionMode":"bypassPermissions","apiKeySource":"none","claude_code_version":"<version>"}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"message_start","message":{"id":"msg_1","type":"message","role":"assistant","model":"claude-haiku-4-5-20251001","content":[],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":150000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":0}}}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Antwort auf "}}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"die erste "}}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Frage."}}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"content_block_stop","index":0}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null},"usage":{"output_tokens":14}}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"message_stop"}}
+{"stream":"<chat-1>","type":"assistant","message":{"id":"msg_1","type":"message","role":"assistant","model":"claude-haiku-4-5-20251001","content":[{"type":"text","text":"Antwort auf die erste Frage."}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":150000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":14}}}
+{"stream":"<chat-1>","type":"result","subtype":"success","is_error":false,"duration_ms":"<ms>","duration_api_ms":1000,"num_turns":1,"result":"Antwort auf die erste Frage.","session_id":"sess-targetGate","total_cost_usd":0,"usage":{"input_tokens":120,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":18}}
+{"stream":"<chat-1>","type":"harness","subtype":"run_done","meta":{"secs":"<secs>","inTok":150000,"outTok":14}}
+{"stream":"<chat-1>","type":"harness","subtype":"compacting","auto":true}
+{"stream":"<chat-1>","type":"harness","subtype":"compacted","chars":105,"auto":true,"percent":60}
+{"stream":"<chat-1>","type":"harness","subtype":"goal_check","achieved":false,"note":"noch offen","continuing":true,"attempt":1,"max":3}
+{"stream":"<chat-1>","type":"harness","subtype":"run_started","resume":false,"provider":"claude"}
+{"stream":"<chat-1>","type":"system","subtype":"init","session_id":"sess-targetGate","cwd":"<path>/workspace","model":"claude-haiku-4-5-20251001","tools":["Bash","Read","Edit","Agent"],"mcp_servers":[{"name":"cbase","status":"connected"}],"permissionMode":"bypassPermissions","apiKeySource":"none","claude_code_version":"<version>"}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"message_start","message":{"id":"msg_2","type":"message","role":"assistant","model":"claude-haiku-4-5-20251001","content":[],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":10000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":0}}}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Fortsetzung nach der "}}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Verdichtung: alles zu "}}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Ende gebracht."}}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"content_block_stop","index":0}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null},"usage":{"output_tokens":14}}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"message_stop"}}
+{"stream":"<chat-1>","type":"assistant","message":{"id":"msg_2","type":"message","role":"assistant","model":"claude-haiku-4-5-20251001","content":[{"type":"text","text":"Fortsetzung nach der Verdichtung: alles zu Ende gebracht."}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":10000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":14}}}
+{"stream":"<chat-1>","type":"result","subtype":"success","is_error":false,"duration_ms":"<ms>","duration_api_ms":1000,"num_turns":1,"result":"Fortsetzung: alles zu Ende gebracht.","session_id":"sess-targetGate","total_cost_usd":0,"usage":{"input_tokens":120,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":18}}
+{"stream":"<chat-1>","type":"harness","subtype":"run_done","meta":{"secs":"<secs>","inTok":10000,"outTok":14}}
+{"stream":"<chat-1>","type":"harness","subtype":"goal_check","achieved":true,"note":"erledigt","turns":2}

@@ -1,0 +1,272 @@
+#!/usr/bin/python3
+# cbase-manifest — the manifest per entry of a tree, for the check of the relocation.
+#
+#   cbase-manifest [--] <root>          or via stdin:  python3 - [--] <root> < cbase-manifest
+#
+# Why it exists: size and count are falsely red for a correct copy (a directory's size depends on the order of creation and on the
+# coreutils version) and falsely green for 9 of 12 deliberate errors, among them a flipped character in a Postgres table that Postgres
+# itself does not notice. The relocation therefore measures every volume at the stopped source and at the target before the start with
+# THIS program and compares the two manifests field-equal (server/backend/electron/server/projectbox/relocation/manifest.js); only
+# then is anything removed.
+#
+# Why in the backend image under /usr/local/bin (not in the project box): /usr/local/bin is mounted read-only into every project
+# container — in B, in a helper and in the project container THE SAME program measures, and a correction is a backend deploy instead of
+# a new image id of the project box, which would make every relocated project be created anew. python3, because `getfattr` is installed
+# nowhere and Node has no xattr API.
+#
+# Output: JSON rows on stdout, ASCII, keys sorted.
+#   1st line  {"cbase-manifest":1}
+#   per entry, the root as "." first, then depth first, per directory sorted by the BYTES of the names:
+#     p       relative path; bytes as UTF-8, what is not UTF-8 as a surrogate (\udcXX) — reversible and unambiguous
+#     type    d f l p s c b (directory, file, symlink, FIFO, socket, character device, block device)
+#     mode    the permissions including setuid/setgid/sticky, four-digit octal
+#     uid gid mtime (nanoseconds, as a string — more than 2^53)
+#     xattr   {name: sha256 of the value}, all namespaces visible without CAP_SYS_ADMIN (trusted.* is missing), including
+#             system.posix_acl_access/_default (the ACLs) and security.capability; a file system without xattrs gives {}
+#     f only: size, sha256 of the content, thin (fewer allocated blocks than its size: st_blocks < st_size / 512 — the heuristic by
+#             which `cp --sparse=auto` treats a file as thin; NOT SEEK_HOLE — ext4/iomap reports a preallocated, never written range
+#             (posix_fallocate, Postgres from 16, InnoDB) as data only if its pages happen to be in the page cache; the field
+#             would hang on the cache, not on the file)
+#     l only: target (sha256 of the symlink target)
+#     c b only: device ("major:minor")
+#     not d:  nlink, and for nlink > 1 hl = the path under which this inode occurred FIRST in the run (the hardlink group)
+#   last line {"entries":N,"end":true} — without it the manifest is incomplete, never "empty".
+#
+# What is deliberately NOT in it: the size and blocks of a directory (they legitimately differ for a correct copy), allocated blocks at
+# all, atime, ctime, inode and device number of the file system. And never a content: files, symlink targets and xattr values appear
+# only as sha256. Paths and xattr names appear.
+#
+# The tree is foreign data (a project container could write into it): no symlink is followed (every step through a directory
+# descriptor with O_NOFOLLOW, checked against the inode from the listing), a FIFO or a device is never opened, and a directory on
+# another file system (a mount point in the tree) is an error instead of a silent overreach. Every error ends with exit 2 and one line
+# on stderr, WITHOUT the closing line.
+import errno
+import hashlib
+import json
+import os
+import stat
+import sys
+
+VERSION = 1
+BLOCK = 1 << 20
+PROC_FD = b"/proc/self/fd/"
+
+TYPES = {
+    stat.S_IFDIR: "d", stat.S_IFREG: "f", stat.S_IFLNK: "l", stat.S_IFIFO: "p",
+    stat.S_IFSOCK: "s", stat.S_IFCHR: "c", stat.S_IFBLK: "b",
+}
+O_BASE = os.O_RDONLY | os.O_NOFOLLOW | getattr(os, "O_CLOEXEC", 0)
+O_DIR = O_BASE | os.O_DIRECTORY
+O_FILE = O_BASE | os.O_NONBLOCK   # a FIFO that took its place between stat and open does not block this way
+
+
+class Error(Exception):
+    def __init__(self, reason, rel, rootCause=None):
+        super().__init__(reason)
+        self.reason, self.rel, self.rootCause = reason, rel, rootCause
+
+
+def text(b):
+    return b.decode("utf-8", "surrogateescape")
+
+
+def sha(b):
+    return hashlib.sha256(b).hexdigest()
+
+
+def xattrs(target, rel):
+    """target: an open descriptor (file, directory) or a path via /proc/self/fd/<dir>/<name> (everything else) —
+    the path is never followed at its LAST component."""
+    try:
+        if isinstance(target, int):
+            names = os.listxattr(target)
+        else:
+            names = os.listxattr(target, follow_symlinks=False)
+    except OSError as e:
+        if e.errno in (errno.ENOTSUP, errno.EOPNOTSUPP):
+            return {}
+        raise Error("xattrs not readable", rel, e)
+    out = {}
+    for n in sorted(names, key=os.fsencode):
+        try:
+            w = os.getxattr(target, n) if isinstance(target, int) else os.getxattr(target, n, follow_symlinks=False)
+        except OSError as e:
+            raise Error("xattr not readable", rel, e)
+        out[n] = sha(w)
+    return out
+
+
+def same(a, b):
+    return a.st_dev == b.st_dev and a.st_ino == b.st_ino
+
+
+def content(fd, st, rel):
+    h = hashlib.sha256()
+    n = 0
+    while True:
+        b = os.read(fd, BLOCK)
+        if not b:
+            break
+        h.update(b)
+        n += len(b)
+    if n != st.st_size:
+        raise Error("file changed while being read", rel)
+    # Thin means: the file occupies fewer blocks than its size demands (a real hole). A preallocated file is not (its blocks are
+    # occupied, `cp -a` writes it full and occupies the same), a thin one stays so after `cp -a` (`--sparse=auto` sees the same
+    # number) and does not after `tar` without -S. The inode knows the allocated blocks — independent of the page cache, unlike
+    # SEEK_HOLE.
+    thin = n > 0 and st.st_blocks < st.st_size // 512
+    return h.hexdigest(), thin
+
+
+def entry(rel, st):
+    type = TYPES.get(stat.S_IFMT(st.st_mode))
+    if type is None:
+        raise Error("unknown file type", rel)
+    e = {
+        "p": text(rel), "type": type, "mode": "%04o" % stat.S_IMODE(st.st_mode),
+        "uid": st.st_uid, "gid": st.st_gid, "mtime": str(st.st_mtime_ns),
+    }
+    return type, e
+
+
+class Run:
+    def __init__(self, out):
+        self.out = out
+        self.count = 0
+        self.groups = {}
+
+    def write(self, e):
+        self.out.write(json.dumps(e, ensure_ascii=True, sort_keys=True, separators=(",", ":")) + "\n")
+        self.count += 1
+
+    def hardlink(self, e, st):
+        e["nlink"] = st.st_nlink
+        if st.st_nlink > 1:
+            e["hl"] = self.groups.setdefault((st.st_dev, st.st_ino), e["p"])
+
+    def kind(self, dfd, name, rel, dev):
+        """An entry under the directory descriptor dfd. Returns the descriptor of a subdirectory (open, the caller closes it),
+        otherwise None."""
+        try:
+            st = os.stat(name, dir_fd=dfd, follow_symlinks=False)
+        except OSError as e:
+            raise Error("stat failed", rel, e)
+        type, e = entry(rel, st)
+        if type == "d":
+            try:
+                cfd = os.open(name, O_DIR, dir_fd=dfd)
+            except OSError as ex:
+                raise Error("directory cannot be opened", rel, ex)
+            try:
+                fst = os.fstat(cfd)
+                if not same(st, fst) or not stat.S_ISDIR(fst.st_mode):
+                    raise Error("directory was replaced during the run", rel)
+                if fst.st_dev != dev:
+                    raise Error("mount point in the tree — the manifest does not cross file system boundaries", rel)
+                e["xattr"] = xattrs(cfd, rel)
+                self.write(e)
+            except BaseException:
+                os.close(cfd)
+                raise
+            return cfd
+        if type == "f":
+            e["size"] = st.st_size
+            try:
+                cfd = os.open(name, O_FILE, dir_fd=dfd)
+            except OSError as ex:
+                raise Error("file cannot be opened", rel, ex)
+            try:
+                fst = os.fstat(cfd)
+                if not same(st, fst) or not stat.S_ISREG(fst.st_mode):
+                    raise Error("file was replaced during the run", rel)
+                e["sha256"], e["thin"] = content(cfd, fst, rel)
+                e["xattr"] = xattrs(cfd, rel)
+            finally:
+                os.close(cfd)
+        else:
+            if type == "l":
+                try:
+                    e["target"] = sha(os.readlink(name, dir_fd=dfd))
+                except OSError as ex:
+                    raise Error("symlink not readable", rel, ex)
+            elif type in ("c", "b"):
+                e["device"] = "%d:%d" % (os.major(st.st_rdev), os.minor(st.st_rdev))
+            e["xattr"] = xattrs(PROC_FD + str(dfd).encode() + b"/" + name, rel)
+        self.hardlink(e, st)
+        self.write(e)
+        return None
+
+    def tree(self, root):
+        try:
+            rfd = os.open(root, O_DIR)
+        except OSError as e:
+            raise Error("root is not a directory or cannot be opened", b".", e)
+        stack = []
+        try:
+            st = os.fstat(rfd)
+            dev = st.st_dev
+            _, e = entry(b".", st)
+            e["xattr"] = xattrs(rfd, b".")
+            self.write(e)
+            stack.append((rfd, b"", iter(names(rfd, b"."))))
+            while stack:
+                dfd, base, it = stack[-1]
+                name = next(it, None)
+                if name is None:
+                    os.close(dfd)
+                    stack.pop()
+                    continue
+                rel = base + name
+                cfd = self.kind(dfd, name, rel, dev)
+                if cfd is not None:
+                    stack.append((cfd, rel + b"/", iter(names(cfd, rel))))
+        finally:
+            for dfd, _, _ in stack:
+                try:
+                    os.close(dfd)
+                except OSError:
+                    pass
+
+
+def names(dfd, rel):
+    try:
+        return sorted(os.fsencode(n) for n in os.listdir(dfd))
+    except OSError as e:
+        raise Error("directory not readable", rel, e)
+
+
+def main(argv):
+    args = list(argv[1:])
+    if args and args[0] == "--":
+        args = args[1:]
+    if len(args) != 1:
+        sys.stderr.write("Usage: cbase-manifest [--] <root>\n")
+        return 64
+    # Without these functions there would be no manifest but one without xattrs or without holes — that would be "empty" instead of
+    # "unknown". Linux has both; macOS has no os.listxattr (the test injects it). The allocated blocks (`thin`) are in st_blocks.
+    for f in ("listxattr", "getxattr"):
+        if not hasattr(os, f):
+            sys.stderr.write("cbase-manifest: os.%s is missing on this platform — no manifest\n" % f)
+            return 3
+    if not hasattr(os.stat_result, "st_blocks"):
+        sys.stderr.write("cbase-manifest: os.stat_result.st_blocks is missing on this platform — no manifest\n")
+        return 3
+    out = sys.stdout
+    run = Run(out)
+    try:
+        out.write(json.dumps({"cbase-manifest": VERSION}, separators=(",", ":")) + "\n")
+        run.tree(os.fsencode(args[0]))
+        out.write(json.dumps({"entries": run.count, "end": True}, sort_keys=True, separators=(",", ":")) + "\n")
+        out.flush()
+    except Error as e:
+        reason = e.reason + (": " + os.strerror(e.rootCause.errno) if isinstance(e.rootCause, OSError) and e.rootCause.errno else "")
+        sys.stderr.write("cbase-manifest: %s (%s)\n" % (reason, text(e.rel).encode("unicode_escape").decode("ascii")))
+        return 2
+    except BrokenPipeError:
+        return 2
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

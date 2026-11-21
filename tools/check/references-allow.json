@@ -1,0 +1,15 @@
+{
+  "files": [],
+  "lines": [
+    {
+      "file": "^tools/check/references\\.test\\.mjs$",
+      "pattern": "server/missing\\.test\\.js|gone\\.test\\.mjs|k1-probe\\.mjs|here\\.test\\.mjs|web/not-here\\.ts",
+      "reason": "synthetic test data: the guard's own counter-test plants a missing file, a missing test and a missing script into a temporary tree"
+    },
+    {
+      "file": "^tools/check/(gate-plans|guard-register|language|test-output|public-closure)\\.test\\.mjs$",
+      "pattern": "[\"`:](?:[a-gx]|title|probe)?(?:\\.extra|\\.ops)?\\.test\\.m?js[\"`:]",
+      "reason": "synthetic test data: fixture file names a test writes into a temporary tree or feeds a matcher, and the .ops/.extra name suffixes the gate's matchers test for; no repository file is meant"
+    }
+  ]
+}

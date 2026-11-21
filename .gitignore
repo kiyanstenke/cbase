@@ -1,0 +1,33 @@
+.env
+data/
+node_modules/
+.next/
+web/out/
+dist/
+.DS_Store
+.playwright-mcp/
+
+# Gateway runtime data and the staged docker build context of the backend image
+server/gateway/data/
+server/backend/build-context/
+
+# Build artifacts
+*.tsbuildinfo
+
+# Logs and the green-gate marker of ./check
+.deploy-logs/
+
+# Stray copies of backend sources in the root folder (the real ones live in server/backend/electron/server/)
+/store.js
+/server.js
+
+# Python bytecode from local runs of cbase-clone/cbase-manifest
+__pycache__/
+*.pyc
+
+# Xcode user data: device-specific, carries the user name in the path
+xcuserdata/
+
+# Deploy: machine-specific files (local config and the marker of a rollout checkout, see DEPLOY.md)
+/deploy.local.json
+/.cbase-rollout-checkout

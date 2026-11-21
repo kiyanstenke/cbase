@@ -1,0 +1,11 @@
+{"type":"launched"}
+{"type":"started","key":"v2:abf366fd5bea302d8f311339b36013a1d7d00a6ffd55dfe1779ae6a8b671d880","agentId":"aafbe603f5a3a976f","label":"eins","phase":"Eins"}
+{"type":"result","key":"v2:abf366fd5bea302d8f311339b36013a1d7d00a6ffd55dfe1779ae6a8b671d880","agentId":"aafbe603f5a3a976f","result":"ALPHA"}
+{"type":"started","key":"v2:5899db0af7d63d9636bbeaa16ece424a3704e01a0452fbb31497b53da544d496","agentId":"ad4cec73c2e2290fc","label":"drei","phase":"Zwei"}
+{"type":"started","key":"v2:8b9bd7031a55dbab9e08e71cd9e66c0a18de80123a3362355ef43948bafde2c9","agentId":"abd827e6b0e33d010","label":"zwei","phase":"Eins"}
+{"type":"result","key":"v2:8b9bd7031a55dbab9e08e71cd9e66c0a18de80123a3362355ef43948bafde2c9","agentId":"abd827e6b0e33d010","result":"BETA"}
+{"type":"result","key":"v2:5899db0af7d63d9636bbeaa16ece424a3704e01a0452fbb31497b53da544d496","agentId":"ad4cec73c2e2290fc","result":{"wort":"GAMMA","zahl":3}}
+{"type":"started","key":"v2:16e990cf427ecb4597ea895a16aacf0aa8666d3e72ebb063502479a5c314088a","agentId":"a0ca43461f215f6e2","label":"vier","phase":"Zwei"}
+{"type":"result","key":"v2:16e990cf427ecb4597ea895a16aacf0aa8666d3e72ebb063502479a5c314088a","agentId":"a0ca43461f215f6e2","result":"ALPHA+BETA"}
+{"type":"started","key":"v2:b9b6743602b2054b16eaa74d00e97820afe08df5fc91fc229bc9b22cda59fbcc","agentId":"a3a9f06f8f923fcc7","label":"fuenf","phase":"Zwei"}
+{"type":"failed","key":"v2:b9b6743602b2054b16eaa74d00e97820afe08df5fc91fc229bc9b22cda59fbcc","agentId":"a3a9f06f8f923fcc7"}

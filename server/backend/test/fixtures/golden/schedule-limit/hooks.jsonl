@@ -1,0 +1,13 @@
+{"kind":"beforeDeliver","name":"channel-human","index":0,"wait":false,"phase":"start","chat":"<chat-1>"}
+{"kind":"turnStart","name":"scheduled","index":0,"wait":false,"phase":"start","chat":"<chat-1>"}
+{"kind":"turnStart","name":"outer-loop-turn","index":1,"wait":false,"phase":"start","chat":"<chat-1>"}
+{"kind":"hold","name":"graph-workflow","index":0,"phase":"start","chat":"<chat-1>"}
+{"kind":"hold","name":"graph-workflow","index":0,"phase":"end","takenOver":false,"chat":"<chat-1>"}
+{"kind":"beforeRunBroadcast","name":"scheduled-end","index":0,"wait":false,"phase":"start","chat":"<chat-1>"}
+{"kind":"beforeRunBroadcast","name":"git-view","index":1,"wait":false,"phase":"start","chat":"<chat-1>"}
+{"kind":"beforeRunBroadcast","name":"captures-show","index":2,"wait":false,"phase":"start","chat":"<chat-1>"}
+{"kind":"end","name":"channel-delivery","index":0,"wait":false,"phase":"start","chat":"<chat-1>"}
+{"kind":"end","name":"outer-loop","index":1,"wait":false,"phase":"start","chat":"<chat-1>"}
+{"kind":"end","name":"scheduled","index":2,"wait":false,"phase":"start","chat":"<chat-1>"}
+{"kind":"afterLimitCancel","name":"scheduled-end","index":0,"wait":false,"phase":"start","chat":"<chat-1>"}
+{"kind":"afterLimitCancel","name":"workflow-end","index":1,"wait":false,"phase":"start","chat":"<chat-1>"}

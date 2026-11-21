@@ -1,0 +1,1009 @@
+#!/usr/bin/env python3
+# cbase-clone — the volume clone of a project container in two phases (the program behind the clone helper).
+#
+# WHERE IT LIVES: in the BACKEND image under /usr/local/bin/cbase-clone, not in the cbase-projectbox image. /usr/local/bin of
+# the user container is mounted read-only into every project container (and into every helper with the same system mounts;
+# projectbox/creation.js, rule `system-bin`); both images bring python3 from `base`. A fix here is therefore a backend deploy —
+# no new projectbox image id, no re-creation of relocated projects.
+#
+# Called in the clone helper with the source (the main's docker folder, read-only) and the target (the volume of the copy).
+# The program NEVER GUESSES what is "stopped": which volumes may be copied up front (phase 1) is computed by B from
+# `docker inspect` and passed in here.
+#
+#   list --phase 1 SOURCE [--volumes V …]
+#       What may be copied while running: every layer `overlay2/<id>` that is COMMITTED in the layerdb (its id appears in
+#       image/overlay2/layerdb/sha256/*/cache-id), except `overlay2/l` and the writable layers of the containers including
+#       `-init` (ids in image/overlay2/layerdb/mounts/*/mount-id and init-id), plus ONLY the named `volumes/<v>`.
+#       Why the cache-id test: moby creates a layer FIRST on pull/build (driver.Create), unpacks into it, and writes it to the
+#       layerdb only afterwards (tx.Commit renames layerdb/tmp/write-set-* to sha256/<chain>). A folder without cache-id may
+#       therefore be half-done — an unpack in progress, an active BuildKit snapshot, the remains of a crash — and goes into the
+#       PAUSE, never into phase 1. Committed layers change no more.
+#   list --phase 2 SOURCE [--volumes V …] [--again V …] [--target TARGET]
+#       The rest, in the pause: everything phase 1 does not take — `image/`, the build cache `buildkit/`, `containers/` WITHOUT
+#       `containers/*/*-json.log*`, `network/`, the other `volumes/*` with `metadata.db`, `overlay2/l`, the container layers,
+#       every layer without cache-id and every other file of the root —, plus the phase-1 volumes named under --again once more
+#       (a container that starts between the phases). With --target also every layer of the phase-1 kind that is still missing
+#       in the target (pulled, built or committed between the phases). Union of both phases = everything except the logs.
+#   copy --phase 1 SOURCE TARGET [--volumes V …] [--upfront W …]
+#   copy --phase 2 SOURCE TARGET [--volumes V …] [--again V …] [--reconcile W … --since NS]
+#       Copies the list of the phase (phase 2 with --target = TARGET) with GNU `cp -a --preserve=xattr --parents` (cwd = SOURCE;
+#       phase 1 with `--upfront`: a separate cp for the up-front volumes, see below) — ONE call as long as the list fits in one
+#       chunk, otherwise one per chunk (see `chunks`: at most CHUNK_COUNT paths and CHUNK_BYTES argv bytes, entries that share
+#       a file in the same chunk; the output then also carries `chunks=<calls>`): xattrs `user.overlay.*`, 0/0 whiteouts,
+#       sockets, links, hard links, owners — as measured; `--preserve=xattr` explicitly so that a non-transferable xattr is an
+#       error instead of silently missing. Never mix: an entry that already exists in the target is an error; only the --again
+#       volumes are deleted in the target first in phase 2. Phase 2 checks that every phase-1 volume is in the target, creates
+#       empty container folders and takes mode and owner of the root.
+#       UPFRONT COPY of the running volumes, so that the pause does not copy the whole database: phase 1 takes the `--upfront`
+#       volumes (mounted by a running container) along while the main runs — in a SEPARATE cp AFTER the one of the list, whose
+#       messages are tolerated and counted (`upfront_error=`; a service that deletes between readdir and lstat used to fail the
+#       whole clone; see `upfront_copy`) — and reports the start (`upfront_begin_ns=`, the clock BEFORE this cp). Phase 2 does
+#       not put them in the list but RECONCILES them (`--reconcile W … --since <upfront_begin_ns>`): the trees of source and
+#       target are compared without ever following a link. An entry is REPLACED (removed in the target, copied again) if its
+#       ctime_ns is at or after `since − CTIME_MARGIN_NS` (only the kernel sets the ctime, no `touch -d` resets it; the margin
+#       covers the coarse ctime clock — it lags by up to one tick — and a small step of the system clock), or if kind, size,
+#       mtime (not for links), mode, owner, link target, device number, link count or the xattrs differ. Missing entries are
+#       created, surplus ones deleted. A HARDLINK GROUP of the source (link count > 1) of which one member is replaced, or whose
+#       members in the target are not ONE file, is created anew — all members in the same cp (GNU cp joins hard links within ONE
+#       call; if a group crosses a chunk boundary, `link` joins it afterwards). All copies of the reconciliation go into the SAME
+#       list as those of the phase. A DELETION MARKER (character device 0:0) never counts by ctime (see `different`): overlayfs
+#       creates them as hard links to a shared inode, every new one raises the ctime of all. LAST the metadata of every folder
+#       that is a folder on both sides, from the inside out: owner, mode, xattrs, atime/mtime (every copy before sets the
+#       folder's mtime). A reconcile volume that vanished in the source vanishes in the target; one missing in the target is an
+#       error (phase 1 did not run completely). Output `reconcile replaced=… fresh=… deleted=… folders=…` — counting only what
+#       changed. Knob (for the guard only): CBASE_CLONE_CTIME_MARGIN_NS.
+#   fadvise PATH …
+#       posix_fadvise(DONTNEED) on every regular file below the paths (links are never followed): takes source and target out
+#       of the page cache (otherwise the save gate counts the clone as pressure).
+#   policy-protection TARGET ID …
+#       Sets `RestartPolicy` to {"Name": "no", "MaximumRetryCount": 0} in TARGET/containers/<id>/hostconfig.json — only for the
+#       named ids — and prints the old values as ONE JSON object {id: RestartPolicy}. Reads and checks everything first, then
+#       writes (atomically per file, mode and owner stay).
+#   layer --phase 1 SOURCE TARGET
+#   layer --phase 2 SOURCE TARGET --since NS
+#       Copy from a copy: the upper layers of a template copy (`<template>/layer`) as the OWN upper layers of the new copy
+#       (`<new>/layer`) — over the same lower layers they show the same view (overlay without redirect_dir/metacopy/index).
+#       Phase 1 while the template runs: TARGET must not exist (a clone never mixes), it is created 0700; the source entries
+#       with `cp -a --preserve=xattr --parents` (whiteouts c 0,0, `user.overlay.*`, owner; in chunks as above); messages about an
+#       entry that vanishes between readdir and lstat are tolerated and counted (like the up-front copy, `layer_error=`), the
+#       clock BEFORE the cp reports `layer_begin_ns=`. Phase 2 in the pause: the same reconciliation as `--reconcile` (ctime from
+#       `--since` with margin or kind/size/mtime/mode/owner/xattrs different ⇒ replaced, missing ⇒ created, surplus ⇒ deleted,
+#       hardlink groups anew, deletion markers without ctime, folder metadata last) over the whole tree, in chunks as above;
+#       output `reconcile replaced=… fresh=… deleted=… folders=…`. The root takes mode and owner of the source.
+#
+# Foreign data: source and target are docker folders that root in the project container can write. The program therefore never
+# follows a link (lstat, O_NOFOLLOW, folders only if they really are folders), and ids and volume names that become paths must
+# match their pattern.
+#
+# Output of `list`: one relative path per line (a name with a line break is an error). Exit 0 = good, 1 = error (message on
+# stderr), 2 = wrong call. Python 3.9+ only (the gate has 3.9 and 3.14, the image 3.11).
+# Guard: tools/check/clone-program.test.mjs. Test seams: CBASE_CLONE_CP (the `cp`, default `cp`), CBASE_CLONE_CHUNK_COUNT/_BYTES.
+# xattrs are read via os.listxattr (Linux, production); on macOS (only the gate's guard) via libc with ctypes — same meaning,
+# NOFOLLOW.
+import argparse
+import ctypes
+import ctypes.util
+import errno
+import fnmatch
+import json
+import os
+import re
+import shutil
+import stat
+import subprocess
+import sys
+import time
+
+# Layer ids: the names of the folders under overlay2/ (except the link collection `l`), as moby and BuildKit assign them (sources:
+# moby layer/layer_store.go and pkg/stringid, builder/builder-next/adapters/snapshot; buildkit identity/randomid.go):
+#   - 64 hex (stringid.GenerateRandomID): layers from pull, load, `docker commit` and the classic builder (DOCKER_BUILDKIT=0),
+#     plus the writable layer of a container (layerdb/mounts/*/mount-id);
+#   - 25 characters [0-9a-z] (BuildKit identity.NewID): every layer BuildKit builds. The snapshot adapter of the moby worker
+#     creates it at the graphdriver under the snapshot key (Prepare → GraphDriver.Create), and moby registers it on export under
+#     exactly this name (RegisterByGraphID): the cache-id IS this id — even after the image is deleted, as long as the build
+#     cache holds the layer. Every stack with a built image (`docker compose build`, BuildKit is the default there) aborted the
+#     clone when only the first form was accepted. Per the sources moby assigns mount-ids only in the first form; the second is
+#     accepted there anyway — one more layer in the pause is the safe direction, an abort is not;
+#   - <id>-init: the init layer of a container (init-id = mount-id + "-init") — never a cache-id.
+# `link` (26 characters [A-Z0-9]) and `lower` ("l/<link>:l/<link>…") never name a layer id; the program does not read them, cp
+# takes them along literally. The check stays narrow — exactly these forms (fullmatch), so no slash, no "..", nothing empty,
+# nothing too long, no NUL: whatever has none of them is unresolved and an error, never guessed.
+LEVELS_ID = r"(?:[0-9a-f]{64}|[0-9a-z]{25})"
+LEVEL = re.compile(LEVELS_ID)  # cache-id
+CONTAINER_LEVEL = re.compile(LEVELS_ID + r"(?:-init)?")  # mount-id, init-id
+LEVEL_FORMS = "64 hex or 25 characters [0-9a-z] (BuildKit)"
+CONTAINER_ID = re.compile(r"^[0-9a-f]{64}$")
+VOLUME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]+$")
+LOG_PATTERN = "*-json.log*"
+NO_POLICY = {"Name": "no", "MaximumRetryCount": 0}
+# How far BEFORE the start of the up-front copy a ctime still counts as "after" (see header) — 2 s, far above one tick.
+CTIME_MARGIN_NS = 2_000_000_000
+
+
+class Error(Exception):
+    pass
+
+
+def is_folder(p):
+    try:
+        return stat.S_ISDIR(os.lstat(p).st_mode)
+    except FileNotFoundError:
+        return False
+
+
+def names(p):
+    if not is_folder(p):
+        raise Error(f"{p} is not a folder")
+    return sorted(os.listdir(p))
+
+
+def read_small(p, limit=65536):
+    fd = os.open(p, os.O_RDONLY | os.O_NOFOLLOW | getattr(os, "O_NONBLOCK", 0))
+    try:
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            raise Error(f"{p} is not a file")
+        data = b""
+        while len(data) <= limit:
+            chunk = os.read(fd, 65536)
+            if not chunk:
+                return data
+            data += chunk
+        raise Error(f"{p} is larger than {limit} bytes")
+    finally:
+        os.close(fd)
+
+
+def show(value, limit=80):
+    """A foreign value for a message: control characters visible (\\x00), at most `limit` characters — the message lands via
+    docker exec in the journal and in the chat."""
+    s = "".join(c if c.isprintable() else repr(c)[1:-1] for c in value[:limit])
+    return s + ("…" if len(value) > limit else "")
+
+
+def no_levels_id(p, value, forms):
+    return Error(f"{p}: “{show(value)}” is not a layer id (expected: {forms})")
+
+
+def container_levels(source):
+    """The layer ids of all containers (mount-id, init-id, mount-id + "-init"). None if there is no layerdb."""
+    layerdb = os.path.join(source, "image", "overlay2", "layerdb")
+    if not is_folder(layerdb):
+        return None
+    mounts = os.path.join(layerdb, "mounts")
+    levels = set()
+    if not os.path.lexists(mounts):
+        return levels
+    for cid in names(mounts):
+        d = os.path.join(mounts, cid)
+        if not is_folder(d):
+            raise Error(f"{d} is not a folder")
+        for file in ("mount-id", "init-id"):
+            p = os.path.join(d, file)
+            if not os.path.lexists(p):
+                if file == "mount-id":
+                    raise Error(f"{p} is missing — the layer of this container is unknown")
+                continue
+            value = read_small(p).decode("ascii", "replace").strip()
+            if not CONTAINER_LEVEL.fullmatch(value):
+                raise no_levels_id(p, value, LEVEL_FORMS + ", also with -init")
+            levels.add(value)
+            if file == "mount-id":
+                levels.add(value + "-init")
+    return levels
+
+
+def committed_levels(source):
+    """The layer ids the layerdb lists as done (layerdb/sha256/*/cache-id) — see header. A folder without
+    cache-id is no error (a commit still pending); a cache-id that is not a layer id is."""
+    sha = os.path.join(source, "image", "overlay2", "layerdb", "sha256")
+    levels = set()
+    if not os.path.lexists(sha):
+        return levels
+    for chain in names(sha):
+        d = os.path.join(sha, chain)
+        if not is_folder(d):
+            raise Error(f"{d} is not a folder")
+        p = os.path.join(d, "cache-id")
+        if not os.path.lexists(p):
+            continue
+        value = read_small(p).decode("ascii", "replace").strip()
+        if not LEVEL.fullmatch(value):
+            raise no_levels_id(p, value, LEVEL_FORMS + ", never -init")
+        levels.add(value)
+    return levels
+
+
+def check_volumes(list, what):
+    for v in list:
+        if not VOLUME.match(v):
+            raise Error(f"{what}: “{v}” is not a volume name")
+
+
+class Docker:
+    """The source read once: layers and the division phase 1 / container layer / other."""
+
+    def __init__(self, source):
+        if not is_folder(source):
+            raise Error(f"Source {source} is not a folder")
+        self.source = source
+        self.ov = os.path.join(source, "overlay2")
+        self.ov_names = names(self.ov) if is_folder(self.ov) else []
+        self.levels = set()
+        self.committed = set()
+        if any(n != "l" for n in self.ov_names):
+            e = container_levels(source)
+            if e is None:
+                raise Error(f"{source}/image/overlay2/layerdb is missing — the layers of the containers are unknown")
+            self.levels = e
+            self.committed = committed_levels(source)
+
+    def phase1_level(self, n):
+        # May be copied while running: a layer (folder) that is neither the link collection `l` nor a container layer
+        # and that the layerdb lists as done (otherwise it may just be unpacking).
+        return n != "l" and n not in self.levels and is_folder(os.path.join(self.ov, n)) and n in self.committed
+
+
+def list_phase1(d, volumes):
+    e = ["overlay2/" + n for n in d.ov_names if d.phase1_level(n)]
+    for v in sorted(set(volumes)):
+        if not is_folder(os.path.join(d.source, "volumes", v)):
+            raise Error(f"Volume {v} is missing in {d.source}/volumes")
+        e.append("volumes/" + v)
+    return e
+
+
+def list_phase2(d, volumes, again, target=None, reconcile=()):
+    """(Entries, empty container folders). The reconcile volumes are not in the list — they are reconciled."""
+    upfront = (set(volumes) - set(again)) | set(reconcile)
+    e, empty = [], []
+    for n in names(d.source):
+        p = os.path.join(d.source, n)
+        if n == "overlay2" and is_folder(p):
+            for m in d.ov_names:
+                if not d.phase1_level(m):
+                    e.append("overlay2/" + m)
+                elif target is not None and not os.path.lexists(os.path.join(target, "overlay2", m)):
+                    e.append("overlay2/" + m)  # created between the phases
+        elif n == "volumes" and is_folder(p):
+            for m in names(p):
+                if m not in upfront:
+                    e.append("volumes/" + m)
+        elif n == "containers" and is_folder(p):
+            for cid in names(p):
+                cd = os.path.join(p, cid)
+                if not is_folder(cd):
+                    e.append("containers/" + cid)
+                    continue
+                children = [f for f in names(cd) if not fnmatch.fnmatchcase(f, LOG_PATTERN)]
+                if not children:
+                    empty.append("containers/" + cid)
+                e.extend(f"containers/{cid}/{f}" for f in children)
+        else:
+            e.append(n)
+    return e, empty
+
+
+def check_upfront(args):
+    """--upfront only in phase 1, --reconcile only in phase 2 and only with --since; no volume in two roles."""
+    if args.phase == 1 and (args.reconcile or args.since is not None):
+        raise Error("--reconcile and --since exist only in phase 2")
+    if args.phase == 2 and args.upfront:
+        raise Error("--upfront exists only in phase 1")
+    if args.reconcile and args.since is None:
+        raise Error("--reconcile without --since — from when a change counts is not a default")
+    for a, b, what in ((args.volumes, args.upfront, "--volumes and --upfront"), (args.volumes, args.reconcile, "--volumes and --reconcile"),
+                      (args.again, args.reconcile, "--again and --reconcile")):
+        duplicate = sorted(set(a) & set(b))
+        if duplicate:
+            raise Error(f"{what} both name {', '.join(duplicate)}")
+
+
+def list_volumes(args):
+    d = Docker(args.source)
+    check_upfront(args)
+    if args.phase == 1:
+        if args.again or args.target:
+            raise Error("--again and --target exist only in phase 2")
+        e = list_phase1(d, args.volumes)
+    else:
+        e, _ = list_phase2(d, args.volumes, args.again, args.target, args.reconcile)
+    for x in e:
+        if "\n" in x:
+            raise Error(f"a name with a line break: {x!r}")
+    for x in e:
+        print(x)
+
+
+def metadata_of(source_path, target_path):
+    st = os.lstat(source_path)
+    os.chmod(target_path, stat.S_IMODE(st.st_mode))
+    zt = os.lstat(target_path)
+    if (zt.st_uid, zt.st_gid) != (st.st_uid, st.st_gid):
+        os.chown(target_path, st.st_uid, st.st_gid, follow_symlinks=False)
+
+
+def remove(p):
+    if is_folder(p):
+        shutil.rmtree(p)
+    elif os.path.lexists(p):
+        os.unlink(p)
+
+
+# ── xattrs without following links (Linux: os; macOS: libc via ctypes, only the guard) ───────────────────────────────────
+_libc = None
+XATTR_NOFOLLOW = 0x0001  # macOS <sys/xattr.h>
+
+
+def _darwin():
+    global _libc
+    if _libc is None:
+        if sys.platform != "darwin":
+            raise Error("xattrs are not readable on this platform — a reconciliation without them would be a guess")
+        libc = ctypes.CDLL(ctypes.util.find_library("c"), use_errno=True)
+        libc.listxattr.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_size_t, ctypes.c_int]
+        libc.listxattr.restype = ctypes.c_ssize_t
+        libc.getxattr.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_void_p, ctypes.c_size_t, ctypes.c_uint32, ctypes.c_int]
+        libc.getxattr.restype = ctypes.c_ssize_t
+        libc.setxattr.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_void_p, ctypes.c_size_t, ctypes.c_uint32, ctypes.c_int]
+        libc.setxattr.restype = ctypes.c_int
+        libc.removexattr.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int]
+        libc.removexattr.restype = ctypes.c_int
+        _libc = libc
+    return _libc
+
+
+def _os_error(p):
+    e = ctypes.get_errno()
+    return OSError(e, os.strerror(e), p)
+
+
+def xattrs_of(p):
+    """{name: value} of the xattrs of `p` (a link itself, never its target). A file system without xattrs: {}."""
+    try:
+        if hasattr(os, "listxattr"):
+            return {n: os.getxattr(p, n, follow_symlinks=False) for n in sorted(os.listxattr(p, follow_symlinks=False))}
+        libc = _darwin()
+        bp = os.fsencode(p)
+        n = libc.listxattr(bp, None, 0, XATTR_NOFOLLOW)
+        if n < 0:
+            raise _os_error(p)
+        buf = ctypes.create_string_buffer(max(n, 1))
+        n = libc.listxattr(bp, buf, n, XATTR_NOFOLLOW)
+        if n < 0:
+            raise _os_error(p)
+        values = {}
+        for name in sorted(x for x in buf.raw[:n].split(b"\0") if x):
+            m = libc.getxattr(bp, name, None, 0, 0, XATTR_NOFOLLOW)
+            if m < 0:
+                raise _os_error(p)
+            wbuf = ctypes.create_string_buffer(max(m, 1))
+            m = libc.getxattr(bp, name, wbuf, m, 0, XATTR_NOFOLLOW)
+            if m < 0:
+                raise _os_error(p)
+            values[os.fsdecode(name)] = wbuf.raw[:m]
+        return values
+    except OSError as e:
+        if e.errno in (errno.ENOTSUP, getattr(errno, "EOPNOTSUPP", errno.ENOTSUP)):
+            return {}
+        raise
+
+
+def xattrs_set(p, desired):
+    """Bring the xattrs of `p` (a folder) to `desired`: set differing ones, remove surplus ones."""
+    actual = xattrs_of(p)
+    if hasattr(os, "setxattr"):
+        for n in sorted(set(actual) - set(desired)):
+            os.removexattr(p, n, follow_symlinks=False)
+        for n, w in sorted(desired.items()):
+            if actual.get(n) != w:
+                os.setxattr(p, n, w, follow_symlinks=False)
+        return
+    libc = _darwin()
+    bp = os.fsencode(p)
+    for n in sorted(set(actual) - set(desired)):
+        if libc.removexattr(bp, os.fsencode(n), XATTR_NOFOLLOW) != 0:
+            raise _os_error(p)
+    for n, w in sorted(desired.items()):
+        if actual.get(n) != w and libc.setxattr(bp, os.fsencode(n), w, len(w), 0, XATTR_NOFOLLOW) != 0:
+            raise _os_error(p)
+
+
+# ── the reconciliation of an up-front copied volume (see header) ─────────────────────────────────────────────────────────
+def is_deletion_marker(st):
+    """A deletion marker (whiteout) of overlayfs: a character device 0:0."""
+    return stat.S_ISCHR(st.st_mode) and st.st_rdev == 0
+
+
+def different(sp, ss, dp, ds, threshold):
+    """Must the entry (not a folder on both sides) be replaced? `ss`/`ds` = lstat of source/target."""
+    # A DELETION MARKER does not count by ctime. Since kernel 5.8 overlayfs creates new deletion markers as hard links to ONE
+    # shared whiteout inode (ovl_whiteout: `link()` instead of `mknod` while the link count is below the cap), and every new or
+    # removed link raises the ctime of this inode — so of ALL deletion markers of the layer. With the ctime, a single delete in
+    # the template made every deletion marker count as changed and sent it through the cp again in the pause. A deletion marker
+    # carries no content that only the ctime would see: whether it is there and stays one is told by kind (st_mode) and device
+    # number, and mode, owner, mtime and xattrs are compared by the rest as before (a `link()` touches none of them).
+    if ss.st_ctime_ns >= threshold and not is_deletion_marker(ss):
+        return True  # changed since the start of the up-front copy (content, metadata, newly created) — whatever else looks equal
+    if ss.st_mode != ds.st_mode or (ss.st_uid, ss.st_gid) != (ds.st_uid, ds.st_gid):
+        return True  # kind, mode, owner
+    if stat.S_ISLNK(ss.st_mode):
+        if os.readlink(sp) != os.readlink(dp):
+            return True
+    else:
+        # mtime not for links: a new link target is a new link (ctime); the time of a link carries nothing.
+        if ss.st_size != ds.st_size or ss.st_mtime_ns != ds.st_mtime_ns:
+            return True
+        if stat.S_ISREG(ss.st_mode) and ss.st_nlink != ds.st_nlink:
+            return True
+        if (stat.S_ISCHR(ss.st_mode) or stat.S_ISBLK(ss.st_mode)) and ss.st_rdev != ds.st_rdev:
+            return True
+    return xattrs_of(sp) != xattrs_of(dp)
+
+
+def reconcile(source, target, rel, threshold, count, copy, folder, groups):
+    """A folder `rel` that is a folder on both sides: reconcile the children; the folder itself comes AFTER them into `folder`.
+    `rel` empty (`layer`): the root itself — its children are named without prefix, it does not appear in `folder`."""
+    s = os.path.join(source, rel) if rel else source
+    d = os.path.join(target, rel) if rel else target
+    sn, dn = set(names(s)), set(names(d))
+    under = (lambda n: f"{rel}/{n}") if rel else (lambda n: n)
+    for n in sorted(dn - sn):
+        remove(os.path.join(d, n))
+        count["deleted"] += 1
+    for n in sorted(sn - dn):
+        copy.append(under(n))
+        count["fresh"] += 1
+    for n in sorted(sn & dn):
+        r = under(n)
+        sp, dp = os.path.join(s, n), os.path.join(d, n)
+        ss, ds = os.lstat(sp), os.lstat(dp)
+        if stat.S_ISDIR(ss.st_mode) and stat.S_ISDIR(ds.st_mode):
+            reconcile(source, target, r, threshold, count, copy, folder, groups)
+            continue
+        replaced = different(sp, ss, dp, ds, threshold)
+        if stat.S_ISREG(ss.st_mode) and ss.st_nlink > 1:
+            groups.setdefault((ss.st_dev, ss.st_ino), []).append((r, None if replaced else (ds.st_dev, ds.st_ino)))
+        if replaced:
+            remove(dp)
+            copy.append(r)
+            count["replaced"] += 1
+    if rel:
+        folder.append(rel)
+
+
+def threshold_of(since):
+    margin = os.environ.get("CBASE_CLONE_CTIME_MARGIN_NS")
+    return since - (int(margin) if margin not in (None, "") else CTIME_MARGIN_NS)
+
+
+def groups_new(target, groups, copy, count):
+    """Hardlink groups: one member replaced, or the members are not ONE file in the target ⇒ the whole group anew (in the same cp)."""
+    for segments in groups.values():
+        targets = {z for _, z in segments}
+        if None in targets or len(targets) > 1:
+            for r, z in segments:
+                if z is not None:
+                    remove(os.path.join(target, r))
+                    copy.append(r)
+                    count["replaced"] += 1
+
+
+def reconcile_volumes(source, target, volumes, since):
+    """Reconcile every volume. Returns (entries for the cp, folders for the metadata afterwards, count)."""
+    threshold = threshold_of(since)
+    count = {"replaced": 0, "fresh": 0, "deleted": 0, "folder": 0}
+    copy, folder, groups = [], [], {}
+    for v in sorted(set(volumes)):
+        rel = "volumes/" + v
+        if not is_folder(os.path.join(target, rel)):
+            raise Error(f"Reconcile volume {v} is missing in the target — the up-front copy (phase 1) did not run (completely)")
+        if not os.path.lexists(os.path.join(source, rel)):
+            remove(os.path.join(target, rel))  # vanished since the up-front copy: the state of the pause does not have it
+            count["deleted"] += 1
+            continue
+        if not is_folder(os.path.join(source, rel)):
+            raise Error(f"volumes/{v} of the source is not a folder")
+        reconcile(source, target, rel, threshold, count, copy, folder, groups)
+    groups_new(target, groups, copy, count)
+    return copy, folder, count
+
+
+def folder_metadata(source, target, folder, count):
+    """LAST, from the inside out (the order of the reconciliation): owner, mode, xattrs and times of every folder."""
+    for rel in folder:
+        sp, dp = os.path.join(source, rel), os.path.join(target, rel)
+        ss, ds = os.lstat(sp), os.lstat(dp)
+        sx, dx = xattrs_of(sp), xattrs_of(dp)
+        if (ss.st_mode, ss.st_uid, ss.st_gid, ss.st_mtime_ns) == (ds.st_mode, ds.st_uid, ds.st_gid, ds.st_mtime_ns) and sx == dx:
+            continue
+        if (ds.st_uid, ds.st_gid) != (ss.st_uid, ss.st_gid):
+            os.chown(dp, ss.st_uid, ss.st_gid, follow_symlinks=False)
+        os.chmod(dp, stat.S_IMODE(ss.st_mode))  # after chown: it clears setuid/setgid
+        if sx != dx:
+            xattrs_set(dp, sx)
+        os.utime(dp, ns=(ss.st_atime_ns, ss.st_mtime_ns), follow_symlinks=False)
+        count["folder"] += 1
+
+
+# ── the path list in CHUNKS to cp ─────────────────────────────────────────────────────────────────────────────────────────
+# A list used to go as ONE argv to ONE cp. The reconciliation names every changed entry individually (a folder that is a folder
+# on both sides is walked) — an `npm ci`, a branch switch or a `chmod -R` in the template between phase 1 and the pause made
+# tens of thousands of paths of it, and from ARG_MAX on (Linux: a quarter of the stack limit, usually 2 MiB, at least 128 KiB —
+# argv AND environment) the call ended with E2BIG ("Argument list too long"): phase 2 failed IN the pause. Now: at most
+# CHUNK_COUNT paths and CHUNK_BYTES argv bytes per call. GNU cp joins hard links only within ONE call — therefore entries that
+# share a file (also a file INSIDE a folder that is copied as a whole) stay in the same chunk; such a group that alone would
+# cross the boundary is split and afterwards joined to ONE file again in the target (`link`). If the whole list fits in one
+# chunk, ONE cp runs as before, without a look into the folders.
+# Knobs (for the guard only): CBASE_CLONE_CHUNK_COUNT, CBASE_CLONE_CHUNK_BYTES.
+CHUNK_COUNT = 1000
+CHUNK_BYTES = 64 * 1024  # far below the minimum of ARG_MAX (128 KiB); environment and the fixed arguments fit beside it
+
+
+def slider(name, preset):
+    w = os.environ.get(name)
+    if w in (None, ""):
+        return preset
+    n = int(w)
+    if n < 1:
+        raise Error(f"{name}={w}: at least 1")
+    return n
+
+
+def argv_bytes(e):
+    return len(os.fsencode(e)) + 1 + 8  # the path, its NUL and its pointer — how the kernel counts argv against ARG_MAX
+
+
+FOLDER_WITHOUT_REFERENCE = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+WAY = (errno.ENOENT, errno.ENOTDIR, errno.ELOOP)  # vanished, no longer a folder, a link — passed over, never followed
+
+
+def hard_links_in(source, e):
+    """(key (dev, ino), path) per regular file with link count > 1 in `e` — a file: itself; a folder: everything below.
+    Never follows a link: every folder is opened part by part via the descriptor of its parent with O_NOFOLLOW — a running
+    source (phase 1) that swaps a folder for a link does not steer the walk outside. What vanishes between readdir
+    and lstat is missing — cp reports it itself."""
+    try:
+        st = os.lstat(os.path.join(source, e))
+    except FileNotFoundError:
+        return
+    if stat.S_ISREG(st.st_mode):
+        if st.st_nlink > 1:
+            yield (st.st_dev, st.st_ino), e
+        return
+    if not stat.S_ISDIR(st.st_mode):
+        return
+    fd = os.open(source, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        for part in e.split("/"):
+            fresh = os.open(part, FOLDER_WITHOUT_REFERENCE, dir_fd=fd)
+            os.close(fd)
+            fd = fresh
+    except OSError as error:
+        os.close(fd)
+        if error.errno in WAY:
+            return
+        raise
+    try:
+        yield from _hard_links_under(fd, e)
+    finally:
+        os.close(fd)
+
+
+def _hard_links_under(fd, rel):
+    with os.scandir(fd) as it:
+        children = list(it)
+    for x in children:
+        r = f"{rel}/{x.name}"
+        try:
+            s = x.stat(follow_symlinks=False)
+        except FileNotFoundError:
+            continue
+        if stat.S_ISREG(s.st_mode):
+            if s.st_nlink > 1:
+                yield (s.st_dev, s.st_ino), r
+            continue
+        if not stat.S_ISDIR(s.st_mode):
+            continue
+        try:
+            k = os.open(x.name, FOLDER_WITHOUT_REFERENCE, dir_fd=fd)
+        except OSError as error:
+            if error.errno in WAY:
+                continue
+            raise
+        try:
+            yield from _hard_links_under(k, r)
+        finally:
+            os.close(k)
+
+
+def chunks(source, entries):
+    """The entries in chunks for one cp each (see above) → (chunks, {key: [paths]} of the shared files for `link`).
+    Order as in the list (a group where its first member stands)."""
+    count_max = slider("CBASE_CLONE_CHUNK_COUNT", CHUNK_COUNT)
+    bytes_max = slider("CBASE_CLONE_CHUNK_BYTES", CHUNK_BYTES)
+    size = [argv_bytes(e) for e in entries]
+    if len(entries) <= count_max and sum(size) <= bytes_max:
+        return ([list(entries)] if entries else []), {}
+    # Groups: entries that share a file (union-find, the smallest position is the root).
+    parent = list(range(len(entries)))
+
+    def root(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+    first, locations = {}, {}
+    for i, e in enumerate(entries):
+        for key, rel in hard_links_in(source, e):
+            locations.setdefault(key, []).append(rel)
+            if key not in first:
+                first[key] = i
+                continue
+            a, b = root(i), root(first[key])
+            if a != b:
+                parent[max(a, b)] = min(a, b)
+    groups, keys_by_root = {}, {}
+    for i in range(len(entries)):
+        groups.setdefault(root(i), []).append(i)
+    for s, i in first.items():
+        if len(locations[s]) > 1:
+            keys_by_root.setdefault(root(i), []).append(s)
+    parts, after, part, tz, tb = [], {}, [], 0, 0
+    for w, segments in groups.items():
+        if len(segments) > count_max or sum(size[i] for i in segments) > bytes_max:
+            for s in keys_by_root.get(w, []):
+                after[s] = locations[s]  # split: `link` joins the members of these files afterwards
+            blocks = [[i] for i in segments]
+        else:
+            blocks = [segments]
+        for block in blocks:
+            bz, bb = len(block), sum(size[i] for i in block)
+            if part and (tz + bz > count_max or tb + bb > bytes_max):
+                parts.append(part)
+                part, tz, tb = [], 0, 0
+            part.extend(entries[i] for i in block)
+            tz, tb = tz + bz, tb + bb
+    if part:
+        parts.append(part)
+    return parts, after
+
+
+def ancestors_real(root, rel):
+    """Every ancestor of `rel` below `root` is a real folder (no link) — otherwise an unlink/link behind it would hit."""
+    p = root
+    for t in rel.split("/")[:-1]:
+        p = os.path.join(p, t)
+        try:
+            if not stat.S_ISDIR(os.lstat(p).st_mode):
+                return False
+        except FileNotFoundError:
+            return False
+    return True
+
+
+def link(source, target, after, tolerate=False):
+    """The members of a file that was copied across several chunks, joined to ONE file again in the target: the first stays,
+    every other becomes a hard link to it; afterwards the touched folders carry the times of the source again (creating and
+    deleting sets them). Never behind a link (`ancestors_real`). `tolerate` (a running source, phase 1): a member that is missing
+    or does not fit is passed over — the reconciliation of the pause puts it right; strictly (the pause) it is an error."""
+    def pass_over(notice):
+        if not tolerate:
+            raise Error(notice)
+    folder = set()
+    for locations in after.values():
+        first = os.path.join(target, locations[0])
+        st0 = os.lstat(first) if ancestors_real(target, locations[0]) and os.path.lexists(first) else None
+        if st0 is None or not stat.S_ISREG(st0.st_mode):
+            pass_over(f"{locations[0]}: not a file in the target (or behind a link) — the hard links to it cannot be made")
+            continue
+        for rel in locations[1:]:
+            zp = os.path.join(target, rel)
+            st = os.lstat(zp) if ancestors_real(target, rel) and os.path.lexists(zp) else None
+            if st is not None and (st.st_dev, st.st_ino) == (st0.st_dev, st0.st_ino):
+                continue
+            if st is None or not stat.S_ISREG(st.st_mode):
+                pass_over(f"{rel}: not a file in the target (or behind a link) — the hard link to {locations[0]} cannot be made")
+                continue
+            os.unlink(zp)
+            os.link(first, zp, follow_symlinks=False)
+            folder.add(os.path.dirname(rel))
+    for rel in sorted(folder, key=lambda r: -r.count("/")):
+        if not rel:
+            continue  # the root: the program takes its times nowhere (metadata_of: mode and owner)
+        try:
+            st = os.lstat(os.path.join(source, rel))
+        except FileNotFoundError:
+            pass_over(f"{rel}: vanished in the source")
+            continue
+        os.utime(os.path.join(target, rel), ns=(st.st_atime_ns, st.st_mtime_ns), follow_symlinks=False)
+
+
+def cp_call(cp, target, part):
+    return [cp, "-a", "--preserve=xattr", "--parents", "-t", target, "--", *part]
+
+
+def copy_in_chunks(cp, source, target, entries, what):
+    """The list in chunks (see above); every exit ≠ 0 is an error. → number of cp calls."""
+    parts, after = chunks(source, entries)
+    for i, part in enumerate(parts):
+        r = subprocess.run(cp_call(cp, target, part), cwd=source)
+        if r.returncode != 0:
+            chunk = f", chunk {i + 1} of {len(parts)}" if len(parts) > 1 else ""
+            raise Error(f"cp ended with {r.returncode} ({what}, {len(entries)} entries{chunk})")
+    link(source, target, after)
+    return len(parts)
+
+
+def chunks_field(calls, listen):
+    """` chunks=<number of cp calls>` — only if a list was split; otherwise the output stays as it was."""
+    return f" chunks={calls}" if calls > listen else ""
+
+
+# This many messages of a tolerated cp of the up-front copy go to stderr (all are counted).
+UPFRONT_NOTICES = 5
+
+
+def upfront_copy(cp, source, target, upfront, what="Up-front volume", roots_check=True):
+    """The up-front volumes in a SEPARATE cp after the list of phase 1, while the main runs. If the service deletes or renames an
+    entry between readdir and lstat/open (SQLite journal, Redis temp-*.rdb, WAL recycling), GNU cp reports "No such file or
+    directory", copies on and ends with 1. That is NOT an error here: the reconciliation of the pause compares every entry
+    (it creates what is missing, replaces what differs, rebuilds hardlink groups, folder metadata last). Every message line is
+    counted — the first ones go to stderr, the number into the output (`upfront_error=`, B writes it into the journal). An
+    error remains: cp ends with anything but 0 or 1 (signal, wrong call), or a volume root folder is missing in the target
+    afterwards — then the reconciliation would have nothing to reconcile against.
+    `layer`: the same tolerance for the upper layers of a living template copy (`what`, without the check of the root folders —
+    there the entries are the parts of the layer, and what is missing is created by the reconciliation of the pause).
+    In chunks like every list (`chunks`), the messages of all chunks counted together.
+    → (number of messages, number of cp calls)"""
+    parts, after = chunks(source, upfront)
+    n, first, code = 0, [], 0
+    for part in parts:
+        p = subprocess.Popen(cp_call(cp, target, part), cwd=source, stderr=subprocess.PIPE)
+        for row in p.stderr:
+            n += 1
+            if len(first) < UPFRONT_NOTICES:
+                first.append(row.decode("utf-8", "replace").rstrip("\n")[:300])
+        c = p.wait()
+        if c not in (0, 1):
+            example = f": {first[0]}" if first else ""
+            raise Error(f"cp ({what}) ended with {c} ({len(upfront)} entries){example}" if not roots_check else
+                         f"cp of the up-front volumes ended with {c} ({len(upfront)} volumes){example}")
+        code = max(code, c)
+    link(source, target, after, tolerate=True)
+    example = f": {first[0]}" if first else ""
+    for x in (upfront if roots_check else ()):
+        if not is_folder(os.path.join(target, x)):
+            raise Error(f"{what} {x} is missing in the target after the up-front copy (cp ended with {code}{example})")
+    if code == 0:
+        return 0, len(parts)
+    n = max(n, 1)
+    print(f"cbase-clone: {'up-front copy' if roots_check else what}: cp ended with {code}, {n} message(s) — tolerated, the reconciliation in the pause reconciles; "
+          f"the first: {' | '.join(first)}", file=sys.stderr)
+    return n, len(parts)
+
+
+def copy(args):
+    d = Docker(args.source)
+    target = args.target
+    if not is_folder(target):
+        raise Error(f"Target {target} is not a folder")
+    check_upfront(args)
+    empty = []
+    folder = []
+    count = None
+    begin = None
+    upfront = []
+    if args.phase == 1:
+        if args.again:
+            raise Error("--again exists only in phase 2")
+        e = list_phase1(d, args.volumes)
+        for v in sorted(set(args.upfront)):  # the running volumes — in a SEPARATE cp after the list (see upfront_copy)
+            if not is_folder(os.path.join(d.source, "volumes", v)):
+                raise Error(f"Volume {v} is missing in {d.source}/volumes")
+            upfront.append("volumes/" + v)
+        for x in upfront:
+            if os.path.lexists(os.path.join(target, x)):
+                raise Error(f"{x} already exists in the target — a clone never mixes")
+    else:
+        for v in sorted(set(args.volumes) - set(args.again)):
+            if not is_folder(os.path.join(target, "volumes", v)):
+                raise Error(f"Phase-1 volume {v} is missing in the target — phase 1 did not run (completely)")
+        for v in sorted(set(args.again)):
+            remove(os.path.join(target, "volumes", v))
+        e, empty = list_phase2(d, args.volumes, args.again, target, args.reconcile)
+    for x in e:
+        if os.path.lexists(os.path.join(target, x)):
+            raise Error(f"{x} already exists in the target — a clone never mixes")
+    if args.phase == 2 and args.reconcile:
+        more, folder, count = reconcile_volumes(d.source, target, args.reconcile, args.since)
+        e = e + more
+    cp = os.environ.get("CBASE_CLONE_CP") or "cp"
+    calls = listen = 0
+    if e:
+        calls += copy_in_chunks(cp, d.source, target, e, f"phase {args.phase}")
+        listen += 1
+    upfront_error = None
+    if upfront:
+        begin = time.time_ns()  # BEFORE the cp of the up-front volumes — what happens afterwards carries a later ctime
+        upfront_error, n = upfront_copy(cp, d.source, target, upfront)
+        calls, listen = calls + n, listen + 1
+    if args.phase == 2:
+        for x in empty:
+            parts = x.split("/")
+            for i in range(1, len(parts) + 1):
+                rel = os.path.join(*parts[:i])
+                zp = os.path.join(target, rel)
+                if not os.path.lexists(zp):
+                    os.mkdir(zp)
+                    metadata_of(os.path.join(d.source, rel), zp)
+        if count is not None:
+            folder_metadata(d.source, target, folder, count)
+        metadata_of(d.source, target)
+    print(f"phase={args.phase} entries={len(e) + len(upfront)}" + chunks_field(calls, listen)
+          + (f" upfront_error={upfront_error} upfront_begin_ns={begin}" if begin is not None else ""))
+    if count is not None:
+        print(f"reconcile replaced={count['replaced']} fresh={count['fresh']} deleted={count['deleted']} folders={count['folder']}")
+
+
+def layer(args):
+    """`layer` (see header): the upper layers of a template copy into the new copy — phase 1 running, phase 2 reconciliation."""
+    source = args.source.rstrip("/") or "/"
+    target = args.target.rstrip("/") or "/"
+    if not is_folder(source):
+        raise Error(f"Source {source} is not a folder")
+    cp = os.environ.get("CBASE_CLONE_CP") or "cp"
+    if args.phase == 1:
+        if args.since is not None:
+            raise Error("--since exists only in phase 2")
+        if os.path.lexists(target):
+            raise Error(f"{target} already exists — a clone never mixes")
+        if not is_folder(os.path.dirname(target)):
+            raise Error(f"the parent folder of {target} is not a folder")
+        os.mkdir(target, 0o700)
+        entries = names(source)
+        begin = time.time_ns()  # BEFORE the cp — what happens afterwards carries a later ctime (like the up-front copy)
+        n, calls = 0, 0
+        if entries:
+            n, calls = upfront_copy(cp, source, target, entries, what="Layer", roots_check=False)
+        metadata_of(source, target)
+        print(f"layer phase=1 entries={len(entries)}{chunks_field(calls, 1)} layer_error={n} layer_begin_ns={begin}")
+        return
+    if args.since is None:
+        raise Error("Phase 2 without --since — from when a change counts is not a default")
+    if not is_folder(target):
+        raise Error(f"{target} is missing — phase 1 did not run (completely)")
+    count = {"replaced": 0, "fresh": 0, "deleted": 0, "folder": 0}
+    copy, folder, groups = [], [], {}
+    reconcile(source, target, "", threshold_of(args.since), count, copy, folder, groups)
+    groups_new(target, groups, copy, count)
+    calls = copy_in_chunks(cp, source, target, copy, "layer, phase 2") if copy else 0
+    folder_metadata(source, target, folder, count)
+    metadata_of(source, target)
+    print(f"layer phase=2 entries={len(copy)}{chunks_field(calls, 1)}")
+    print(f"reconcile replaced={count['replaced']} fresh={count['fresh']} deleted={count['deleted']} folders={count['folder']}")
+
+
+def fadvise(args):
+    if not hasattr(os, "posix_fadvise"):
+        raise Error("posix_fadvise does not exist on this platform")
+    n = error = 0
+
+    def one(p):
+        nonlocal n, error
+        try:
+            fd = os.open(p, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        except FileNotFoundError:
+            return
+        except OSError:
+            error += 1
+            return
+        try:
+            if stat.S_ISREG(os.fstat(fd).st_mode):
+                os.posix_fadvise(fd, 0, 0, os.POSIX_FADV_DONTNEED)
+                n += 1
+        except OSError:
+            error += 1
+        finally:
+            os.close(fd)
+
+    for root in args.paths:
+        try:
+            st = os.lstat(root)
+        except FileNotFoundError:
+            continue
+        if stat.S_ISREG(st.st_mode):
+            one(root)
+        elif stat.S_ISDIR(st.st_mode):
+            for location, _, files in os.walk(root, followlinks=False):
+                for f in files:
+                    p = os.path.join(location, f)
+                    try:
+                        if stat.S_ISREG(os.lstat(p).st_mode):
+                            one(p)
+                    except FileNotFoundError:
+                        pass
+    print(f"fadvise files={n} error={error}")
+
+
+def policy_protection(args):
+    ids = list(dict.fromkeys(args.ids))
+    for cid in ids:
+        if not CONTAINER_ID.match(cid):
+            raise Error(f"“{cid}” is not a container id")
+    containers = os.path.join(args.target, "containers")
+    if not is_folder(containers):
+        raise Error(f"{containers} is not a folder")
+    read = []
+    for cid in ids:
+        cd = os.path.join(containers, cid)
+        if not is_folder(cd):
+            raise Error(f"{cd} is not a folder")
+        p = os.path.join(cd, "hostconfig.json")
+        st = os.lstat(p)
+        if not stat.S_ISREG(st.st_mode):
+            raise Error(f"{p} is not a file")
+        data = json.loads(read_small(p, 16 * 1024 * 1024).decode("utf-8"))
+        if not isinstance(data, dict):
+            raise Error(f"{p} is not a JSON object")
+        read.append((cid, cd, p, st, data))
+    old_policies = {}
+    for cid, cd, p, st, data in read:
+        old_policies[cid] = data.get("RestartPolicy")
+        data["RestartPolicy"] = dict(NO_POLICY)
+        tmp = os.path.join(cd, ".hostconfig.json.cbase-clone")
+        remove(tmp)
+        fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, stat.S_IMODE(st.st_mode))
+        try:
+            os.write(fd, json.dumps(data, separators=(",", ":")).encode("utf-8"))
+            os.fchmod(fd, stat.S_IMODE(st.st_mode))
+            if (os.fstat(fd).st_uid, os.fstat(fd).st_gid) != (st.st_uid, st.st_gid):
+                os.fchown(fd, st.st_uid, st.st_gid)
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+        os.replace(tmp, p)
+    print(json.dumps(old_policies, sort_keys=True))
+
+
+def main(argv):
+    ap = argparse.ArgumentParser(prog="cbase-clone", description="Volume clone of a project container in two phases.")
+    sub = ap.add_subparsers(dest="command", required=True)
+    for name in ("list", "copy"):
+        s = sub.add_parser(name)
+        s.add_argument("--phase", type=int, choices=(1, 2), required=True)
+        s.add_argument("source")
+        if name == "copy":
+            s.add_argument("target")
+        s.add_argument("--volumes", nargs="*", default=[])
+        s.add_argument("--again", nargs="*", default=[])
+        s.add_argument("--upfront", nargs="*", default=[])
+        s.add_argument("--reconcile", nargs="*", default=[])
+        s.add_argument("--since", type=int, default=None)
+        if name == "list":
+            s.add_argument("--target", dest="target", default=None)
+    s = sub.add_parser("fadvise")
+    s.add_argument("paths", nargs="+")
+    s = sub.add_parser("policy-protection")
+    s.add_argument("target")
+    s.add_argument("ids", nargs="+")
+    s = sub.add_parser("layer")
+    s.add_argument("--phase", type=int, choices=(1, 2), required=True)
+    s.add_argument("source")
+    s.add_argument("target")
+    s.add_argument("--since", type=int, default=None)
+    args = ap.parse_args(argv)
+    try:
+        if args.command in ("list", "copy"):
+            check_volumes(args.volumes, "--volumes")
+            check_volumes(args.again, "--again")
+            check_volumes(args.upfront, "--upfront")
+            check_volumes(args.reconcile, "--reconcile")
+        {"list": list_volumes, "copy": copy, "fadvise": fadvise, "policy-protection": policy_protection, "layer": layer}[args.command](args)
+    except (Error, OSError, ValueError) as e:
+        print(f"cbase-clone: {e}", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

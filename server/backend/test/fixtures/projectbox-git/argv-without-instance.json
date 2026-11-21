@@ -1,0 +1,2479 @@
+[
+ {
+  "step": "tree"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "symbolic-ref",
+   "--quiet",
+   "--short",
+   "HEAD"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--abbrev-ref",
+   "--symbolic-full-name",
+   "@{upstream}"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-list",
+   "--left-right",
+   "--count",
+   "@{upstream}...HEAD"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "status",
+   "--porcelain=v1",
+   "-z",
+   "--untracked-files=all"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "log",
+   "--no-ext-diff",
+   "--no-textconv",
+   "-1",
+   "--pretty=format:%h\u001f%s\u001f%an\u001f%ct"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "remote",
+   "get-url",
+   "origin"
+  ]
+ },
+ {
+  "step": "repos"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "step": "branches"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "symbolic-ref",
+   "--quiet",
+   "--short",
+   "HEAD"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "branch",
+   "--format=%(refname:short)"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "branch",
+   "-r",
+   "--format=%(refname:short)"
+  ]
+ },
+ {
+  "step": "stage"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "add",
+   "--",
+   "a.txt"
+  ]
+ },
+ {
+  "step": "diff-staged"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "diff",
+   "--no-ext-diff",
+   "--no-textconv",
+   "--staged",
+   "--",
+   "a.txt"
+  ]
+ },
+ {
+  "step": "unstage"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "restore",
+   "--staged",
+   "--",
+   "a.txt"
+  ]
+ },
+ {
+  "step": "diff"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "diff",
+   "--no-ext-diff",
+   "--no-textconv",
+   "--",
+   "a.txt"
+  ]
+ },
+ {
+  "step": "diff-new"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "diff",
+   "--no-ext-diff",
+   "--no-textconv",
+   "--",
+   "fresh.txt"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "diff",
+   "--no-ext-diff",
+   "--no-textconv",
+   "--no-index",
+   "--",
+   "/dev/null",
+   "fresh.txt"
+  ]
+ },
+ {
+  "step": "stage-all"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "add",
+   "-A"
+  ]
+ },
+ {
+  "step": "commit"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "commit",
+   "-m",
+   "zweiter Stand"
+  ]
+ },
+ {
+  "step": "log"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "log",
+   "--no-ext-diff",
+   "--no-textconv",
+   "--format=%H\u001f%h\u001f%s\u001f%an\u001f%ct",
+   "-n",
+   "5"
+  ]
+ },
+ {
+  "step": "show"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "show",
+   "--no-ext-diff",
+   "--no-textconv",
+   "<H>",
+   "--stat",
+   "-p"
+  ]
+ },
+ {
+  "step": "blame"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "blame",
+   "--no-textconv",
+   "--line-porcelain",
+   "--",
+   "a.txt"
+  ]
+ },
+ {
+  "step": "push"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--abbrev-ref",
+   "--symbolic-full-name",
+   "@{upstream}"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "push"
+  ]
+ },
+ {
+  "step": "fetch"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "fetch",
+   "--all",
+   "--prune"
+  ]
+ },
+ {
+  "step": "pull"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "pull"
+  ]
+ },
+ {
+  "step": "host"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "remote",
+   "get-url",
+   "origin"
+  ]
+ },
+ {
+  "step": "stash"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "stash",
+   "push",
+   "-m",
+   "between"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "stash",
+   "list",
+   "--format=%gd\u001f%s\u001f%ct"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "-c",
+   "diff.noprefix=false",
+   "-c",
+   "diff.mnemonicPrefix=false",
+   "-c",
+   "diff.srcPrefix=a/",
+   "-c",
+   "diff.dstPrefix=b/",
+   "stash",
+   "show",
+   "-p",
+   "stash@{0}",
+   "--no-color",
+   "--no-ext-diff",
+   "--no-textconv",
+   "-U3"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "stash",
+   "pop",
+   "stash@{0}"
+  ]
+ },
+ {
+  "step": "dismiss"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "checkout",
+   "HEAD",
+   "--",
+   "a.txt"
+  ]
+ },
+ {
+  "step": "branch"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "checkout",
+   "-b",
+   "beside"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "add",
+   "-A"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "commit",
+   "-m",
+   "auf neben"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "checkout",
+   "main"
+  ]
+ },
+ {
+  "step": "merge"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "merge",
+   "--no-edit",
+   "beside"
+  ]
+ },
+ {
+  "step": "cherry"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "checkout",
+   "-b",
+   "third"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "add",
+   "-A"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "commit",
+   "-m",
+   "auf dritter"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "log",
+   "--no-ext-diff",
+   "--no-textconv",
+   "--format=%H\u001f%h\u001f%s\u001f%an\u001f%ct",
+   "-n",
+   "1"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "checkout",
+   "main"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "cherry-pick",
+   "<H>"
+  ]
+ },
+ {
+  "step": "rebase"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rebase",
+   "main"
+  ]
+ },
+ {
+  "step": "abort"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "merge",
+   "--abort"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rebase",
+   "--abort"
+  ]
+ },
+ {
+  "step": "ERROR abort"
+ },
+ {
+  "step": "apply"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "diff",
+   "--no-ext-diff",
+   "--no-textconv",
+   "--",
+   "a.txt"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "apply",
+   "--cached",
+   "--whitespace=nowarn",
+   "-"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "apply",
+   "--cached",
+   "--whitespace=nowarn",
+   "--reverse",
+   "-"
+  ]
+ },
+ {
+  "step": "worktree"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "worktree",
+   "list",
+   "--porcelain"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "worktree",
+   "add",
+   "-b",
+   "wt-branch",
+   "<T>/wt"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "worktree",
+   "remove",
+   "--force",
+   "<T>/wt"
+  ]
+ },
+ {
+  "step": "submodule"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "submodule",
+   "status",
+   "--recursive"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "submodule",
+   "update",
+   "--init",
+   "--recursive"
+  ]
+ },
+ {
+  "step": "commit-push"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "add",
+   "-A"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "commit",
+   "-m",
+   "mit push"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--abbrev-ref",
+   "--symbolic-full-name",
+   "@{upstream}"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "push"
+  ]
+ },
+ {
+  "step": "push-new"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "checkout",
+   "-b",
+   "without-upstream"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--abbrev-ref",
+   "--symbolic-full-name",
+   "@{upstream}"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "symbolic-ref",
+   "--short",
+   "HEAD"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "push",
+   "-u",
+   "origin",
+   "without-upstream"
+  ]
+ },
+ {
+  "step": "access"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "accessaskpass",
+  "argv": [
+   "fetch",
+   "--all",
+   "--prune"
+  ]
+ },
+ {
+  "step": "dismiss-all"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "diff",
+   "--no-ext-diff",
+   "--no-textconv",
+   "--name-only"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "checkout",
+   "--",
+   "."
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "clean",
+   "-fd"
+  ]
+ },
+ {
+  "step": "amend"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "add",
+   "--",
+   "d.txt"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "commit",
+   "--amend",
+   "--no-edit"
+  ]
+ },
+ {
+  "step": "untracked"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "step": "access-push"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "checkout",
+   "-b",
+   "access-branch"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--abbrev-ref",
+   "--symbolic-full-name",
+   "@{upstream}"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "symbolic-ref",
+   "--short",
+   "HEAD"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "accessaskpass",
+  "argv": [
+   "push",
+   "-u",
+   "origin",
+   "access-branch"
+  ]
+ },
+ {
+  "step": "access-pull"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "accessaskpass",
+  "argv": [
+   "pull"
+  ]
+ },
+ {
+  "step": "access-commit-push"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "add",
+   "-A"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "commit",
+   "-m",
+   "mit Zugang"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--abbrev-ref",
+   "--symbolic-full-name",
+   "@{upstream}"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "accessaskpass",
+  "argv": [
+   "push"
+  ]
+ },
+ {
+  "step": "show-files"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "log",
+   "--no-ext-diff",
+   "--no-textconv",
+   "--format=%H\u001f%h\u001f%s\u001f%an\u001f%ct",
+   "-n",
+   "1"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-list",
+   "--parents",
+   "-n",
+   "1",
+   "<H>^{commit}",
+   "--"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "diff-tree",
+   "-r",
+   "-M",
+   "--no-commit-id",
+   "--name-status",
+   "-z",
+   "--no-ext-diff",
+   "--no-textconv",
+   "<H>",
+   "<H>"
+  ]
+ },
+ {
+  "step": "show-file"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "log",
+   "--no-ext-diff",
+   "--no-textconv",
+   "--format=%H\u001f%h\u001f%s\u001f%an\u001f%ct",
+   "-n",
+   "1"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-list",
+   "--parents",
+   "-n",
+   "1",
+   "<H>^{commit}",
+   "--"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "-c",
+   "core.quotePath=false",
+   "--literal-pathspecs",
+   "diff-tree",
+   "-p",
+   "-M",
+   "--no-commit-id",
+   "--no-color",
+   "--no-ext-diff",
+   "--no-textconv",
+   "<H>",
+   "<H>",
+   "--",
+   "z.txt"
+  ]
+ },
+ {
+  "step": "show-info"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "log",
+   "--no-ext-diff",
+   "--no-textconv",
+   "--format=%H\u001f%h\u001f%s\u001f%an\u001f%ct",
+   "-n",
+   "1"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-list",
+   "--parents",
+   "-n",
+   "1",
+   "<H>^{commit}",
+   "--"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "log",
+   "--no-ext-diff",
+   "--no-textconv",
+   "-1",
+   "--no-show-signature",
+   "--no-color",
+   "--encoding=UTF-8",
+   "--format=%an%x00%ae%x00%at%x00%B",
+   "<H>",
+   "--"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "diff-tree",
+   "-r",
+   "-M",
+   "--no-commit-id",
+   "--numstat",
+   "-z",
+   "--no-ext-diff",
+   "--no-textconv",
+   "<H>",
+   "<H>"
+  ]
+ },
+ {
+  "step": "diff-content"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "-c",
+   "core.quotePath=false",
+   "--literal-pathspecs",
+   "ls-files",
+   "-s",
+   "-z",
+   "--",
+   "a.txt"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "cat-file",
+   "blob",
+   "<H>"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "-c",
+   "core.quotePath=false",
+   "--literal-pathspecs",
+   "diff",
+   "--no-color",
+   "--no-ext-diff",
+   "--no-textconv",
+   "-U3",
+   "--src-prefix=a/",
+   "--dst-prefix=b/",
+   "--",
+   "a.txt"
+  ]
+ },
+ {
+  "step": "diff-content-staged"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "add",
+   "--",
+   "a.txt"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "-c",
+   "core.quotePath=false",
+   "--literal-pathspecs",
+   "diff",
+   "--no-color",
+   "--no-ext-diff",
+   "--no-textconv",
+   "-U3",
+   "--src-prefix=a/",
+   "--dst-prefix=b/",
+   "--staged",
+   "--",
+   "a.txt"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--verify",
+   "--quiet",
+   "HEAD^{commit}"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.quotePath=false",
+   "--literal-pathspecs",
+   "ls-tree",
+   "-z",
+   "<H>",
+   "--",
+   "a.txt"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "cat-file",
+   "blob",
+   "<H>"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "-c",
+   "core.quotePath=false",
+   "--literal-pathspecs",
+   "ls-files",
+   "-s",
+   "-z",
+   "--",
+   "a.txt"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "cat-file",
+   "blob",
+   "<H>"
+  ]
+ },
+ {
+  "step": "diff-content-new"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "-c",
+   "core.quotePath=false",
+   "--literal-pathspecs",
+   "ls-files",
+   "-s",
+   "-z",
+   "--",
+   "i.txt"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "-c",
+   "core.quotePath=false",
+   "diff",
+   "--no-index",
+   "--no-color",
+   "--no-ext-diff",
+   "--no-textconv",
+   "-U3",
+   "--src-prefix=a/",
+   "--dst-prefix=b/",
+   "--",
+   "/dev/null",
+   "i.txt"
+  ]
+ },
+ {
+  "step": "show-content"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "log",
+   "--no-ext-diff",
+   "--no-textconv",
+   "--format=%H\u001f%h\u001f%s\u001f%an\u001f%ct",
+   "-n",
+   "1"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-list",
+   "--parents",
+   "-n",
+   "1",
+   "<H>^{commit}",
+   "--"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "-c",
+   "core.quotePath=false",
+   "--literal-pathspecs",
+   "diff-tree",
+   "-p",
+   "-M",
+   "--no-commit-id",
+   "--no-color",
+   "--no-ext-diff",
+   "--no-textconv",
+   "<H>",
+   "<H>",
+   "--",
+   "z.txt"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.quotePath=false",
+   "--literal-pathspecs",
+   "ls-tree",
+   "-z",
+   "<H>",
+   "--",
+   "z.txt"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.quotePath=false",
+   "--literal-pathspecs",
+   "ls-tree",
+   "-z",
+   "<H>",
+   "--",
+   "z.txt"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "cat-file",
+   "blob",
+   "<H>"
+  ]
+ },
+ {
+  "step": "apply-working-tree"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "-c",
+   "core.quotePath=false",
+   "--literal-pathspecs",
+   "ls-files",
+   "-s",
+   "-z",
+   "--",
+   "a.txt"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "cat-file",
+   "blob",
+   "<H>"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "-c",
+   "core.quotePath=false",
+   "--literal-pathspecs",
+   "diff",
+   "--no-color",
+   "--no-ext-diff",
+   "--no-textconv",
+   "-U3",
+   "--src-prefix=a/",
+   "--dst-prefix=b/",
+   "--",
+   "a.txt"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "apply",
+   "--whitespace=nowarn",
+   "--reverse",
+   "-"
+  ]
+ },
+ {
+  "step": "stage-block"
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "rev-parse",
+   "--show-toplevel"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "-c",
+   "core.quotePath=false",
+   "--literal-pathspecs",
+   "ls-files",
+   "-s",
+   "-z",
+   "--",
+   "a.txt"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "-c",
+   "core.quotePath=false",
+   "check-attr",
+   "-z",
+   "filter",
+   "working-tree-encoding",
+   "ident",
+   "text",
+   "eol",
+   "--",
+   "a.txt"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "cat-file",
+   "blob",
+   "<H>"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "hash-object",
+   "-w",
+   "--stdin",
+   "--no-filters"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "-c",
+   "core.quotePath=false",
+   "--literal-pathspecs",
+   "ls-files",
+   "-s",
+   "-z",
+   "--",
+   "a.txt"
+  ]
+ },
+ {
+  "where": "B",
+  "cwd": "<T>/proj/app",
+  "prompt": "0",
+  "access": "",
+  "argv": [
+   "-c",
+   "core.hooksPath=/dev/null",
+   "-c",
+   "core.fsmonitor=false",
+   "-c",
+   "log.showSignature=false",
+   "update-index",
+   "--cacheinfo",
+   "100644,<H>,a.txt"
+  ]
+ }
+]

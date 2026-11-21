@@ -1,0 +1,72 @@
+[
+  {
+    "id": "<msg-1>",
+    "role": "user",
+    "text": "Prüf die zwei Befunde mit einem Workflow.",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-2>",
+    "role": "tool",
+    "text": "{\"name\":\"mcp__cbase__cbase_dynamic_workflow\",\"detail\":\"\",\"id\":\"toolu_wffrei\",\"input\":{\"script\":\"export const meta = { name: 'findings-check', description: 'Zwei Befunde gegenlesen', phases: [{ title: 'Lesen' }, { title: 'Urteilen', detail: 'je Befund' }] }\\nreturn await agent('Lies A');\\n\"},\"parent\":null}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-3>",
+    "role": "workflow_approval",
+    "text": "{\"requestId\":\"<id-1>\",\"name\":\"findings-check\",\"description\":\"Zwei Befunde gegenlesen\",\"phases\":[{\"title\":\"Lesen\"},{\"title\":\"Urteilen\",\"detail\":\"je Befund\"}],\"at\":\"<t>\"}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-4>",
+    "role": "tool_result",
+    "text": "{\"id\":\"toolu_wffrei\",\"result\":\"{\\n  \\\"status\\\": \\\"awaiting_approval\\\",\\n  \\\"requestId\\\": \\\"<id-1>\\\",\\n  \\\"name\\\": \\\"findings-check\\\",\\n  \\\"note\\\": \\\"Der Workflow „findings-check“ wartet auf die Freigabe des Nutzers — der Nutzer hat Multi-Agenten-Orchestrierung in diesem Turn nicht gewählt (kein Modus Ultracode, kein „ultracode“ in seiner Nachricht). Im Chat steht eine Karte mit Name, Beschreibung und Phasen. Nichts läuft. Beende jetzt deinen Turn und rufe das Werkzeug nicht erneut: nimmt er an, startet der Workflow, und am Ende kommt eine <task-notification>; lehnt er ab, erfährst du es als Systemmeldung.\\\"\\n}\",\"isError\":false}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-5>",
+    "role": "assistant",
+    "text": "Der Workflow wartet auf deine Freigabe.",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-6>",
+    "role": "meta",
+    "text": "{\"secs\":\"<secs>\",\"inTok\":210,\"outTok\":48}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-7>",
+    "role": "workflow_approval_ruling",
+    "text": "{\"requestId\":\"<id-1>\",\"decision\":\"rejected\",\"at\":\"<t>\"}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-8>",
+    "role": "user",
+    "text": "<task-notification>\n<task-id><id-1></task-id>\n<tool-use-id>toolu_wffrei</tool-use-id>\n<summary>Workflow \"findings-check\" was rejected by the user</summary>\n<result>Der Nutzer hat die Freigabe-Karte des dynamischen Workflows „findings-check“ abgelehnt. Nichts ist gelaufen. Starte ihn nicht erneut; erledige die Aufgabe ohne Workflow oder frag den Nutzer, wie er vorgehen möchte.</result>\n<note>Das ist eine Systemmeldung über deinen dynamischen Workflow, keine Nutzerantwort. Werte sie aus und arbeite weiter.</note>\n</task-notification>",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-9>",
+    "role": "assistant",
+    "text": "Verstanden, ohne Workflow.",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-10>",
+    "role": "meta",
+    "text": "{\"secs\":\"<secs>\",\"inTok\":240,\"outTok\":7}",
+    "ts": "<t>",
+    "attachments": null
+  }
+]

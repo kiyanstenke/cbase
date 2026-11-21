@@ -1,0 +1,3 @@
+{
+  "files": ["main.js", "browser.js", "browser-rules.js", "forwarding-rules.js", "shell-rules.js", "preload.cjs", "connect.html"]
+}

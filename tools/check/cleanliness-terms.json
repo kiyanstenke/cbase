@@ -1,0 +1,11 @@
+{
+ "hint": "The canary alone (the full list is private). Built by tools/check/cleanliness.mjs --hash; never edit by hand.",
+ "salt": "0ab2fc1c40a9a86a7a2a8d0e83f3de32",
+ "lengths": [
+  22
+ ],
+ "substring": [
+  "9e6bd3bc9266051ad903f679c043a337"
+ ],
+ "whole": []
+}

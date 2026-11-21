@@ -1,0 +1,6 @@
+{"type":"init","running":[],"browsers":[]}
+{"type":"chat_title","chatId":"<chat-1>","title":"Strom verdichtung"}
+{"type":"run","chatId":"<chat-1>","running":true}
+{"type":"run","chatId":"<chat-1>","running":false,"answered":true,"title":"Strom verdichtung","workspaceId":"<ws-1>","projectId":"","kind":"finished","pushTitle":"Strom verdichtung","pushSubtitle":"Antwort fertig","pushBody":"Response","push":false}
+{"type":"run","chatId":"<chat-1>","running":true}
+{"type":"run","chatId":"<chat-1>","running":false,"answered":true,"title":"Strom verdichtung","workspaceId":"<ws-1>","projectId":"","kind":"finished","pushTitle":"Strom verdichtung","pushSubtitle":"Antwort fertig","pushBody":"Response","push":false}

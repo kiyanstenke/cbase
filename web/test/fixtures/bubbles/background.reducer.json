@@ -1,0 +1,503 @@
+{
+  "start": "[]",
+  "history": [
+    {
+      "seq": 1,
+      "kind": "harness/connected",
+      "bubbles": 0,
+      "stream": {
+        "open": false,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 2,
+      "kind": "harness/user_message",
+      "bubbles": 1,
+      "stream": {
+        "open": false,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 3,
+      "kind": "harness/run_started",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 4,
+      "kind": "system",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 5,
+      "kind": "stream_event/message_start",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 6,
+      "kind": "stream_event/content_block_start:tool_use",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 7,
+      "kind": "stream_event/content_block_delta:input_json_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 8,
+      "kind": "stream_event/content_block_stop",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 9,
+      "kind": "stream_event/message_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 10,
+      "kind": "stream_event/message_stop",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 11,
+      "kind": "assistant",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 12,
+      "kind": "harness/background",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 13,
+      "kind": "user",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 14,
+      "kind": "stream_event/message_start",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 15,
+      "kind": "stream_event/content_block_start:text",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 16,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 17,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 18,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 19,
+      "kind": "stream_event/content_block_stop",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 20,
+      "kind": "stream_event/message_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 21,
+      "kind": "stream_event/message_stop",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 22,
+      "kind": "assistant",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 23,
+      "kind": "result",
+      "bubbles": 2,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 24,
+      "kind": "harness/run_done",
+      "bubbles": 2,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 25,
+      "kind": "harness/background",
+      "bubbles": 2,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 26,
+      "kind": "stream_event/content_block_start:text",
+      "bubbles": 2,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 27,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 28,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 29,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 2,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 30,
+      "kind": "stream_event/content_block_stop",
+      "bubbles": 2,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 31,
+      "kind": "stream_event/message_stop",
+      "bubbles": 2,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 32,
+      "kind": "assistant",
+      "bubbles": 2,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 33,
+      "kind": "harness/user_message",
+      "bubbles": 3,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 34,
+      "kind": "user",
+      "bubbles": 3,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 35,
+      "kind": "harness/background",
+      "bubbles": 3,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 36,
+      "kind": "harness/run_started",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 37,
+      "kind": "system",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 38,
+      "kind": "stream_event/message_start",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 39,
+      "kind": "stream_event/content_block_start:text",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": false
+      }
+    },
+    {
+      "seq": 40,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 41,
+      "kind": "stream_event/content_block_delta:text_delta",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 42,
+      "kind": "stream_event/content_block_stop",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 43,
+      "kind": "stream_event/message_delta",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 44,
+      "kind": "stream_event/message_stop",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 45,
+      "kind": "assistant",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 46,
+      "kind": "result",
+      "bubbles": 4,
+      "stream": {
+        "open": true,
+        "gotText": true
+      }
+    },
+    {
+      "seq": 47,
+      "kind": "harness/run_done",
+      "bubbles": 4,
+      "stream": {
+        "open": false,
+        "gotText": true
+      }
+    }
+  ],
+  "bubbles": [
+    {
+      "role": "user",
+      "blocks": [
+        {
+          "kind": "text",
+          "text": "Lass einen Subagenten nebenher den Befund holen."
+        }
+      ],
+      "attachments": []
+    },
+    {
+      "role": "assistant",
+      "blocks": [
+        {
+          "kind": "tool",
+          "id": "toolu_agent_bg",
+          "name": "mcp__cbase__cbase_agent",
+          "detail": "Nebenher prüfen",
+          "count": 1,
+          "input": {
+            "description": "Nebenher prüfen",
+            "prompt": "Sieh nach und melde den Befund."
+          },
+          "result": "{\n  \"status\": \"completed\",\n  \"error\": \"\",\n  \"agentId\": \"<agentrun-1>\",\n  \"name\": \"agent-1\",\n  \"description\": \"Nebenher prüfen\",\n  \"agentType\": \"general-purpose\",\n  \"provider\": \"claude\",\n  \"resolvedModel\": \"\",\n  \"skills\": [],\n  \"report\": \"Befund 42: im Hintergrund gefunden.\",\n  \"totalTokens\": 100,\n  \"tokenKind\": \"voll\",\n  \"totalToolUseCount\": 0,\n  \"totalDurationMs\": \"<ms>\",\n  \"cwd\": \"<path>/workspace\",\n  \"worktree\": \"\",\n  \"outputFile\": \"<path>/data-root/data/outputs/<chat-1>/agents/<agentrun-1>.output\",\n  \"notes\": \"\",\n  \"note\": \"Fortsetzen mit cbase_agent_send (agentId „<agentrun-1>\\\") — der Subagent behält seinen Kontext.\"\n}",
+          "resultIsError": false,
+          "done": true,
+          "children": [
+            {
+              "kind": "text",
+              "text": "Befund 42: im Hintergrund gefunden."
+            }
+          ]
+        },
+        {
+          "kind": "text",
+          "text": "Der Subagent läuft im Hintergrund."
+        }
+      ],
+      "streaming": false,
+      "summary": {
+        "secs": 21,
+        "inTok": 200,
+        "outTok": 39,
+        "aborted": false,
+        "at": 1789646423000
+      }
+    },
+    {
+      "role": "divider",
+      "blocks": [],
+      "kind": "completionNotice",
+      "label": "Subagent \"{name}\" finished",
+      "labelParams": {
+        "name": "Nebenher prüfen"
+      }
+    },
+    {
+      "role": "assistant",
+      "blocks": [
+        {
+          "kind": "text",
+          "text": "Meldung verarbeitet: Befund 42 "
+        }
+      ],
+      "streaming": false,
+      "summary": {
+        "secs": 11,
+        "inTok": 260,
+        "outTok": 8,
+        "aborted": false,
+        "at": 1789646446000
+      }
+    }
+  ]
+}

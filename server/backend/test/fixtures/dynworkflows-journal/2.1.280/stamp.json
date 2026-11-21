@@ -1,0 +1,51 @@
+{
+  "claudeVersion": "2.1.280",
+  "pack": "@anthropic-ai/claude-code-darwin-arm64@2.1.280",
+  "binarySha256": "387a5c5dcdbb815085edf0baf79591f9d8894efe922bceaf3d75b1b08055229d",
+  "platform": "darwin-arm64",
+  "way": "api-mock",
+  "generatedWith": "server/backend/test/fixtures/dynworkflows-journal/generate.mjs",
+  "conditions": "claude -p im bypassPermissions-Mode, leeres HOME und CLAUDE_CONFIG_DIR, API-Mock auf 127.0.0.1; der Hauptlauf ruft Workflow({ script }) mit script.js; Exit 0",
+  "responses": {
+    "1": "ALPHA",
+    "2": "BETA",
+    "3": {
+      "wort": "GAMMA",
+      "count": 3
+    },
+    "4": "ALPHA+BETA",
+    "5": "HTTP 400 invalid_request_error"
+  },
+  "runId": "wf_1387dbb6-37d",
+  "requests": [
+    {
+      "seq": 1,
+      "response": "ALPHA"
+    },
+    {
+      "seq": 2,
+      "response": "BETA"
+    },
+    {
+      "seq": 3,
+      "response": "StructuredOutput"
+    },
+    {
+      "seq": 4,
+      "response": "ALPHA+BETA"
+    },
+    {
+      "seq": 5,
+      "response": "HTTP 400"
+    },
+    {
+      "seq": 5,
+      "response": "HTTP 400"
+    }
+  ],
+  "files": {
+    "journal.jsonl": "90c335a1efd895f4295776fc3b710b57a8a5ef468cb104f1cdf2dd6647a690e7",
+    "script.js": "406ce8411a8c36db94effd0f49a48e8a6cda350d39ddea45dba1e8387dc9a141"
+  },
+  "filesHint": "script.js: sha256 taken anew on 12.11.2026 with the rename to cbase; the only difference to the old anchor is the name (one word in meta.description, held against the recorded state at the branch point 07417c18). journal.jsonl is unchanged — it was run with the script from before the rename."
+}

@@ -1,0 +1,6 @@
+{"type":"init","running":[],"browsers":[]}
+{"type":"chat_title","chatId":"<chat-1>","title":"Strom freigabe"}
+{"type":"run","chatId":"<chat-1>","running":true}
+{"type":"run","chatId":"<chat-1>","running":false,"answered":true,"title":"Strom freigabe","workspaceId":"<ws-1>","projectId":"","kind":"finished","pushTitle":"Strom freigabe","pushSubtitle":"Antwort fertig","pushBody":"finished","push":false}
+{"type":"run","chatId":"<chat-1>","running":true}
+{"type":"run","chatId":"<chat-1>","running":false,"answered":true,"title":"Strom freigabe","workspaceId":"<ws-1>","projectId":"","kind":"finished","pushTitle":"Strom freigabe","pushSubtitle":"Antwort fertig","pushBody":"ohne Workflow","push":false}

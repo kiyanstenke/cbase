@@ -1,0 +1,7 @@
+{"type":"init","running":[],"browsers":[]}
+{"type":"chat_title","chatId":"<chat-1>","title":"Strom rueckfrage"}
+{"type":"run","chatId":"<chat-1>","running":true}
+{"type":"notice","notice":{"id":1,"at":"<t>","native":false,"kind":"question","title":"Rückfrage: Strom rueckfrage","body":"Monorepo oder getrennte Repos?","chatTitle":"Strom rueckfrage","chatId":"<chat-1>","managerChatId":null,"projectId":null,"projectName":null,"workspaceId":"<ws-1>","port":null,"requestId":"<id-1>","kind":"question","push":true,"pushTitle":"Strom rueckfrage","pushSubtitle":"Rückfrage"}}
+{"type":"run","chatId":"<chat-1>","running":false,"answered":true,"title":"Strom rueckfrage","workspaceId":"<ws-1>","projectId":"","kind":"finished","pushTitle":"Strom rueckfrage","pushSubtitle":"Antwort fertig","pushBody":"Ich habe eine Rückfrage gestellt und warte auf deine Auswahl.","push":false}
+{"type":"run","chatId":"<chat-1>","running":true}
+{"type":"run","chatId":"<chat-1>","running":false,"answered":true,"title":"Strom rueckfrage","workspaceId":"<ws-1>","projectId":"","kind":"finished","pushTitle":"Strom rueckfrage","pushSubtitle":"Antwort fertig","pushBody":"Verstanden — getrennte Repos, wegen der Release-Zyklen.","push":false}

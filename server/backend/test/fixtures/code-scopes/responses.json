@@ -1,0 +1,477 @@
+{
+  "_header": [
+    "Recorded answers of the shared code branches - the anchor of server/backend/test/code-scopes.test.js.",
+    "Per request pair the NORMALIZED answer: status, Content-Type, Content-Disposition, Cache-Control,",
+    "X-Content-Type-Options, body.",
+    "BOTH levels (project and workspace) are measured against THIS value, and additionally against each other.",
+    "",
+    "Re-record ONLY if a change in behavior is INTENDED and NAMED:",
+    "  CBASE_CODE_SCOPES_RECORD=1 CBASE_LIMIT_GRACE_MS=2000 CBASE_LIMIT_MIN_WAIT_MS=2000 node --test server/backend/test/code-scopes.test.js",
+    "Then READ the `git diff` of this file: every line is a behavior difference or a gap of the normalization.",
+    "A red test is NEVER made green by re-recording (snapshots are an alarm, not a lock).",
+    "",
+    "── WHAT THIS RECORDING STAYS BOUND TO ───────────────────────────────────────────────────────────────────",
+    "Recorded with git 2.50.1 (Apple Git-155), node v22.17.1 and typescript 5.9.3.",
+    "What the test itself pins (GIT_ENVIRONMENT): the git identity, the git dates, the git configuration",
+    "(GIT_CONFIG_GLOBAL/-SYSTEM on /dev/null) with the TWO path defaults that switching it off does not cover",
+    "(core.excludesFile and core.attributesFile, via GIT_CONFIG_COUNT), plus LC_ALL=C and TZ=UTC - also",
+    "for the SERVER process that creates the commits",
+    "during the run; the anchor used to carry `user.name` from ~/.gitconfig and was thereby an imprint of ONE Mac.",
+    "Pinned likewise: file timestamps (ZIP bytes) and the template. ALL",
+    "commit hashes stand unsmoothed, also those created during the run.",
+    "What could NOT be pinned, and what a red should therefore check first:",
+    "  * git's OWN error and hint texts are passed through (pull, push, rebase, merge) - another git REVISION",
+    "    words them differently. A red there is no product failure, but no reason for silent",
+    "    re-recording either: first look at WHAT changed. The LANGUAGE is fixed with LC_ALL=C, but",
+    "    this could not be proven here: this Apple git ships no translations.",
+    "  * The commit hashes presuppose git's object format (SHA-1). A repo format with SHA-256 would rewrite them.",
+    "  * `42 POST /debug/launch` depends on a module (answers available:true only with an installed `ws`).",
+    "  * `43 POST /terminal` depends on node-pty, and that is a NATIVE module (pty.node, built for the ABI,",
+    "    platform and architecture of this machine). If it drops out, the branch answers 200 {available:false}",
+    "    instead of 201 - measured by renaming pty.node. A red there means: check `npm rebuild` first.",
+    "",
+    "── WHAT THIS ANCHOR DOES NOT HOLD (measured by the skeptic, not assumed) ─────────────────────────────────",
+    "  (a) One payload per branch, the options of the branches are never varied (no `regex`, no `staged`,",
+    "      no `push`, no `type:\"dir\"`).",
+    "  (b) `42 POST /debug/launch` answers {id, available}, `43 POST /terminal` {id, shell, available} - the shell",
+    "      is fixed to /bin/sh (process.env.SHELL in the test), otherwise the anchor would hang on the login shell of the machine.",
+    "  (c) The smoothing of the relative time keeps only the language family",
+    "      (a complete replacement of the own renderer relativeDe stayed green)."
+  ],
+  "branches": {
+    "00 GET /git": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"repos\":[{\"name\":\"spiegel\",\"relPath\":\"\",\"root\":\"<ROOT>\",\"branch\":\"main\",\"detached\":false,\"upstream\":null,\"ahead\":0,\"behind\":0,\"changes\":[{\"x\":\" \",\"y\":\"M\",\"path\":\"README.md\",\"code\":\"M\",\"label\":\"modified\",\"kind\":\"modified\"},{\"x\":\"?\",\"y\":\"?\",\"path\":\"notiz.txt\",\"code\":\"?\",\"label\":\"new (untracked)\",\"kind\":\"untracked\"}],\"counts\":{\"staged\":0,\"unstaged\":1,\"untracked\":1,\"total\":2},\"clean\":false,\"truncated\":false,\"lastCommit\":{\"hash\":\"fdbb5f5\",\"subject\":\"Saat\",\"author\":\"Testerin\",\"relative\":\"<RELATIVE de>\"},\"remote\":null}]}"
+    },
+    "01 GET /git/branches?repo=": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"current\":\"main\",\"locals\":[\"extra\",\"main\"],\"remotes\":[]}"
+    },
+    "02 GET /git/creds": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"creds\":[]}"
+    },
+    "03 PUT /git/creds": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"ok\":true}"
+    },
+    "04 PUT /git/creds": {
+      "status": 400,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"error\":\"Host, Benutzername und Token erforderlich\"}"
+    },
+    "05 DELETE /git/creds?host=gitlab.example": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"ok\":true}"
+    },
+    "06 POST /git/commit": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"repos\":[{\"name\":\"spiegel\",\"relPath\":\"\",\"root\":\"<ROOT>\",\"branch\":\"main\",\"detached\":false,\"upstream\":null,\"ahead\":0,\"behind\":0,\"changes\":[],\"counts\":{\"staged\":0,\"unstaged\":0,\"untracked\":0,\"total\":0},\"clean\":true,\"truncated\":false,\"lastCommit\":{\"hash\":\"45a6f66\",\"subject\":\"Zweiter\",\"author\":\"Testerin\",\"relative\":\"<RELATIVE de>\"},\"remote\":null}]}"
+    },
+    "07 POST /git/stage": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"repos\":[{\"name\":\"spiegel\",\"relPath\":\"\",\"root\":\"<ROOT>\",\"branch\":\"main\",\"detached\":false,\"upstream\":null,\"ahead\":0,\"behind\":0,\"changes\":[{\"x\":\"M\",\"y\":\" \",\"path\":\"README.md\",\"code\":\"M\",\"label\":\"modified\",\"kind\":\"modified\"},{\"x\":\"?\",\"y\":\"?\",\"path\":\"notiz.txt\",\"code\":\"?\",\"label\":\"new (untracked)\",\"kind\":\"untracked\"}],\"counts\":{\"staged\":1,\"unstaged\":0,\"untracked\":1,\"total\":2},\"clean\":false,\"truncated\":false,\"lastCommit\":{\"hash\":\"fdbb5f5\",\"subject\":\"Saat\",\"author\":\"Testerin\",\"relative\":\"<RELATIVE de>\"},\"remote\":null}]}"
+    },
+    "08 POST /git/unstage": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"repos\":[{\"name\":\"spiegel\",\"relPath\":\"\",\"root\":\"<ROOT>\",\"branch\":\"main\",\"detached\":false,\"upstream\":null,\"ahead\":0,\"behind\":0,\"changes\":[{\"x\":\" \",\"y\":\"M\",\"path\":\"README.md\",\"code\":\"M\",\"label\":\"modified\",\"kind\":\"modified\"},{\"x\":\"?\",\"y\":\"?\",\"path\":\"notiz.txt\",\"code\":\"?\",\"label\":\"new (untracked)\",\"kind\":\"untracked\"}],\"counts\":{\"staged\":0,\"unstaged\":1,\"untracked\":1,\"total\":2},\"clean\":false,\"truncated\":false,\"lastCommit\":{\"hash\":\"fdbb5f5\",\"subject\":\"Saat\",\"author\":\"Testerin\",\"relative\":\"<RELATIVE de>\"},\"remote\":null}]}"
+    },
+    "09 POST /git/discard": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"repos\":[{\"name\":\"spiegel\",\"relPath\":\"\",\"root\":\"<ROOT>\",\"branch\":\"main\",\"detached\":false,\"upstream\":null,\"ahead\":0,\"behind\":0,\"changes\":[{\"x\":\"?\",\"y\":\"?\",\"path\":\"notiz.txt\",\"code\":\"?\",\"label\":\"new (untracked)\",\"kind\":\"untracked\"}],\"counts\":{\"staged\":0,\"unstaged\":0,\"untracked\":1,\"total\":1},\"clean\":false,\"truncated\":false,\"lastCommit\":{\"hash\":\"fdbb5f5\",\"subject\":\"Saat\",\"author\":\"Testerin\",\"relative\":\"<RELATIVE de>\"},\"remote\":null}]}"
+    },
+    "10 POST /git/diff": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"path\":\"README.md\",\"staged\":false,\"diff\":\"diff --git a/README.md b/README.md\\nindex d64b3ab..ff65dc3 100644\\n--- a/README.md\\n+++ b/README.md\\n@@ -1,3 +1,4 @@\\n # Spiegel\\n \\n Eine Zeile.\\n+Geaendert.\\n\"}"
+    },
+    "11 POST /git/pull": {
+      "status": 400,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"error\":\"There is no tracking information for the current branch.\\nPlease specify which branch you want to merge with.\\nSee git-pull(1) for details.\\n\\n    git pull <remote> <branch>\\n\\nIf you wish to set tracking information for this branch you can do so with:\\n\\n    git branch --set-upstream-to=<remote>/<branch> main\"}"
+    },
+    "12 POST /git/fetch": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"repos\":[{\"name\":\"spiegel\",\"relPath\":\"\",\"root\":\"<ROOT>\",\"branch\":\"main\",\"detached\":false,\"upstream\":null,\"ahead\":0,\"behind\":0,\"changes\":[{\"x\":\" \",\"y\":\"M\",\"path\":\"README.md\",\"code\":\"M\",\"label\":\"modified\",\"kind\":\"modified\"},{\"x\":\"?\",\"y\":\"?\",\"path\":\"notiz.txt\",\"code\":\"?\",\"label\":\"new (untracked)\",\"kind\":\"untracked\"}],\"counts\":{\"staged\":0,\"unstaged\":1,\"untracked\":1,\"total\":2},\"clean\":false,\"truncated\":false,\"lastCommit\":{\"hash\":\"fdbb5f5\",\"subject\":\"Saat\",\"author\":\"Testerin\",\"relative\":\"<RELATIVE de>\"},\"remote\":null}]}"
+    },
+    "13 POST /git/apply": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"repos\":[{\"name\":\"spiegel\",\"relPath\":\"\",\"root\":\"<ROOT>\",\"branch\":\"main\",\"detached\":false,\"upstream\":null,\"ahead\":0,\"behind\":0,\"changes\":[{\"x\":\"M\",\"y\":\" \",\"path\":\"README.md\",\"code\":\"M\",\"label\":\"modified\",\"kind\":\"modified\"},{\"x\":\"?\",\"y\":\"?\",\"path\":\"notiz.txt\",\"code\":\"?\",\"label\":\"new (untracked)\",\"kind\":\"untracked\"}],\"counts\":{\"staged\":1,\"unstaged\":0,\"untracked\":1,\"total\":2},\"clean\":false,\"truncated\":false,\"lastCommit\":{\"hash\":\"fdbb5f5\",\"subject\":\"Saat\",\"author\":\"Testerin\",\"relative\":\"<RELATIVE de>\"},\"remote\":null}]}"
+    },
+    "14 GET /git/stashes?repo=": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"stashes\":[{\"ref\":\"stash@{0}\",\"message\":\"On main: aside\",\"relative\":\"<RELATIVE de>\"}]}"
+    },
+    "15 POST /git/stash": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"repos\":[{\"name\":\"spiegel\",\"relPath\":\"\",\"root\":\"<ROOT>\",\"branch\":\"main\",\"detached\":false,\"upstream\":null,\"ahead\":0,\"behind\":0,\"changes\":[],\"counts\":{\"staged\":0,\"unstaged\":0,\"untracked\":0,\"total\":0},\"clean\":true,\"truncated\":false,\"lastCommit\":{\"hash\":\"fdbb5f5\",\"subject\":\"Saat\",\"author\":\"Testerin\",\"relative\":\"<RELATIVE de>\"},\"remote\":null}]}"
+    },
+    "16 POST /git/stash/op": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"repos\":[{\"name\":\"spiegel\",\"relPath\":\"\",\"root\":\"<ROOT>\",\"branch\":\"main\",\"detached\":false,\"upstream\":null,\"ahead\":0,\"behind\":0,\"changes\":[{\"x\":\" \",\"y\":\"M\",\"path\":\"README.md\",\"code\":\"M\",\"label\":\"modified\",\"kind\":\"modified\"},{\"x\":\" \",\"y\":\"M\",\"path\":\"code/help.ts\",\"code\":\"M\",\"label\":\"modified\",\"kind\":\"modified\"},{\"x\":\"?\",\"y\":\"?\",\"path\":\"notiz.txt\",\"code\":\"?\",\"label\":\"new (untracked)\",\"kind\":\"untracked\"}],\"counts\":{\"staged\":0,\"unstaged\":2,\"untracked\":1,\"total\":3},\"clean\":false,\"truncated\":false,\"lastCommit\":{\"hash\":\"fdbb5f5\",\"subject\":\"Saat\",\"author\":\"Testerin\",\"relative\":\"<RELATIVE de>\"},\"remote\":null}]}"
+    },
+    "17 POST /git/stash/show": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"ref\":\"stash@{0}\",\"diff\":\"diff --git a/code/help.ts b/code/help.ts\\nindex 322e952..b717094 100644\\n--- a/code/help.ts\\n+++ b/code/help.ts\\n@@ -1 +1,2 @@\\n export const help = \\\"da\\\";\\n+// beiseite\\n\"}"
+    },
+    "18 POST /git/merge": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"repos\":[{\"name\":\"spiegel\",\"relPath\":\"\",\"root\":\"<ROOT>\",\"branch\":\"main\",\"detached\":false,\"upstream\":null,\"ahead\":0,\"behind\":0,\"changes\":[{\"x\":\" \",\"y\":\"M\",\"path\":\"README.md\",\"code\":\"M\",\"label\":\"modified\",\"kind\":\"modified\"},{\"x\":\"?\",\"y\":\"?\",\"path\":\"notiz.txt\",\"code\":\"?\",\"label\":\"new (untracked)\",\"kind\":\"untracked\"}],\"counts\":{\"staged\":0,\"unstaged\":1,\"untracked\":1,\"total\":2},\"clean\":false,\"truncated\":false,\"lastCommit\":{\"hash\":\"1520107\",\"subject\":\"Extra\",\"author\":\"Testerin\",\"relative\":\"<RELATIVE de>\"},\"remote\":null}],\"conflicts\":false}"
+    },
+    "19 POST /git/rebase": {
+      "status": 400,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"error\":\"error: cannot rebase: You have unstaged changes.\\nerror: Please commit or stash them.\"}"
+    },
+    "20 POST /git/merge-abort": {
+      "status": 400,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"error\":\"fatal: no rebase in progress\"}"
+    },
+    "21 POST /git/blame": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"file\":\"README.md\",\"lines\":[{\"sha\":\"fdbb5f53\",\"author\":\"Testerin\",\"relative\":\"<RELATIVE de>\",\"summary\":\"Saat\"},{\"sha\":\"fdbb5f53\",\"author\":\"Testerin\",\"relative\":\"<RELATIVE de>\",\"summary\":\"Saat\"},{\"sha\":\"fdbb5f53\",\"author\":\"Testerin\",\"relative\":\"<RELATIVE de>\",\"summary\":\"Saat\"},{\"sha\":\"00000000\",\"author\":\"Nicht committet\",\"relative\":\"<RELATIVE de>\",\"summary\":\"Version of README.md from README.md\"}]}"
+    },
+    "22 POST /git/log": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"commits\":[{\"hash\":\"fdbb5f53f206aa129d4f3d40855a79d5f9555527\",\"short\":\"fdbb5f5\",\"subject\":\"Saat\",\"author\":\"Testerin\",\"relative\":\"<RELATIVE de>\"}]}"
+    },
+    "23 POST /git/show": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"hash\":\"fdbb5f53f206aa129d4f3d40855a79d5f9555527\",\"diff\":\"commit fdbb5f53f206aa129d4f3d40855a79d5f9555527\\nAuthor: Testerin <test@example.invalid>\\nDate:   Fri Jan 2 03:04:05 2026 +0000\\n\\n    Saat\\n---\\n README.md    | 3 +++\\n code/app.ts  | 2 ++\\n code/help.ts | 1 +\\n 3 files changed, 6 insertions(+)\\n\\ndiff --git a/README.md b/README.md\\nnew file mode 100644\\nindex 0000000..d64b3ab\\n--- /dev/null\\n+++ b/README.md\\n@@ -0,0 +1,3 @@\\n+# Spiegel\\n+\\n+Eine Zeile.\\ndiff --git a/code/app.ts b/code/app.ts\\nnew file mode 100644\\nindex 0000000..ee1c0b2\\n--- /dev/null\\n+++ b/code/app.ts\\n@@ -0,0 +1,2 @@\\n+export const count: number = 41;\\n+export function plus(a: number) { return a + count; }\\ndiff --git a/code/help.ts b/code/help.ts\\nnew file mode 100644\\nindex 0000000..322e952\\n--- /dev/null\\n+++ b/code/help.ts\\n@@ -0,0 +1 @@\\n+export const help = \\\"da\\\";\\n\"}"
+    },
+    "24 POST /git/cherry-pick": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"repos\":[{\"name\":\"spiegel\",\"relPath\":\"\",\"root\":\"<ROOT>\",\"branch\":\"main\",\"detached\":false,\"upstream\":null,\"ahead\":0,\"behind\":0,\"changes\":[{\"x\":\" \",\"y\":\"M\",\"path\":\"README.md\",\"code\":\"M\",\"label\":\"modified\",\"kind\":\"modified\"},{\"x\":\"?\",\"y\":\"?\",\"path\":\"notiz.txt\",\"code\":\"?\",\"label\":\"new (untracked)\",\"kind\":\"untracked\"}],\"counts\":{\"staged\":0,\"unstaged\":1,\"untracked\":1,\"total\":2},\"clean\":false,\"truncated\":false,\"lastCommit\":{\"hash\":\"1520107\",\"subject\":\"Extra\",\"author\":\"Testerin\",\"relative\":\"<RELATIVE de>\"},\"remote\":null}],\"conflicts\":false}"
+    },
+    "25 GET /git/worktrees?repo=": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"worktrees\":[{\"path\":\"<ROOT>\",\"branch\":\"main\",\"head\":\"fdbb5f5\",\"locked\":false}]}"
+    },
+    "26 POST /git/worktree": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"worktrees\":[{\"path\":\"<ROOT>\",\"branch\":\"main\",\"head\":\"fdbb5f5\",\"locked\":false},{\"path\":\"<ROOT>/wt\",\"branch\":\"branch\",\"head\":\"fdbb5f5\",\"locked\":false}]}"
+    },
+    "27 DELETE /git/worktree?path=wt": {
+      "status": 400,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"error\":\"fatal: 'wt' is not a working tree\"}"
+    },
+    "28 GET /git/submodules?repo=": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"submodules\":[]}"
+    },
+    "29 POST /git/submodule/update": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"submodules\":[]}"
+    },
+    "30 POST /git/push": {
+      "status": 400,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"error\":\"fatal: 'origin' does not appear to be a git repository\\nfatal: Could not read from remote repository.\\n\\nPlease make sure you have the correct access rights\\nand the repository exists.\"}"
+    },
+    "31 POST /git/checkout": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"repos\":[{\"name\":\"spiegel\",\"relPath\":\"\",\"root\":\"<ROOT>\",\"branch\":\"fresh\",\"detached\":false,\"upstream\":null,\"ahead\":0,\"behind\":0,\"changes\":[{\"x\":\" \",\"y\":\"M\",\"path\":\"README.md\",\"code\":\"M\",\"label\":\"modified\",\"kind\":\"modified\"},{\"x\":\"?\",\"y\":\"?\",\"path\":\"notiz.txt\",\"code\":\"?\",\"label\":\"new (untracked)\",\"kind\":\"untracked\"}],\"counts\":{\"staged\":0,\"unstaged\":1,\"untracked\":1,\"total\":2},\"clean\":false,\"truncated\":false,\"lastCommit\":{\"hash\":\"fdbb5f5\",\"subject\":\"Saat\",\"author\":\"Testerin\",\"relative\":\"<RELATIVE de>\"},\"remote\":null}]}"
+    },
+    "32 GET /files/tree": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"path\":\"\",\"entries\":[{\"name\":\"code\",\"path\":\"code\",\"type\":\"dir\",\"size\":\"<FOLDER>\",\"symlink\":false,\"heavy\":false},{\"name\":\"empty\",\"path\":\"empty\",\"type\":\"dir\",\"size\":\"<FOLDER>\",\"symlink\":false,\"heavy\":false},{\"name\":\"notiz.txt\",\"path\":\"notiz.txt\",\"type\":\"file\",\"size\":18,\"symlink\":false,\"heavy\":false},{\"name\":\"README.md\",\"path\":\"README.md\",\"type\":\"file\",\"size\":34,\"symlink\":false,\"heavy\":false}]}"
+    },
+    "33 GET /files/tree?path=code": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"path\":\"code\",\"entries\":[{\"name\":\"app.ts\",\"path\":\"code/app.ts\",\"type\":\"file\",\"size\":87,\"symlink\":false,\"heavy\":false},{\"name\":\"help.ts\",\"path\":\"code/help.ts\",\"type\":\"file\",\"size\":26,\"symlink\":false,\"heavy\":false}]}"
+    },
+    "34 GET /files/read?path=README.md": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"path\":\"README.md\",\"content\":\"# Spiegel\\n\\nEine Zeile.\\nGeaendert.\\n\",\"size\":34,\"sha\":\"e46175371431fac8b0c9d4b75f9a54241a3a262590ba0ed75bf4a820324f3259\"}"
+    },
+    "35 GET /files/download?path=README.md": {
+      "status": 200,
+      "type": "application/octet-stream",
+      "attachment": "attachment; filename=\"README.md\"; filename*=UTF-8''README.md",
+      "cache": "no-store",
+      "nosniff": "nosniff",
+      "body": "# Spiegel\n\nEine Zeile.\nGeaendert.\n"
+    },
+    "36 GET /files/download?path=code": {
+      "status": 200,
+      "type": "application/zip",
+      "attachment": "attachment; filename=\"code.zip\"; filename*=UTF-8''code.zip",
+      "cache": "no-store",
+      "nosniff": "",
+      "body": "PK\u0003\u0004\u0014\u0000\b\b\b\u0000\u0018\"\\\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u000b\u0000\u0000\u0000code/app.tsK­(È/*QHÎÏ+\u0006¥y%V\ny¥¹I©E\n¶\n&Ö\\©\u0010\u0005i¥yÉ%ùy\n\u00059¥Å\u001a0E\nÕ\nE©%¥Ey\n\nÚ\u0010\u0003¬\u0015j¹\u0000PK\u0007\bá²E÷H\u0000\u0000\u0000W\u0000\u0000\u0000PK\u0003\u0004\u0014\u0000\b\b\b\u0000\u0018\"\\\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\f\u0000\u0000\u0000code/help.tsK­(È/*QHÎÏ+.QÈHÍ)P°UPJIT²æ\u0002\u0000PK\u0007\b\u001f `\u001c\u0000\u0000\u0000\u001a\u0000\u0000\u0000PK\u0001\u0002\u001e\u0003\u0014\u0000\b\b\b\u0000\u0018\"\\á²E÷H\u0000\u0000\u0000W\u0000\u0000\u0000\u000b\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000¤\u0000\u0000\u0000\u0000code/app.tsPK\u0001\u0002\u001e\u0003\u0014\u0000\b\b\b\u0000\u0018\"\\\u001f `\u001c\u0000\u0000\u0000\u001a\u0000\u0000\u0000\f\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000¤\u0000\u0000\u0000code/help.tsPK\u0005\u0006\u0000\u0000\u0000\u0000\u0002\u0000\u0002\u0000s\u0000\u0000\u0000×\u0000\u0000\u0000\u0000\u0000"
+    },
+    "37 PUT /files/write": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"ok\":true,\"path\":\"fresh.txt\",\"size\":7,\"sha\":\"ed7002b439e9ac845f22357d822bac1444730fbdb6016d3ec9432297b9ec9f73\"}"
+    },
+    "38 POST /files/create": {
+      "status": 201,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"ok\":true,\"path\":\"fresh.txt\",\"type\":\"file\"}"
+    },
+    "39 POST /files/rename": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"ok\":true,\"path\":\"note2.txt\"}"
+    },
+    "40 DELETE /files?path=notiz.txt": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"ok\":true}"
+    },
+    "41 POST /files/search": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"results\":[{\"path\":\"code/app.ts\",\"matches\":[{\"line\":1,\"text\":\"export const count: number = 41;\",\"hits\":[[7,12]]}]},{\"path\":\"code/help.ts\",\"matches\":[{\"line\":1,\"text\":\"export const help = \\\"da\\\";\",\"hits\":[[7,12]]}]}],\"count\":2,\"files\":2,\"truncated\":false,\"openMatches\":[]}"
+    },
+    "42 POST /debug/launch": {
+      "status": 201,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"id\":\"<SESSION>\",\"available\":true}"
+    },
+    "43 POST /terminal": {
+      "status": 201,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"id\":\"<SESSION>\",\"shell\":\"sh\",\"available\":true}"
+    },
+    "44 POST /files/find": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"results\":[\"code/app.ts\"],\"truncated\":false,\"cap\":512}"
+    },
+    "45 POST /files/copy": {
+      "status": 201,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"ok\":true,\"path\":\"notiz copy.txt\",\"copied\":1,\"omitted\":0}"
+    },
+    "46 POST /files/copy": {
+      "status": 201,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"ok\":true,\"path\":\"code copy\",\"copied\":3,\"omitted\":0}"
+    },
+    "47 POST /files/copy": {
+      "status": 409,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"code\":\"TARGET_EXISTS\",\"error\":\"Ziel existiert bereits\"}"
+    },
+    "48 GET /git/ignored": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"repos\":[{\"relPath\":\"\",\"ignored\":[],\"clipped\":false}]}"
+    },
+    "49 POST /git/stage-block": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"repos\":[{\"name\":\"spiegel\",\"relPath\":\"\",\"root\":\"<ROOT>\",\"branch\":\"main\",\"detached\":false,\"upstream\":null,\"ahead\":0,\"behind\":0,\"changes\":[{\"x\":\"M\",\"y\":\" \",\"path\":\"README.md\",\"code\":\"M\",\"label\":\"modified\",\"kind\":\"modified\"},{\"x\":\"?\",\"y\":\"?\",\"path\":\"notiz.txt\",\"code\":\"?\",\"label\":\"new (untracked)\",\"kind\":\"untracked\"}],\"counts\":{\"staged\":1,\"unstaged\":0,\"untracked\":1,\"total\":2},\"clean\":false,\"truncated\":false,\"lastCommit\":{\"hash\":\"fdbb5f5\",\"subject\":\"Saat\",\"author\":\"Testerin\",\"relative\":\"<RELATIVE de>\"},\"remote\":null}]}"
+    }
+  },
+  "upload": {
+    "00 POST /upload dir=\"code\"": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"written\":1,\"dir\":\"code\"}"
+    },
+    "01 POST /upload dir=\"\"": {
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"written\":1,\"dir\":\"\"}"
+    },
+    "02 POST /upload dir=\"nonexistent\"": {
+      "status": 400,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"error\":\"Zielordner nicht gefunden\"}"
+    },
+    "03 POST /upload dir=\"\"": {
+      "status": 400,
+      "type": "application/json; charset=utf-8",
+      "attachment": "",
+      "cache": "",
+      "nosniff": "",
+      "body": "{\"error\":\"UngÃ¼ltiger Pfad: ../escape.txt\"}"
+    }
+  }
+}

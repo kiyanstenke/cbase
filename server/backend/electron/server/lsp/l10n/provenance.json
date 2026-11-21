@@ -1,0 +1,23 @@
+{
+  "note": "Origin of the bundles next to this file: verbatim from microsoft/vscode-loc (commit 62d5443b567022539ba6e8565b0f43f5f6b3682b, i18n/vscode-language-pack-de/translations/extensions/). A JSON file has no comments — its marker (web/src/lib/thirdParty.ts markerOf) is kept here, its content is bound by sha256. Guards: web/test/thirdParty.test.mjs (marker), server/backend/test/lsp-vu.test.js (sha256, the servers' texts).",
+  "files": {
+    "de/vscode.markdown-language-features.i18n.json": {
+      "markers": [
+        "// Taken from: microsoft/vscode-loc i18n/vscode-language-pack-de/translations/extensions/vscode.markdown-language-features.i18n.json (MIT)"
+      ],
+      "sha256": "2b3e983bf2040bf8ba6b140d61de9e4d8bd9d0e9aabc02160e844d9e84fa9feb"
+    },
+    "de/vscode.css-language-features.i18n.json": {
+      "markers": [
+        "// Taken from: microsoft/vscode-loc i18n/vscode-language-pack-de/translations/extensions/vscode.css-language-features.i18n.json (MIT)"
+      ],
+      "sha256": "f9c9af691afe15313ddf16c9324ae6e959cae4dfa6a7418fd52553eb570df37f"
+    },
+    "de/vscode.json-language-features.i18n.json": {
+      "markers": [
+        "// Taken from: microsoft/vscode-loc i18n/vscode-language-pack-de/translations/extensions/vscode.json-language-features.i18n.json (MIT)"
+      ],
+      "sha256": "ea25f63d45f30304978b8a3a6ce7f0e8db00fd7d5e0005323beab4d9ff7fa4dd"
+    }
+  }
+}

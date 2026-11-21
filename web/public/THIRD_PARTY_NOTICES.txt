@@ -1,0 +1,215 @@
+cbase — Third-Party Notices
+
+cbase contains third-party material. Per entry: author, license with link, source (repo and tag), changes and per part the path
+in the repo with the files of cbase that carry it (each with the same marker in its header).
+
+------------------------------------------------------------------------------
+Codicons
+------------------------------------------------------------------------------
+© Microsoft Corporation
+License: Creative Commons Attribution 4.0 International (CC BY 4.0) — https://creativecommons.org/licenses/by/4.0/
+Source: https://github.com/microsoft/vscode-codicons/tree/v0.0.46-46
+Origin: microsoft/vscode-codicons, Tag v0.0.46-46 — outlines from dist/codicon.ttf of the npm package @vscode/codicons 0.0.46-46 (built from src/icons; sha256 fe9082f0a5b97134…, the same file as out/media/codicon.ttf in Visual Studio Code 1.143.1), SVG paths from src/icons/<name>.svg
+Changes: Outlines converted to a 16×16 grid and rounded; Further glyphs taken over unchanged as SVG paths.
+Parts:
+  Taken from: src/icons — Editor glyphs (symbols, buttons, title bar)
+    web/src/lib/codicon-symbols.ts
+    web/src/components/code/EditorTitleSymbols.tsx
+    web/src/lib/codicons.ts
+
+------------------------------------------------------------------------------
+Visual Studio Code (Code - OSS)
+------------------------------------------------------------------------------
+© Microsoft Corporation
+License: MIT License — https://github.com/microsoft/vscode/blob/1.143.1/LICENSE.txt
+Source: https://github.com/microsoft/vscode/tree/1.143.1
+Origin: microsoft/vscode, Tag 1.143.1
+Changes: Rewritten in TypeScript or JavaScript, names and form adapted to cbase.
+Parts:
+  Taken from: extensions/markdown-language-features/media/preview-dark.svg — Markdown preview icon taken over
+    web/src/components/code/EditorTitleSymbols.tsx
+  Port of: src/vs/base/common/fuzzyScorer.ts — Quick Open scoring reimplemented
+    web/src/lib/fuzzy-scorer.ts
+    server/backend/electron/server/runtime/fast-open.js
+  Port of: src/vs/base/common/filters.ts — Command palette word filter reimplemented
+    web/src/lib/fuzzy-scorer.ts
+  Port of: src/vs/base/common/strings.ts — Quick Open prefilter reimplemented
+    server/backend/electron/server/runtime/fast-open.js
+  Port of: src/vs/base/common/labels.ts — Shortening of same-named paths reimplemented
+    web/src/lib/tab-bar.ts
+  Port of: src/vs/base/common/search.ts — Case preservation on replace reimplemented
+    web/src/lib/preserve-case.ts
+  Port of: src/vs/base/browser/ui/tree/abstractTree.ts — Sticky folders in the tree reimplemented
+    web/src/lib/tree-sticky.ts
+  Port of: src/vs/base/browser/ui/tree/abstractTree.ts — ARIA attributes of tree rows reimplemented
+    web/src/lib/tree-window.ts
+  Port of: src/vs/base/browser/ui/list/listView.ts — Virtualized Explorer rows reimplemented
+    web/src/lib/tree-window.ts
+    web/src/components/code/explorer/TreeWindow.tsx
+  Port of: src/vs/editor/common/model/guidesTextModelPart.ts — Indentation guides reimplemented
+    web/src/lib/indentation.ts
+  Port of: src/vs/workbench/contrib/files/browser/fileActions.ts — Copy names and file name validation reimplemented
+    web/src/lib/explorer-names.ts
+  Port of: src/vs/workbench/contrib/files/browser/fileImportExport.ts — Import of entries from another window reimplemented
+    web/src/lib/explorer-names.ts
+  Port of: src/vs/base/common/htmlContent.ts — Image dimensions in Markdown reimplemented
+    web/src/lib/hover-sections.ts
+  Port of: src/vs/workbench/contrib/scm/browser/quickDiffModel.ts — Quick Diff peek navigation reimplemented
+    web/src/lib/quick-diff.ts
+  Port of: src/vs/workbench/contrib/scm/browser/quickDiffWidget.ts — Quick Diff peek measurements reimplemented
+    web/src/lib/quick-diff.ts
+  Port of: src/vs/base/browser/ui/grid/grid.ts — Editor group grid reimplemented
+    web/src/lib/editor-raster.ts
+  Port of: src/vs/base/browser/ui/grid/gridview.ts — Grid nesting and sizes reimplemented
+    web/src/lib/editor-raster.ts
+  Port of: src/vs/base/browser/ui/splitview/splitview.ts — Sash dragging reimplemented
+    web/src/lib/editor-raster.ts
+  Port of: src/vs/workbench/browser/parts/editor/editorPart.ts — Splitting, closing and merging of editor groups reimplemented
+    web/src/lib/editor-groups.ts
+  Port of: src/vs/workbench/browser/parts/editor/editorActions.ts — Editor group commands and layouts reimplemented
+    web/src/lib/editor-groups.ts
+  Port of: src/vs/workbench/browser/parts/editor/editorCommands.ts — Moving editors between groups reimplemented
+    web/src/lib/editor-groups.ts
+  Port of: src/vs/workbench/browser/parts/editor/editorDropTarget.ts — Drop zones on an editor group reimplemented
+    web/src/lib/editor-groups.ts
+  Port of: extensions/markdown-language-features/src/client/client.ts — Client side of the Markdown language server reimplemented
+    server/backend/electron/server/lsp/markdown.js
+  Port of: extensions/markdown-language-features/src/extensions/yamlPreamble/yamlPreamble.ts — Front matter rule for markdown-it reimplemented
+    server/backend/electron/server/lsp/markdown.js
+  Port of: src/vs/workbench/contrib/debug/browser/debug.contribution.ts — Run or Debug button of the editor title bar reimplemented
+    web/src/lib/editor-title.ts
+  Port of: src/vs/editor/contrib/colorPicker/browser/colorDetector.ts — Color squares before color values reimplemented
+    web/src/lib/color-square.ts
+    web/src/components/code/lsp-colors.ts
+  Port of: src/vs/editor/contrib/colorPicker/browser/colorPicker.css — Dimensions of the color squares and the color picker reimplemented
+    web/src/components/code/lsp-colors.ts
+    web/src/components/code/color-picker.ts
+  Port of: src/vs/base/common/color.ts — Color math (RGBA, HSVA, CSS, light/dark) reimplemented
+    web/src/lib/color-picker.ts
+  Port of: src/vs/editor/contrib/colorPicker/browser/colorPickerModel.ts — Color picker presentations reimplemented
+    web/src/lib/color-picker.ts
+  Port of: src/vs/editor/contrib/colorPicker/browser/colorPickerParts/colorPickerSaturationBox.ts — Color picker saturation box reimplemented
+    web/src/lib/color-picker.ts
+  Port of: src/vs/editor/contrib/colorPicker/browser/colorPickerParts/colorPickerStrip.ts — Hue and opacity strips reimplemented
+    web/src/lib/color-picker.ts
+  Port of: src/vs/editor/contrib/colorPicker/browser/colorPickerWidget.ts — Color picker reimplemented
+    web/src/components/code/color-picker.ts
+  Port of: src/vs/editor/contrib/colorPicker/browser/colorPickerParts/colorPickerHeader.ts — Color picker header reimplemented
+    web/src/components/code/color-picker.ts
+  Port of: src/vs/editor/contrib/colorPicker/browser/colorPickerParts/colorPickerBody.ts — Color picker body reimplemented
+    web/src/components/code/color-picker.ts
+  Port of: src/vs/editor/contrib/colorPicker/browser/hoverColorPicker/hoverColorPickerParticipant.ts — Color picker in the hover reimplemented
+    web/src/components/code/color-picker.ts
+  Port of: src/vs/editor/contrib/colorPicker/browser/colorPickerParticipantUtils.ts — Writing the picked color reimplemented
+    web/src/components/code/color-picker.ts
+  Port of: src/vs/editor/common/languages/linkComputer.ts — Detection of addresses in text reimplemented
+    web/src/lib/link-detection.ts
+  Port of: src/vs/editor/contrib/links/browser/links.ts — Links in the editor (hint, ⌘-click) reimplemented
+    web/src/components/code/editor-links.ts
+  Taken from: extensions/theme-seti/icons/vs-seti-icon-theme.json — File icon colours of the Seti theme taken over
+    web/src/lib/file-symbols.ts
+
+------------------------------------------------------------------------------
+VS Code Language Pack (German)
+------------------------------------------------------------------------------
+© Microsoft Corporation
+License: MIT License — https://github.com/microsoft/vscode-loc/blob/62d5443b567022539ba6e8565b0f43f5f6b3682b/LICENSE.md
+Source: https://github.com/microsoft/vscode-loc/tree/62d5443b567022539ba6e8565b0f43f5f6b3682b
+Origin: microsoft/vscode-loc, Tag 62d5443b567022539ba6e8565b0f43f5f6b3682b — branch main, read on 29.10.2026 and 31.10.2026 (commit of 19.10.2026); package i18n/vscode-language-pack-de
+Changes: Wording adopted entry by entry, “...” as “…”, typographic quotes, placeholders named after their content, informal “du” instead of “Sie”.
+Parts:
+  Taken from: i18n/vscode-language-pack-de/translations/main.i18n.json — German wording of Explorer and editor adopted
+    web/test/fixtures/vscode-de-wordings.json
+  Taken from: i18n/vscode-language-pack-de/translations/extensions/vscode.git.i18n.json — German wording of the Git commands adopted
+    web/test/fixtures/vscode-de-wordings.json
+  Taken from: i18n/vscode-language-pack-de/translations/extensions/vscode.references-view.i18n.json — German wording of the References view adopted
+    web/test/fixtures/vscode-de-wordings.json
+  Taken from: i18n/vscode-language-pack-de/translations/extensions/vscode.typescript-language-features.i18n.json — German wording of “Go to Source Definition” adopted
+    web/test/fixtures/vscode-de-wordings.json
+  Taken from: i18n/vscode-language-pack-de/translations/extensions/vscode.markdown-language-features.i18n.json — German wording of the Markdown preview adopted
+    web/test/fixtures/vscode-de-wordings.json
+  Taken from: i18n/vscode-language-pack-de/translations/extensions/vscode.markdown-language-features.i18n.json — German messages of the Markdown language server taken over unchanged
+    server/backend/electron/server/lsp/l10n/de/vscode.markdown-language-features.i18n.json
+  Taken from: i18n/vscode-language-pack-de/translations/extensions/vscode.css-language-features.i18n.json — German messages of the CSS language server taken over unchanged
+    server/backend/electron/server/lsp/l10n/de/vscode.css-language-features.i18n.json
+  Taken from: i18n/vscode-language-pack-de/translations/extensions/vscode.json-language-features.i18n.json — German messages of the JSON language server taken over unchanged
+    server/backend/electron/server/lsp/l10n/de/vscode.json-language-features.i18n.json
+
+------------------------------------------------------------------------------
+Further attributions
+------------------------------------------------------------------------------
+  Simple Icons — Simple Icons contributors — Creative Commons Zero v1.0 Universal (CC0 1.0) — https://creativecommons.org/publicdomain/zero/1.0/ — https://github.com/simple-icons/simple-icons
+    Brand logos and colours of the MCP servers taken over (the logos remain trademarks of their owners)
+    web/src/components/brandLogos.ts
+  Seti UI — © Jesse Weed — MIT License — https://opensource.org/license/mit — https://github.com/jesseweed/seti-ui
+    Origin of the Seti file icon colours (taken over through VS Code's theme-seti, see above)
+    web/src/lib/file-symbols.ts
+  Simple Icons (provider and integration logos) — Simple Icons contributors — Creative Commons Zero v1.0 Universal (CC0 1.0) — https://creativecommons.org/publicdomain/zero/1.0/ — https://github.com/simple-icons/simple-icons
+    GitLab logo in the iOS app, ngrok wordmark in the web UI and the iOS app (the logos remain trademarks of their owners; list: TRADEMARKS.md)
+    web/src/components/settings/IntegrationsSettings.tsx
+    mobile/CbaseMobile/Assets.xcassets/IntegrationGitLab.imageset/gitlab.svg
+    mobile/CbaseMobile/Assets.xcassets/IntegrationNgrok.imageset/ngrok.svg
+
+------------------------------------------------------------------------------
+Backend packages
+------------------------------------------------------------------------------
+Shipped unmodified; each package's license text is in the image under /app/node_modules/<name>/
+  markdown-it 14.3.3 — MIT — https://github.com/markdown-it/markdown-it
+  linkify-it 5.0.2 — MIT — https://github.com/markdown-it/linkify-it
+  mdurl 2.1.0 — MIT — https://github.com/markdown-it/mdurl
+  uc.micro 2.1.0 — MIT — https://github.com/markdown-it/uc.micro
+  punycode.js 2.3.1 — MIT — https://github.com/mathiasbynens/punycode.js
+  entities 4.5.0 — BSD-2-Clause — https://github.com/fb55/entities
+  argparse 2.0.1 — Python-2.0 — https://github.com/nodeca/argparse
+
+------------------------------------------------------------------------------
+Visual Studio Code (Code - OSS) — MIT License
+------------------------------------------------------------------------------
+MIT License
+
+Copyright (c) 2015 - present Microsoft Corporation
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+------------------------------------------------------------------------------
+VS Code Language Pack (German) — MIT License
+------------------------------------------------------------------------------
+Visual Studio Code Localization Packs
+Copyright (c) Microsoft Corporation
+All rights reserved.
+
+MIT License
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE

@@ -1,0 +1,58 @@
+[
+  {
+    "id": "<msg-1>",
+    "role": "user",
+    "text": "Lass einen Subagenten die Testdatei lesen.",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-2>",
+    "role": "tool",
+    "text": "{\"name\":\"Agent\",\"detail\":\"Testdatei lesen\",\"id\":\"toolu_agent_01\",\"input\":{\"description\":\"Testdatei lesen\",\"prompt\":\"Lies web/test/stream.test.mjs und sag, was sie prüft.\"},\"parent\":null}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-3>",
+    "role": "tool",
+    "text": "{\"name\":\"Read\",\"detail\":\"web/test/stream.test.mjs\",\"id\":\"toolu_sub_01\",\"input\":{\"file_path\":\"web/test/stream.test.mjs\"},\"parent\":\"toolu_agent_01\"}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-4>",
+    "role": "tool_result",
+    "text": "{\"id\":\"toolu_sub_01\",\"result\":\"// Was ein wiederverbundener Ereignisstrom nachträgt (src/lib/stream.ts) …\",\"isError\":false}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-5>",
+    "role": "sub_text",
+    "text": "{\"text\":\"Die Datei prüft missingBeginning in sieben Fällen.\",\"parent\":\"toolu_agent_01\"}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-6>",
+    "role": "tool_result",
+    "text": "{\"id\":\"toolu_agent_01\",\"result\":\"Die Datei prüft missingBeginning in sieben Fällen.\",\"isError\":false}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-7>",
+    "role": "assistant",
+    "text": "Der Subagent hat die Datei gelesen: sieben Fälle zu missingBeginning.",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-8>",
+    "role": "meta",
+    "text": "{\"secs\":\"<secs>\",\"inTok\":210,\"outTok\":44}",
+    "ts": "<t>",
+    "attachments": null
+  }
+]

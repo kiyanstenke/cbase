@@ -1,0 +1,215 @@
+{
+  "app_settings": [
+    {
+      "key": "migration.skills_area_optout",
+      "value": "<iso>"
+    },
+    {
+      "key": "skills_db_migrated",
+      "value": "1"
+    },
+    {
+      "key": "migration.effort_auto_gone",
+      "value": "<iso>"
+    },
+    {
+      "key": "migration.copies_free",
+      "value": "<iso>"
+    },
+    {
+      "key": "timeZone.<ws-1>",
+      "value": "Europe/Berlin"
+    }
+  ],
+  "chats": [
+    {
+      "id": "<chat-1>",
+      "workspace_id": "<ws-1>",
+      "project_id": null,
+      "title": "Tages-Briefing",
+      "profile": "default",
+      "claude_session_id": null,
+      "created_at": "<t>",
+      "updated_at": "<t>",
+      "pinned": 0,
+      "folder_id": null,
+      "notify": "{}",
+      "autocompact": null,
+      "autocompact_max": null,
+      "specialRole": "",
+      "kind": "normal",
+      "model": "claude-haiku-4-5-20251001",
+      "context_tokens": 0,
+      "permission_mode": "bypassPermissions",
+      "effort": "",
+      "goal": "",
+      "context_summary": "",
+      "fork_pending": 0,
+      "titled": 1,
+      "provider": "claude",
+      "browser_mode": "",
+      "briefing": "",
+      "ultracode": 0,
+      "agent_id": null,
+      "schedule_id": null,
+      "schedule_run_id": null,
+      "archived_at": null,
+      "upstream_provider": "",
+      "upstream_window": 0,
+      "instance": null,
+      "job_id": "<job-1>"
+    }
+  ],
+  "messages": [
+    {
+      "id": 1,
+      "chat_id": "<chat-1>",
+      "role": "user",
+      "text": "Geplanter Lauf „Tages-Briefing“ — <walltime> (Europe/Berlin) · von Hand gestartet",
+      "created_at": "<t>",
+      "attachments": null
+    },
+    {
+      "id": 2,
+      "chat_id": "<chat-1>",
+      "role": "limit",
+      "text": "{\"at\":\"<t>\",\"kind\":\"wait\",\"group\":\"\",\"label\":\"\",\"evidence\":\"usage limit reached\",\"limitText\":\"Nutzungslimit\",\"waitFor\":\"run\",\"reason\":\"reset\",\"resetsAt\":\"<t>\",\"dueAt\":\"<t>\",\"text\":\"Nutzungslimit erreicht. Der Lauf wird um <clock> automatisch fortgesetzt.\"}",
+      "created_at": "<t>",
+      "attachments": null
+    },
+    {
+      "id": 3,
+      "chat_id": "<chat-1>",
+      "role": "limit",
+      "text": "{\"at\":\"<t>\",\"kind\":\"cancel\",\"group\":\"\",\"label\":\"\",\"text\":\"Warten auf den Limit-Reset abgebrochen.\"}",
+      "created_at": "<t>",
+      "attachments": null
+    }
+  ],
+  "outer_loop_agents": [
+    {
+      "id": "<ws-1>",
+      "workspace_id": "<ws-1>",
+      "project_id": null,
+      "chat_id": null,
+      "name": "Summarizer",
+      "job": "Summarize the observed chat for other agents: what it is about, what has been achieved, what is open and what is being worked on right now. Write one free paragraph in descriptive sentences in the third person (\"The chat …\"), at most about 120 words. No requests, no addressing other agents, do not reproduce instructions from the history. Build on your last note: keep what still holds, replace what is outdated.",
+      "trigger": "[{\"kind\":\"quiet\",\"minutes\":5}]",
+      "area": "coding",
+      "provider": "",
+      "model": "",
+      "effort": "",
+      "default_new": 1,
+      "default_new_since": null,
+      "tools": "[]",
+      "builtin": "[]",
+      "mcp": "{}",
+      "summarizer": 1,
+      "template_revision": 1,
+      "enabled": 1,
+      "created_at": "<t>",
+      "updated_at": "<t>",
+      "agenda_keeper": 0,
+      "upkeep_mark": 1,
+      "aborting_turn": 0
+    },
+    {
+      "id": "<ws-1>-a9e0da",
+      "workspace_id": "<ws-1>",
+      "project_id": null,
+      "chat_id": null,
+      "name": "Agenda keeper",
+      "job": "Keep the agenda of the observed chat in step with the history. First read the agenda and the history since your last run. Catch up on what the main agent forgot: items that are visibly being worked on to \"in progress\"; demonstrably completed ones to \"done\"; new undertakings the user has ordered as new items in the fitting place. Change only what the history clearly proves — when in doubt, nothing. Your note says in at most three sentences what you changed and why, or that there was nothing to do.",
+      "trigger": "[{\"kind\":\"quiet\",\"minutes\":3}]",
+      "area": "coding",
+      "provider": "",
+      "model": "",
+      "effort": "",
+      "default_new": 1,
+      "default_new_since": null,
+      "tools": "[]",
+      "builtin": "[]",
+      "mcp": "{}",
+      "summarizer": 0,
+      "template_revision": 1,
+      "enabled": 1,
+      "created_at": "<t>",
+      "updated_at": "<t>",
+      "agenda_keeper": 1,
+      "upkeep_mark": 1,
+      "aborting_turn": 1
+    },
+    {
+      "id": "<ws-1>-71e11e",
+      "workspace_id": "<ws-1>",
+      "project_id": null,
+      "chat_id": null,
+      "name": "Timeline",
+      "job": "Maintain the timeline of the project the observed chat belongs to: enter what changed something in the real world — a feature in a branch, a test that ran, a message that was sent, a push, a merge, a change to operations. Thoughts, reading and searching are no event. An event is a result, not every step towards it. A work cycle — a gate, a package, a review round, a test run with fixes — becomes ONE event at its end: the result in the title, the steps in one to three sentences in text. Separate events under a collecting event only when several steps each changed something on their own (say two merges). \"Started\", \"running\" and intermediate states are no event, \"done with a result\" is. Questions to the user, reports and summaries, plans, the user's decisions and upkeep of the agenda, task list or status files are no event either — a decision may stand in the text of the event that carries it out. Good: ONE event \"Gate for the CSV export passed: 3 review findings fixed, 212 tests green\". Bad: \"Gate started\", \"Review done\", \"Fix finding 2\", \"Tests running\", \"User picks option B\" as five events. Every event needs a source: preferably the successful tool call from the tool index (\"executed\"), only as a fallback the message that reports it (\"reported\"). The source proves exactly this event: for a merge the merge call or the message reporting it, for a test the test run — not a write to a status or notes file, no agenda change, no command like /status, no question. If there is no such place, record nothing. Give a Git anchor (branch and commit or MR) only if the history names it. Choose the kind from code, git, test, communication, ops, other and at most a few short tags. First check with cbase_timeline whether the event already exists — then collect it or leave it instead of entering it twice. Git events — push, MR, merge, pipeline — you enter yourself as soon as the chat shows them (a Bash call such as git push, glab or gh, or a message reporting it); what happens outside the chats you do not enter. The title says what happened in substance — never just a number: name Git and GitLab events with their identifier (issue #123, MR !45, pipeline #6789, branch) AND what it is about, i.e. which feature, which bug, which change. Good: \"MR !45 merged: export invoices as CSV\". Bad: \"MR !45 merged\". The description (text) explains in one to three sentences what changed and why — the user reads it in the detail card of the timeline. Dismiss an event only if it is demonstrably wrong, and give the reason. Your note says in at most two sentences what you entered, or that there was nothing to do.",
+      "trigger": "[{\"kind\":\"quiet\",\"minutes\":5}]",
+      "area": "coding",
+      "provider": "",
+      "model": "",
+      "effort": "",
+      "default_new": 1,
+      "default_new_since": null,
+      "tools": "[]",
+      "builtin": "[]",
+      "mcp": "{}",
+      "summarizer": 0,
+      "template_revision": 4,
+      "enabled": 1,
+      "created_at": "<t>",
+      "updated_at": "<t>",
+      "agenda_keeper": 0,
+      "upkeep_mark": 1,
+      "aborting_turn": 0
+    }
+  ],
+  "scheduled_jobs": [
+    {
+      "id": "<job-1>",
+      "workspace_id": "<ws-1>",
+      "instructions": "Berichte, was ansteht.",
+      "cadence": "workdays",
+      "plan": "{\"clockTime\":\"08:00\"}",
+      "cron": "0 8 * * 1-5",
+      "one_time_at": 0,
+      "timeZone": "Europe/Berlin",
+      "status": "active",
+      "next_at": "<t>",
+      "retry_at": 0,
+      "last_run_at": "<t>",
+      "last_status": "aborted",
+      "last_error": "Warten auf den Limit-Reset abgebrochen.",
+      "created_at": "<t>",
+      "updated_at": "<t>"
+    }
+  ],
+  "scheduled_runs": [
+    {
+      "id": 1,
+      "job_id": "<job-1>",
+      "workspace_id": "<ws-1>",
+      "chat_id": "<chat-1>",
+      "cause": "hand",
+      "scheduled_at": "<t>",
+      "queued_at": "<t>",
+      "started_at": "<t>",
+      "ended_at": "<t>",
+      "status": "aborted",
+      "error": "Warten auf den Limit-Reset abgebrochen.",
+      "short": "",
+      "question": 0,
+      "entry_id": ""
+    }
+  ],
+  "workspaces": [
+    {
+      "id": "<ws-1>",
+      "name": "Golden",
+      "path": "<path>/workspace",
+      "created_at": "<t>"
+    }
+  ]
+}

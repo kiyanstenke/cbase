@@ -1,0 +1,31 @@
+{"type":"harness","subtype":"connected","running":false,"compacting":false,"waiting":false,"monitors":[],"agents":[],"tasks":[],"wakeupAt":0,"wakeupReason":"","wakeupPrompt":"","contextTokens":0,"streamText":"","streamTextTruncated":false,"queued":[]}
+{"type":"harness","subtype":"user_message","text":"Erste Nachricht vor der Verdichtung.","attachments":[]}
+{"type":"harness","subtype":"run_started","resume":false,"provider":"claude"}
+{"type":"system","subtype":"init","session_id":"sess-compaction","cwd":"<path>/workspace","model":"claude-haiku-4-5-20251001","tools":["Bash","Read","Edit","Agent"],"mcp_servers":[{"name":"cbase","status":"connected"}],"permissionMode":"bypassPermissions","apiKeySource":"none","claude_code_version":"<version>"}
+{"type":"stream_event","event":{"type":"message_start","message":{"id":"msg_1","type":"message","role":"assistant","model":"claude-haiku-4-5-20251001","content":[],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":120,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":0}}}}
+{"type":"stream_event","event":{"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}}
+{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Antwort auf: Erste "}}}
+{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Nachricht vor der "}}}
+{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Verdichtung."}}}
+{"type":"stream_event","event":{"type":"content_block_stop","index":0}}
+{"type":"stream_event","event":{"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null},"usage":{"output_tokens":18}}}
+{"type":"stream_event","event":{"type":"message_stop"}}
+{"type":"assistant","message":{"id":"msg_1","type":"message","role":"assistant","model":"claude-haiku-4-5-20251001","content":[{"type":"text","text":"Antwort auf: Erste Nachricht vor der Verdichtung."}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":120,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":18}}}
+{"type":"result","subtype":"success","is_error":false,"duration_ms":1234,"duration_api_ms":1000,"num_turns":1,"result":"Response","session_id":"sess-compaction","total_cost_usd":0,"usage":{"input_tokens":120,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":18}}
+{"type":"harness","subtype":"run_done","meta":{"secs":"<secs>","inTok":120,"outTok":18}}
+{"type":"harness","subtype":"compacting","auto":false}
+{"type":"harness","subtype":"compacted","chars":105,"auto":false,"percent":0}
+{"type":"harness","subtype":"user_message","text":"Zweite Nachricht nach der Verdichtung.","attachments":[]}
+{"type":"harness","subtype":"run_started","resume":false,"provider":"claude"}
+{"type":"system","subtype":"init","session_id":"sess-compaction","cwd":"<path>/workspace","model":"claude-haiku-4-5-20251001","tools":["Bash","Read","Edit","Agent"],"mcp_servers":[{"name":"cbase","status":"connected"}],"permissionMode":"bypassPermissions","apiKeySource":"none","claude_code_version":"<version>"}
+{"type":"stream_event","event":{"type":"message_start","message":{"id":"msg_2","type":"message","role":"assistant","model":"claude-haiku-4-5-20251001","content":[],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":120,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":0}}}}
+{"type":"stream_event","event":{"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}}
+{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Antwort auf: [Zusammenfassung des "}}}
+{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"bisherigen, komprimierten Gesprächs — "}}}
+{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"nutze sie als Kontext"}}}
+{"type":"stream_event","event":{"type":"content_block_stop","index":0}}
+{"type":"stream_event","event":{"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null},"usage":{"output_tokens":18}}}
+{"type":"stream_event","event":{"type":"message_stop"}}
+{"type":"assistant","message":{"id":"msg_2","type":"message","role":"assistant","model":"claude-haiku-4-5-20251001","content":[{"type":"text","text":"Antwort auf: [Zusammenfassung des bisherigen, komprimierten Gesprächs — nutze sie als Kontext"}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":120,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":18}}}
+{"type":"result","subtype":"success","is_error":false,"duration_ms":1234,"duration_api_ms":1000,"num_turns":1,"result":"Response","session_id":"sess-compaction","total_cost_usd":0,"usage":{"input_tokens":120,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":18}}
+{"type":"harness","subtype":"run_done","meta":{"secs":"<secs>","inTok":120,"outTok":18}}

@@ -1,0 +1,213 @@
+{
+  "name": "git-files",
+  "description": "P7: a submodule (gitdir relative in .git/modules) comes along and stays content of its repo; a worktree of a brought-along repo becomes a worktree block; a worktree of another machine (absolute gitdir) drops out with a hint, its folder is treated normally.",
+  "mode": "creation",
+  "selection": [
+    {
+      "seq": 1,
+      "kind": "folder",
+      "name": "project",
+      "files": [
+        {
+          "rel": "main/.git/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "main/.git/modules/lib/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "main/.git/worktrees/feat/HEAD",
+          "size": 23
+        },
+        {
+          "rel": "main/lib/.git",
+          "size": 30
+        },
+        {
+          "rel": "main/lib/x.c",
+          "size": 5
+        },
+        {
+          "rel": "main/README.md",
+          "size": 5
+        },
+        {
+          "rel": "feat/.git",
+          "size": 40
+        },
+        {
+          "rel": "feat/y.c",
+          "size": 5
+        }
+      ]
+    },
+    {
+      "seq": 2,
+      "kind": "folder",
+      "name": "foreign",
+      "files": [
+        {
+          "rel": ".git",
+          "size": 50
+        },
+        {
+          "rel": "z.txt",
+          "size": 5
+        }
+      ]
+    }
+  ],
+  "gitFiles": {
+    "1:project/main/lib/.git": "gitdir: ../.git/modules/lib\n",
+    "1:project/feat/.git": "gitdir: ../main/.git/worktrees/feat\n",
+    "2:foreign/.git": "gitdir: /Users/jemand/repo/.git/worktrees/foreign\n"
+  },
+  "steps": [],
+  "expected": {
+    "tree": [
+      {
+        "path": "project",
+        "kind": "folder",
+        "source": 1,
+        "origin": "project",
+        "size": 154
+      },
+      {
+        "path": "project/feat",
+        "kind": "worktree",
+        "source": 1,
+        "origin": "project/feat",
+        "size": 45
+      },
+      {
+        "path": "project/main",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "project/main",
+        "size": 109
+      },
+      {
+        "path": "foreign",
+        "kind": "folder",
+        "source": 2,
+        "origin": "foreign",
+        "size": 5,
+        "codeRepo": true
+      },
+      {
+        "path": "foreign/z.txt",
+        "kind": "file",
+        "source": 2,
+        "origin": "foreign/z.txt",
+        "size": 5
+      }
+    ],
+    "hints": [
+      {
+        "code": "GIT_FILE_TOT",
+        "path": "foreign/.git"
+      }
+    ],
+    "omitted": 1,
+    "upload": {
+      "1": [
+        "project/main/.git/HEAD",
+        "project/main/.git/modules/lib/HEAD",
+        "project/main/.git/worktrees/feat/HEAD",
+        "project/main/lib/.git",
+        "project/main/lib/x.c",
+        "project/main/README.md",
+        "project/feat/.git",
+        "project/feat/y.c"
+      ],
+      "2": [
+        "foreign/z.txt"
+      ]
+    },
+    "finalTree": [
+      {
+        "path": "foreign",
+        "kind": "folder",
+        "source": 2,
+        "origin": "foreign",
+        "size": 5,
+        "codeRepo": true
+      },
+      {
+        "path": "foreign/z.txt",
+        "kind": "file",
+        "source": 2,
+        "origin": "foreign/z.txt",
+        "size": 5
+      },
+      {
+        "path": "project",
+        "kind": "folder",
+        "source": 1,
+        "origin": "project",
+        "size": 154
+      },
+      {
+        "path": "project/feat",
+        "kind": "worktree",
+        "source": 1,
+        "origin": "project/feat",
+        "size": 45
+      },
+      {
+        "path": "project/main",
+        "kind": "code-repo",
+        "source": 1,
+        "origin": "project/main",
+        "size": 109
+      }
+    ],
+    "mapping": {
+      "1": [
+        {
+          "from": "project",
+          "to": "project"
+        }
+      ],
+      "2": [
+        {
+          "from": "foreign",
+          "to": "foreign"
+        }
+      ]
+    },
+    "finalMapping": {
+      "ways": [],
+      "gone": [],
+      "codeRepos": []
+    },
+    "codeRepos": [
+      "foreign"
+    ],
+    "repos": [
+      "foreign",
+      "project/feat",
+      "project/main"
+    ],
+    "error": [],
+    "warnings": [],
+    "targets": [
+      {
+        "source": 1,
+        "origin": "project/main/lib/.git",
+        "target": "project/main/lib/.git"
+      },
+      {
+        "source": 1,
+        "origin": "project/feat/.git",
+        "target": "project/feat/.git"
+      },
+      {
+        "source": 2,
+        "origin": "foreign/z.txt",
+        "target": "foreign/z.txt"
+      }
+    ]
+  }
+}

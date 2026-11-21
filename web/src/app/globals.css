@@ -1,0 +1,1346 @@
+@import "tailwindcss";
+
+@theme {
+  /* Light design after the Twisty model: warm greys, white, navy-black. Accent = cobalt #1f57f7 (dark #4d89ff); the
+     gradient #0c9cfc→#6c30f0 stays the logo. Adjustable (Settings → Appearance): lib/accent.ts overrides accent and
+     accent-soft of both designs via a <style id="cb-accent">; the values here are the default and are copied there
+     (ACCENT_DEFAULT_VALUES, web/test/accent.test.mjs). */
+  --color-bg: #eeece6;
+  --color-panel: #ffffff;
+  --color-hover: #f4f2ec;
+  --color-edge: #e6e3db;
+  --color-fg: #1c1e22;
+  --color-dim: #8d919b;
+  --color-accent: #1f57f7;
+  --color-accent-soft: #e4ebfe;
+  --color-dark: #23262c;
+  --color-bubble: #23262c;
+  --color-tool: #8d919b;
+  --color-danger: #c94f3d;
+  --color-warn: #a8802a;
+  --color-ok: #2f9e6b;
+  --color-code: #f5f3ed;
+  /* The frame around the content card (see `.cb-frame` below): header and icon rail in ONE colour, the page as a card
+     in it. Light is a cool grey one step BELOW the ground of the cool lists (`.cb-kit` bg #e9ebef), else the chat list would
+     flow into the frame; the card stays light. `frame-edge` is the card's hairline (all round), `frame-hover`/`frame-active`
+     the two steps of a rail button. */
+  --color-frame: #dfe3e9;
+  --color-frame-edge: #ccd2db;
+  --color-frame-hover: #d4d9e0;
+  --color-frame-active: #c9d0d9;
+  --font-sans: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --shadow-card: 0 1px 2px rgb(28 30 34 / 0.04), 0 10px 30px rgb(28 30 34 / 0.06);
+}
+
+/* Dark design: the same colour roles, inverted lightness. Active as soon as <html data-theme="dark"> is set (inline script
+   before first paint, or the switch in the header). The colour utilities (bg-panel, text-fg, border-edge, …) resolve the
+   variables at use, so overriding them here colours the WHOLE app without touching components. The attribute selector has
+   higher specificity than Tailwind's :root and wins the cascade. */
+/* Palette of dark ChatGPT, measured from a screenshot: neutral greys instead of a cool blue-grey: reading surface #181818,
+   card #2a2a2a with edge #3d3d3d, side surface/menu #2d2d2d, input #363636, text ≈ #f3f3f3, second step ≈ #b0b0b0, third
+   ≈ #8f8f8f. The ground of the lists is one step BELOW the reading surface (ChatGPT's sidebar is darker than the history).
+   The accent stays cobalt. */
+:root[data-theme="dark"] {
+  --color-bg: #121212;
+  --color-panel: #181818;
+  --color-hover: #262626;
+  --color-edge: #2f2f2f;
+  --color-fg: #f3f3f3;
+  --color-dim: #9b9b9b;
+  --color-accent: #4d89ff;
+  --color-accent-soft: #1f2d45;
+  --color-dark: #333333;
+  --color-bubble: #303030;
+  --color-tool: #8f8f8f;
+  --color-danger: #e5705c;
+  --color-warn: #cfa24a;
+  --color-ok: #46b483;
+  --color-code: #222222;
+  /* The frame, measured from a screenshot of the ChatGPT app: rail and strip above the card #272c31 (a blue-tinted dark grey,
+     clearly set off from the content), hairline of the card #33383d, the active step #383d41. */
+  --color-frame: #272c31;
+  --color-frame-edge: #33383d;
+  --color-frame-hover: #30353a;
+  --color-frame-active: #383d41;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.34), 0 10px 30px rgb(0 0 0 / 0.46);
+  color-scheme: dark;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+/* ── The frame: header + icon rail, the page as a card in it ──────────────────────────────────
+   Header (`TopNav`) and rail (`#cbase-rail`, app/layout.tsx) carry `bg-frame` and this class; the card beside them is
+   rounded 12 px at all corners, has a hairline all round (`frame-edge`) and stands 3 px off the window edge at the bottom
+   and right (app/layout.tsx). `.cb-frame` sits on header and rail, NEVER on a common ancestor of the card: the variables
+   inherit, and the card would get the frame's steps.
+   Two roles change inside the frame: `hover` and `edge` are the frame's steps (the dark `hover` #262626 would lie BELOW
+   #272c31 and be invisible). Light also gets a darker `dim`: #8d919b on the grey frame is 2.5 : 1, #6b707b is 3.9 : 1.
+   Menus inside it (`cb-pop`) reset `hover` and `edge` themselves and stay as they are; they inherit the darker `dim`
+   (light on white: 4.9 : 1). */
+.cb-frame {
+  --color-hover: var(--color-frame-hover);
+  --color-edge: var(--color-frame-edge);
+}
+:root:not([data-theme="dark"]) .cb-frame {
+  --color-dim: #6b707b;
+}
+/* Coding → Chats as THREE cards: the content card steps back (no ground, no edge), and chat list, conversation and right
+   rail each draw a card of their own (`rounded-[12px] border border-frame-edge`, chat/ChatListPane.tsx, chat/ChatPane.tsx,
+   chat/ChatRightSidebar.tsx) with 3 px of frame between them, the same distance as to the window edge. `data-three-cards`
+   sits only on the VISIBLE chats tab (app/workspaces/page.tsx). Zero border width instead of a transparent edge: the three
+   cards then lie exactly where the one lay. */
+[data-content-card]:has([data-three-cards]) {
+  background: transparent;
+  border-width: 0;
+  border-radius: 0;
+}
+
+/* No continuous animation without meaning: an animated box-shadow cannot be composited, and `mix-blend-screen` on moving
+   layers forces the compositor to read back per frame (a looping animation on a root-layout button cost ~40 % renderer
+   and ~45 % GPU at idle). */
+
+/* Switching tabs, categories and pages: the new content fades in over 150 ms, ease-out; for document content plus 3 px of
+   travel upwards, otherwise opacity only. A switch happens dozens of times a day, so any longer path feels sluggish. The
+   marker of segment bars (`SlideTabBar`, kit `Segments`) sits at the new tab at once; only its colour fades via
+   `transition-colors`.
+
+   Duration and curve live ONLY here, as variables: switchers that do NOT remount their content (`AnimatedSwitch`, `TabFade`,
+   `RouteTransition`; streams, terminals and open editors stay) restart the animation via inline style (`var(--cb-switch)`)
+   instead of keeping a second number in TypeScript.
+   - `--cb-switch` (`tab-enter`, class `cb-tab-enter`): document content: settings pages, lists, dialog tabs, the greeting in
+     the empty chat.
+   - `--cb-switch-fade` (`fade-in`): opacity ONLY, for full-height panels: the coding categories (code, terminal, browser),
+     the page changes of the header, the sections of the right chat rail.
+     A transform would make the panel the reference frame of every `position: fixed` inside it for the duration and shift
+     CodeMirror/canvas against the position they measured. */
+:root {
+  --cb-switch: tab-enter 150ms ease-out;
+  --cb-switch-fade: fade-in 150ms ease-out;
+}
+/* No fade without an opaque ground: Coding → Chats are three opaque cards on the frame, the surface behind them is transparent
+   (`data-three-cards`, above). From opacity 0 the cards would fade in over the frame, which in the dark is LIGHTER than they
+   are (#272c31 against #121212/#181818): a brief light flash. This hits the tab change (`TabFade`, `data-tab-fade`) AND the page
+   change (`RouteTransition`, `#cbase-route-content`); a check in the effect would come too early, this rule applies as soon as
+   they are there.
+   `!important` because the switchers set the animation as inline style. */
+[data-content-card]:has([data-three-cards]) :is(#cbase-route-content, [data-tab-fade]) {
+  animation: none !important;
+}
+@keyframes tab-enter {
+  from { opacity: 0; transform: translateY(3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+/* Overlays/dialogs: the backdrop fades in, the panel "pops" in. */
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+/* Chat switch: the history fades in. Short and flat: a switch happens often, and a long path then feels sluggish instead of
+   soft (shorter than `cb-tab-enter`, since the tab change is the faster one). */
+@keyframes chat-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.cb-chat-in { animation: chat-in 200ms cubic-bezier(0.22, 1, 0.36, 1); }
+.cb-tab-enter { animation: var(--cb-switch); }
+.cb-fade-in { animation: fade-in 300ms ease-out; }
+.cb-overlay-in { animation: fade-in 220ms ease-out; }
+.cb-pop-in { animation: pop-in 300ms cubic-bezier(0.22, 1, 0.36, 1); }
+/* Fast variant for popovers/dropdowns (model picker etc.). */
+.cb-pop-in-fast { animation: pop-in 150ms cubic-bezier(0.22, 1, 0.36, 1); }
+/* The same duration with opacity ONLY, for menus IN the header (TopNav.tsx, rule there): Electron computes their `no-drag`
+   area from the layout, and a transform animation (`pop-in`: 12 px lower, 96 %) bypasses the compositor, so the region would
+   stay at the start position until some later layout comes. */
+.cb-fade-in-fast { animation: fade-in 150ms ease-out; }
+
+/* ── Effort slider in the composer (chat/EffortSlider.tsx) ─────────────────
+   The word of the level glides in on a change; on ultracode the filled track flows in a cobalt → violet gradient, the knob
+   carries a softly pulsing halo, the word shimmers, the spark under the track twinkles. All quiet. */
+@keyframes effort-word { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+.cb-effort-word { animation: effort-word 220ms cubic-bezier(0.22, 1, 0.36, 1); }
+.cb-ultra-flow, .cb-ultra-text {
+  background-image: linear-gradient(90deg, var(--color-accent), #7c5cff, #b35cff, #7c5cff, var(--color-accent));
+  background-size: 250% 100%;
+  animation: ultra-flow 3.2s linear infinite;
+}
+.cb-ultra-text { -webkit-background-clip: text; background-clip: text; color: transparent; }
+@keyframes ultra-flow { from { background-position: 0% 50%; } to { background-position: 250% 50%; } }
+.cb-ultra-puls { animation: ultra-puls 2.4s ease-in-out infinite; }
+@keyframes ultra-puls {
+  0%, 100% { box-shadow: 0 1px 3px rgb(0 0 0 / 0.35), 0 0 0 3px color-mix(in srgb, #8b5cff 22%, transparent); }
+  50% { box-shadow: 0 1px 3px rgb(0 0 0 / 0.35), 0 0 0 6px color-mix(in srgb, #8b5cff 10%, transparent), 0 0 14px 2px color-mix(in srgb, #8b5cff 35%, transparent); }
+}
+.cb-ultra-spark { color: #9b6bff; transform-origin: center; animation: ultra-spark 2.4s ease-in-out infinite; }
+@keyframes ultra-spark { 0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.85; } 50% { transform: scale(1.25) rotate(45deg); opacity: 1; } }
+
+/* ── Send/stop button (CbSendButton) ────────────────────────────────────────
+   The shape change hexagon ↔ stop sign runs as a transition of the `d` property: both paths have the same point count;
+   engines without CSS `d` (Safari) jump hard to the target shape via the attribute. The continuous rotation of the stop sign
+   during the answer does NOT live here but as a Web Animations API call in the component (soft run-out to the 60° grid;
+   honours prefers-reduced-motion itself). Echo and dots animate ONLY transform/opacity (compositable, one layer each) and run
+   only on send or abort, so nothing loops at rest (see the orb note above). */
+.cb-send-shape {
+  transition: d 420ms cubic-bezier(0.3, 1.2, 0.5, 1), fill 350ms ease, stroke 350ms ease, opacity 300ms ease;
+}
+@keyframes send-ripple {
+  from { opacity: 0.85; transform: scale(0.9); }
+  to   { opacity: 0; transform: scale(1.7); }
+}
+.cb-send-ripple { animation: send-ripple 520ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+@keyframes send-dot {
+  0%, 100% { opacity: 0.25; transform: translateY(0); }
+  30%      { opacity: 1; transform: translateY(-1.5px); }
+}
+.cb-send-dot { animation: send-dot 900ms ease-in-out infinite; }
+/* Waking up (locked → ready to send): softer than the send echo, shorter path. */
+@keyframes send-wake {
+  from { opacity: 0.55; transform: scale(0.85); }
+  to   { opacity: 0; transform: scale(1.28); }
+}
+.cb-send-wake { animation: send-wake 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+/* Small hop of the arrow on waking up: on a <g> layer of its own so the take-off transition of the arrow SVG stays untouched. */
+@keyframes send-hop {
+  0%   { transform: translateY(0); }
+  40%  { transform: translateY(-3.5px); }
+  72%  { transform: translateY(1px); }
+  100% { transform: translateY(0); }
+}
+.cb-send-hop { animation: send-hop 350ms cubic-bezier(0.22, 1, 0.36, 1); }
+/* Send sparks: six dots fly outward along the hexagon's corner directions. The angle comes per spark as --spark-a from the inline style. */
+@keyframes send-spark {
+  from { opacity: 0.9; transform: rotate(var(--spark-a)) translateY(-9px) scale(1); }
+  to   { opacity: 0; transform: rotate(var(--spark-a)) translateY(-20px) scale(0.2); }
+}
+.cb-send-spark { animation: send-spark 480ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
+/* ── Light effect of a RUNNING history row ───────
+   Without dots and spinners in front of the rows, a tool row or collective row shows that it runs by a bright band moving
+   across its sentence. Only `shimmerClass(running)` (lib/history-state.ts) sets the class; done means no band.
+   - Unlayered like `edge`/`data-active`: `color: transparent` must beat `text-tool text-dim` on the button (utilities live in
+     `@layer utilities` and lose against this rule).
+   - The ground is `--color-tool`: light tool and dim are equal (#8d919b), dark `text-tool` wins (#8f8f8f, dim would be #9b9b9b).
+     The band is `--color-fg`, not cobalt: the accent belongs to the display and the word "running".
+   - A child with an opaque colour (the red counter "(1 failed)") paints over the band and stays red.
+   - Cost: `background-position` is painted, not moved by the compositor. So the effect runs only while a row runs (the header
+     and display hexagons spin then anyway), and is off under reduced motion (block below). The rule MUST come before that
+     block: same specificity, and the later rule wins. */
+@keyframes cb-shimmer {
+  from { background-position: 100% 0; }
+  to   { background-position: 0 0; }
+}
+.cb-shimmer {
+  color: transparent;
+  background: linear-gradient(100deg, var(--color-tool) 0 40%, var(--color-fg) 50%, var(--color-tool) 60% 100%) 0 0 / 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: cb-shimmer 2.2s linear infinite;
+}
+@media (forced-colors: active) {
+  .cb-shimmer { background: none; color: CanvasText; }
+}
+
+/* ── Overhang of the memory brake ──────────────────────────────────────────────
+   `content-visibility: auto` (lib/contain.tsx) brings paint containment, and that CLIPS at the edge of the padding box. Four
+   pixels of negative margin plus four pixels of padding move the clip edge outward without moving the content. The overhang
+   lands in the inner padding of the scroll area (at least 32 px), so it creates no horizontal scrollbar. Kept as a reserve:
+   italic glyphs (the opened thinking block) and descenders can overhang this edge by a pixel or two, and containment would
+   clip them. Whoever builds an element that deliberately protrudes measures the overhang instead of taking 4 px as "enough". */
+.cb-contain-bleed { margin-inline: -4px; padding-inline: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* The switch fade-in: the variables to `none` so the switchers' inline style (`var(--cb-switch)`) plays nothing either; inline
+     style would beat any class rule here. The switchers also ask the preference themselves. */
+  :root { --cb-switch: none; --cb-switch-fade: none; }
+  .cb-tab-enter, .cb-fade-in, .cb-fade-in-fast, .cb-overlay-in, .cb-pop-in, .cb-pop-in-fast, .cb-chat-in,
+  .cb-send-dot, .cb-send-hop, .cb-effort-word, .cb-ultra-flow, .cb-ultra-text, .cb-ultra-puls,
+  .cb-ultra-spark { animation: none; }
+  /* The light effect of a running row: no band, readable text. Only `animation: none` would leave a half-lit, frozen band. */
+  .cb-shimmer { animation: none; background: none; color: var(--color-fg); }
+  /* Hide the send button's one-shot overlays entirely: with animation:none they would stay, since only their animationend event removes them. */
+  .cb-send-ripple, .cb-send-wake, .cb-send-spark { display: none; }
+  /* Switch off height/layout transitions too (also the shape morph of the send button). */
+  .cb-anim-height { transition: none !important; }
+  .cb-send-shape { transition: fill 350ms ease, stroke 350ms ease; }
+}
+
+/* ── Narrow windows ──────────────────────────────────────────────────────────
+   Rows that fit side by side on a wide window but not on a narrow one scroll horizontally instead of being clipped. The
+   scrollbar stays invisible, else it eats half the height of a 28 px tab bar. The content stays reachable via trackpad, wheel
+   (shift) and keyboard. */
+.cb-strip {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overscroll-behavior-x: contain;
+}
+.cb-strip::-webkit-scrollbar {
+  display: none;
+}
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font: 15px/1.55 var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+/* ── Surfaces the browser brings along ────────────────────────────────────────
+   Text selection, caret and focus ring are not drawn by us; untreated they come in colours that belong to no design (Chrome's
+   blue, the black cursor). They are coloured from the roles here and so follow the dark design too. The focus ring is indigo
+   because it says exactly what the signal indigo may say: "you are here". Fields keep their own focus (border change above);
+   their `:focus` rule is more specific and wins. */
+::selection {
+  background: var(--color-accent-soft);
+  color: var(--color-fg);
+}
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+input,
+textarea {
+  caret-color: var(--color-accent);
+}
+
+/* Scrollbar: the same kind of surface as selection and focus ring above. Untreated it comes in Chrome's grey, which belongs
+   to no colour role here, and is 15 px wide; in a 268 px chat list that is a sixteenth of the width, visible even when nobody
+   scrolls. `cb-scroll` colours it from the roles and makes it narrow. Deliberately NOT global on `*`: CodeMirror, the terminal
+   and the screen streamer bring their own, and two rule sets on top of each other give a different result per browser. */
+.cb-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-edge) transparent;
+}
+.cb-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.cb-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+/* The transparent border plus `background-clip: content-box` is the trick that makes the thumb narrower than its track;
+   otherwise it sticks to both edges. */
+.cb-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-edge);
+  background-clip: content-box;
+  border: 3px solid transparent;
+  border-radius: 999px;
+}
+.cb-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--color-dim);
+  background-clip: content-box;
+}
+
+/* The side scroll track of the streamed browser: an agent viewport wider than the rail scrolls horizontally, and that should be
+   SEEN even without scrolling. So only the WebKit pseudo-elements here: if a rule sets `scrollbar-width`/`scrollbar-color`,
+   Chrome (from 121) takes those and on macOS shows the overlay bar, which appears only while scrolling. Browsers without the
+   pseudo-elements (Firefox) get the thin default bar. The track is 8 px high; BrowserPane measures it and sets the image above
+   it (lib/browser-surface). */
+.cb-scroll-track::-webkit-scrollbar {
+  height: 8px;
+}
+.cb-scroll-track::-webkit-scrollbar-track {
+  background: transparent;
+}
+.cb-scroll-track::-webkit-scrollbar-thumb {
+  background: var(--color-edge);
+  background-clip: content-box;
+  border: 2px solid transparent;
+  border-radius: 999px;
+}
+.cb-scroll-track::-webkit-scrollbar-thumb:hover {
+  background: var(--color-dim);
+  background-clip: content-box;
+}
+@supports not selector(::-webkit-scrollbar) {
+  .cb-scroll-track {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-edge) transparent;
+  }
+}
+/* The tabs of an editor group scroll horizontally as in VS Code (`workbench.editor.titleScrollbarSizing: default`): a 3 px thin
+   scrollbar, visible only on hover, space always reserved (nothing jumps); the actions beside it never scroll along. */
+.cb-tabs-scroll { overscroll-behavior-x: contain; }
+.cb-tabs-scroll::-webkit-scrollbar { height: 3px; background: transparent; }
+.cb-tabs-scroll::-webkit-scrollbar-thumb { background: transparent; }
+.cb-tabs-scroll:hover::-webkit-scrollbar-thumb { background: rgb(121 121 121 / 0.4); }
+@supports not selector(::-webkit-scrollbar) {
+  .cb-tabs-scroll { scrollbar-width: none; }
+  .cb-tabs-scroll:hover { scrollbar-width: thin; }
+}
+
+/* ── Cool roles in the coding views ────────
+   The house is warm: `bg #eeece6`, `panel #ffffff`. On a page of cards, lists and tables that works. But three large, nearly
+   empty surfaces (list, conversation, input) lying close on top of each other look milky in cream: much white, no material.
+   So a cool set of greys applies under `.cb-kit` (light only; the dark design is one palette, see `.cb-kit` below). The
+   mechanism is the one with which the dark design recolours the whole app: the colour utilities resolve `var(--color-…)`, so
+   overriding AT THE CONTAINER colours everything below it without touching a component.
+
+   The glass layer that used to live here (translucent surfaces, inset light, `backdrop-filter`, a radial glow on the stage) is
+   gone: the whole app is flat (`cb-flat` on the body, see "Flat overlays" and "Flat cards" below). What remains of it is the
+   row hover of the cool lists. */
+:root {
+  --kit-row-hover: rgb(255 255 255 / 0.08);
+}
+:root:not([data-theme="dark"]) {
+  --kit-row-hover: rgb(255 255 255 / 0.72);
+}
+/* The identifying colours of the copies in the git overview: one colour per copy (index `color` 0..5 from the server,
+   lib/api/gitView.ts GIT_VIEW_COLORS) on the lane and mark of the timeline (components/projects/git/Timeline.tsx); the main one
+   has none. Quiet and flat: muted tones, none of the traffic-light colours themselves (`ok`, `warn`, `danger` already say
+   something) and not the cobalt accent (that means "selected"); the sage is a grey-green, not `ok`. Dark as the default, the
+   light ones on top, one step darker so line and dot carry on the light ground. */
+:root {
+  --kit-copy-0: #5fb3aa; /* teal */
+  --kit-copy-1: #a394e0; /* lilac */
+  --kit-copy-2: #d38fa8; /* dusty rose */
+  --kit-copy-3: #b39a77; /* sand */
+  --kit-copy-4: #7fa7c9; /* dove blue */
+  --kit-copy-5: #9bb07a; /* sage */
+}
+:root:not([data-theme="dark"]) {
+  --kit-copy-0: #2f857d;
+  --kit-copy-1: #6f5cc0;
+  --kit-copy-2: #b05a7a;
+  --kit-copy-3: #87693f;
+  --kit-copy-4: #44739b;
+  --kit-copy-5: #627a3c;
+}
+/* The lanes of the git bar graph (components/git-bar/GitGraph.tsx, computed in lib/git-graph.ts LANE_COLORS): five quiet tones from
+   the copies' identifying colours; light and dark follow their values. WITHOUT the dove blue (`--kit-copy-4`): next to the cobalt
+   lane of the HEAD branch (`--color-accent`) it would read as "also HEAD". Own names so the graph can change the tones without
+   taking the git overview's copies along. */
+:root {
+  --git-lane-0: var(--kit-copy-0);
+  --git-lane-1: var(--kit-copy-1);
+  --git-lane-2: var(--kit-copy-2);
+  --git-lane-3: var(--kit-copy-3);
+  --git-lane-4: var(--kit-copy-5);
+}
+/* The dot of a commit row in the graph grows: when the row is hovered, with keyboard focus inside it, and while its hover card
+   stands (`data-card`, components/git-bar/CommitCard.tsx), as in VS Code. Every circle carries its target as `--point-large`
+   (GitGraph.tsx stripe: +2 px, the core of a merge in proportion to its ring); `r` as a CSS property beats the attribute, and the
+   transition runs through it. The lanes stay as they are (no rendering, no computation). */
+.cb-git-dot { transition: r 120ms ease-out; }
+[data-git-commit-row]:is(:hover, :has(:focus-visible), [data-card]) .cb-git-dot { r: var(--point-large); }
+@media (prefers-reduced-motion: reduce) { .cb-git-dot { transition: none; } }
+/* The tones of the file icons (the files of an expanded commit in the graph, lib/git-files.ts fileKind): the colours of VS Code's
+   Seti icons (TS blue, JS/JSON yellow, markup orange, styles purple, shell green), a shade more muted. Dark as the default, the
+   light ones a step darker, else 9 px abbreviations would not carry on the light ground. Grey is `--color-dim`. */
+:root {
+  --file-blue: #519aba;
+  --file-yellow: #cbcb41;
+  --file-orange: #e37933;
+  --file-purple: #a074c4;
+  --file-green: #8dc149;
+  --file-red: #cc5a5f;
+}
+:root:not([data-theme="dark"]) {
+  --file-blue: #2f7499;
+  --file-yellow: #8f8414;
+  --file-orange: #b8581c;
+  --file-purple: #7a4fa3;
+  --file-green: #4c7d1c;
+  --file-red: #a8373d;
+}
+/* The cool colour roles still apply ONLY under `.cb-kit`; the coding page stays warm. */
+:root:not([data-theme="dark"]) .cb-kit {
+  --color-bg: #e9ebef;
+  --color-panel: #f7f8fa;
+  --color-hover: #eff1f5;
+  --color-edge: #dbdfe6;
+  --color-code: #eceff3;
+}
+/* The card surface (`cb-kit-pane`): the base rule only gives the frame its geometry; surface, edge colour and the variations
+   (accent, warning, hover) are the flat card's, under "Flat cards" below. `-dashed` stands here because the flat form has no
+   counterpart (same specificity, later, so it wins over the base). Unlayered on purpose: `.cb-kit-pane` beats every Tailwind
+   utility (they live in `@layer utilities`), so whoever wants to vary a surface does it in this file. */
+.cb-kit-pane {
+  border-width: 1px;
+  border-style: solid;
+}
+.cb-kit-pane-dashed {
+  border-style: dashed;
+}
+/* List rows INSIDE the cool view: rows in one surface instead of thirty boxes with an edge of their own. The rule stands here
+   and not on the row because the same row component also runs on the warm pages (material under knowledge), where nothing
+   should change, and a second set of classes on the element would have mixed both. The active state must come back via
+   `data-active`: `bg-accent-soft` on the element would be overruled by this unlayered rule. */
+.cb-kit .cb-row {
+  background: transparent;
+  border-radius: 0;
+}
+.cb-kit .cb-row:hover {
+  background: var(--kit-row-hover);
+}
+.cb-kit .cb-row[data-active="1"],
+.cb-kit .cb-row[data-active="1"]:hover {
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+}
+/* Two kinds of "selected": `data-active` means "is open on the right" (split view, accent: "you are here"), `data-open` means
+   "is expanded in place" (facts, projects, tasks) and carries `edge`, the neutral selection step that works in both designs.
+   Both must stand here: a utility on the element would lose against the rule above. */
+.cb-kit .cb-row[data-open="1"],
+.cb-kit .cb-row[data-open="1"]:hover {
+  background: var(--color-edge);
+}
+/* The two veils: header and base lie OVER the scrolling history, and what runs underneath fades out. Flat like the rest of the
+   app: the opaque stage colour (`panel`, resolved at the element, so the cool roles apply under `.cb-kit`), no blur. The fade
+   sits on the mask, not on the colour value. */
+.cb-kit-veil-top,
+.cb-kit-veil-bottom {
+  background: var(--color-panel);
+}
+/* At the top the veil covers the whole header fully and fades out only over the 10 px BELOW it: it hangs exactly that far under
+   the header (`bottom-[-10px]`, ChatStage.tsx `headerRef`). Reason: the history's padding leaves only 12 px free (`headerH + 12`);
+   a veil reaching further would cover the top of the first message, and one ending at the header edge would let a row scrolling
+   up to the header stand sharp right under the title, so the header would have no lower boundary. 10 px of fade BELOW the edge
+   < 12 px of padding: scrolled to the very top the first message stays free, and whoever scrolls underneath is washed out. */
+.cb-kit-veil-top {
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 10px), transparent 100%);
+}
+.cb-kit-veil-bottom {
+  mask-image: linear-gradient(to top, #000 62%, transparent 100%);
+}
+
+/* A title that does not fit its column FADES OUT instead of ending in "…". Three dots are three characters themselves, and in a
+   list of twenty conversations they stand twenty times one under the other at varying places; the fade says the same without
+   building a column of dots. Short titles stay untouched: the fade step sits at the right EDGE of the box, not at the text end. */
+.cb-fade-r {
+  mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent 100%);
+}
+
+/* The leading command, skill or workflow in the composer (lib/slash.ts slashMarkerLength): accent type on a tinted surface. NO
+   padding and no other font weight: the overlay must lie character for character under the (transparent) textarea, else the
+   caret sits beside the text; the shadow gives the edge around the word. */
+.cb-slash-marker {
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 16%, transparent);
+  border-radius: 4px;
+}
+
+/* ── Overlays ──────────────────────────────────────────────
+   Three building blocks; they hang at the body via portal and take their form from "Flat overlays" below.
+
+   `.cb-overlay` — the scrim over the page.
+   `.cb-sheet`   — the sheet of a modal.
+   `.cb-pop`     — a menu or popover. */
+/* `no-drag` on the veil: it hangs at the body via portal, so it stands in the DOM BEHIND the header, and Electron accounts the
+   app regions in DOM order: `fixed inset-0` with `no-drag` takes the whole drag region from the header for the duration of the
+   modal. Without it the region stayed (the veil itself carries `none`, subtracts nothing), and where a sheet reached into the
+   header, a click dragged the window instead of, say, pressing "Close". Applies to every modal; guard: web/test/drag-region.test.mjs,
+   rule (b). */
+.cb-overlay {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+/* ── Flat overlays ─────────────────────────────────────────────
+   Every menu and modal of the app takes the form of the ChatGPT app's popover: surface #2d2d2d, opaque, an
+   edge of 10 % white, 16 px radius, no blur. Light the same form in white with a dark hairline.
+
+   Where it applies: under `.cb-flat` and on a sheet that carries the class itself. The class sits on the BODY (app/layout.tsx),
+   so the flat form is the whole app's, portals at the body included; `useFlat()` (CbKit) defaults to flat and keeps the form in
+   an embedding without that body. There is no other form: without a flat ancestor a sheet or menu has no surface. Unlayered: `rounded-xl`/`rounded-3xl` on the element lose against the radius here; round pills
+   (`rounded-full`: selection bar, toast, scroll button) stay round.
+
+   `--color-hover` and `--color-edge` are reset IN the sheet: the dark `hover` (#262626) would lie BELOW the surface and make
+   the row hover darker instead of lighter, the hairline (#2f2f2f) would vanish on it. */
+:root {
+  --cb-flat-pop: #2d2d2d;
+  --cb-flat-edge: rgb(255 255 255 / 0.1);
+  --cb-flat-hover: rgb(255 255 255 / 0.07);
+  --cb-flat-shadow: 0 2px 6px rgb(0 0 0 / 0.25), 0 14px 36px -12px rgb(0 0 0 / 0.55);
+  --cb-flat-overlay: rgb(0 0 0 / 0.5);
+}
+:root:not([data-theme="dark"]) {
+  --cb-flat-pop: #ffffff;
+  --cb-flat-edge: rgb(0 0 0 / 0.1);
+  --cb-flat-hover: rgb(0 0 0 / 0.05);
+  --cb-flat-shadow: 0 2px 6px rgb(0 0 0 / 0.06), 0 14px 36px -12px rgb(0 0 0 / 0.18);
+  --cb-flat-overlay: rgb(0 0 0 / 0.3);
+}
+:is(.cb-flat .cb-pop, .cb-pop.cb-flat, .cb-flat .cb-sheet, .cb-sheet.cb-flat) {
+  --color-hover: var(--cb-flat-hover);
+  --color-edge: var(--cb-flat-edge);
+  background: var(--cb-flat-pop);
+  border: 1px solid var(--cb-flat-edge);
+  box-shadow: var(--cb-flat-shadow);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+:is(.cb-flat .cb-pop, .cb-pop.cb-flat, .cb-flat .cb-sheet, .cb-sheet.cb-flat):not(.rounded-full) {
+  border-radius: 16px;
+}
+/* In the dark, ground (#121212) and surface (#181818) of the page lie BELOW the sheet: a search field or count mark in it
+   (`bg-bg`, `bg-panel`) would be a dark hole. In the sheet they therefore stand out light as in ChatGPT. Light the order is
+   right by itself (ground greyer than the white sheet). */
+:root[data-theme="dark"] :is(.cb-flat .cb-pop, .cb-pop.cb-flat, .cb-flat .cb-sheet, .cb-sheet.cb-flat) {
+  --color-bg: rgb(255 255 255 / 0.06);
+  --color-panel: rgb(255 255 255 / 0.04);
+}
+.cb-overlay.cb-flat, .cb-flat .cb-overlay {
+  background: var(--cb-flat-overlay);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* ── The menu row ─────────────────────────────────────────────────────
+   The highlight like the night-mode toggle (ThemeToggle): it does not touch the sheet's edges and is slightly rounded, with a
+   minimal gap between two rows. ONE form for every menu of the app: the sheet holds 6 px of padding (`popClass`, CbKit), the row
+   (`menuRow`, `MenuEntry`) is rounded 10 px (concentric to the 16 px of the flat sheet) and stands 2 px from its neighbour
+   (sibling selector, hence CSS instead of a utility). A row under keyboard focus gets the same surface as under the pointer
+   and no ring: the ring used to run as an accent bar across the sheet edge (Chromium counts even the focus a menu sets after a
+   MOUSE click as `:focus-visible`). Red backs a row with `data-danger` (delete).
+
+   Two layers on purpose: switching off the ring is UNLAYERED, because the global `:focus-visible` ring above is itself
+   unlayered and nothing from a layer would win against it. Form, highlight and icon colour stand in `@layer components`: so
+   every utility on the element beats them, and a row that paints its own state (the marked row of a palette in `bg-accent`, the
+   chosen one in `bg-edge`, an icon in `text-fg`) keeps it under the pointer too, without `!`. A sheet that holds focus itself
+   (`tabIndex -1`, opened with the mouse) shows no ring.
+   `.cb-menu-guided` (`menuRowGuided`): the row of a palette whose marking follows the index: no surface under the pointer, the
+   palette paints the chosen row itself. */
+.cb-menu-row:focus-visible,
+.cb-pop[role="menu"]:focus-visible,
+.cb-pop[role="listbox"]:focus-visible {
+  outline: none;
+}
+@layer components {
+  .cb-menu-row {
+    border-radius: 10px;
+  }
+  .cb-menu-row + .cb-menu-row {
+    margin-top: 2px;
+  }
+  .cb-menu-row:focus-visible {
+    background-color: var(--color-hover);
+  }
+  .cb-menu-row[data-danger]:focus-visible {
+    background-color: color-mix(in srgb, var(--color-danger) 10%, transparent);
+  }
+  @media (hover: hover) {
+    .cb-menu-row:not(:disabled, [aria-disabled="true"], .cb-menu-guided):hover {
+      background-color: var(--color-hover);
+    }
+    .cb-menu-row[data-danger]:not(:disabled, [aria-disabled="true"]):hover {
+      background-color: color-mix(in srgb, var(--color-danger) 10%, transparent);
+    }
+    .cb-menu-row:not(:disabled, [aria-disabled="true"]):hover .cb-menu-symbol {
+      color: var(--color-fg);
+    }
+  }
+  .cb-menu-symbol {
+    color: var(--color-dim);
+  }
+  .cb-menu-row:focus-visible .cb-menu-symbol {
+    color: var(--color-fg);
+  }
+  .cb-menu-row[data-danger] .cb-menu-symbol {
+    color: inherit;
+  }
+}
+
+/* ── Flat cards in the coding chat ─────────────────────────────────────
+   Cards in the coding chat without the plastic glass look (light edge on top, drop shadow), in the form of ChatGPT's card:
+   #2a2a2a opaque, edge #3d3d3d, no shadow, no blur. Light the same form in white with a fine edge. It hits every `cb-kit-pane`
+   under the ChatPane root (`.cb-flat`): cards in the history (question, approval, channel, intake, info, permission), the heads
+   above the history (workflow, tasks, limit), the ideas of the empty chat, the folder view, the archive bar, and, with `cb-flat`
+   on the body, EVERY card of the app: skills, apps, settings, workflows.
+
+   The variations (accent, warning, hover) stand only here, after the surface: tinting happens OVER the opaque surface.
+   In the dark the colour roles in the card are reset as in the sheet: `hover` (#262626) would lie BELOW #2a2a2a, the hairline
+   (#2f2f2f) would vanish on it, and input fields and marks (`bg-bg`, #121212) would be black holes. */
+:root {
+  --cb-flat-card: #2a2a2a;
+  --cb-flat-card-edge: #3d3d3d;
+  --cb-flat-card-hover: #313131;
+}
+:root:not([data-theme="dark"]) {
+  --cb-flat-card: #ffffff;
+  --cb-flat-card-edge: rgb(0 0 0 / 0.1);
+  --cb-flat-card-hover: #f6f7f8;
+}
+.cb-flat .cb-kit-pane {
+  background: var(--cb-flat-card);
+  border-color: var(--cb-flat-card-edge);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+:root[data-theme="dark"] .cb-flat .cb-kit-pane {
+  --color-hover: rgb(255 255 255 / 0.06);
+  --color-edge: var(--cb-flat-card-edge);
+  --color-bg: rgb(255 255 255 / 0.06);
+}
+.cb-flat .cb-kit-pane-hover:hover {
+  background: var(--cb-flat-card-hover);
+}
+/* A card IN a sheet or menu (settings, inbox, artifacts, workflow dialogs): in the dark the sheet lies at #2d2d2d and its surface
+   above it; the opaque #2a2a2a would be a sunken hole there. It lifts like input fields in the sheet: one step above the sheet.
+   The variables are set at the sheet, not the surface, so accent and warning cards in it keep tinting over the same step. */
+:root[data-theme="dark"] :is(.cb-flat .cb-pop, .cb-pop.cb-flat, .cb-flat .cb-sheet, .cb-sheet.cb-flat) {
+  --cb-flat-card: #353535;
+  --cb-flat-card-hover: #3b3b3b;
+  --cb-flat-card-edge: #444444;
+}
+/* Node of the workflow builder (WorkflowEditor.tsx): on hover the edge gets a shade firmer. As a rule HERE and not as
+   `hover:border-…` on the element: the utility would lie in `@layer utilities` and lose against the unlayered flat edge above.
+   Selection and edge target set the edge colour inline and so win against this rule. */
+.cb-flat .cb-wf-node:hover {
+  border-color: color-mix(in srgb, var(--color-dim) 45%, transparent);
+}
+.cb-flat .cb-kit-pane-accent {
+  border-color: color-mix(in srgb, var(--color-accent) 38%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 10%, var(--cb-flat-card));
+}
+.cb-flat .cb-kit-pane-accent.cb-kit-pane-hover:hover {
+  background: color-mix(in srgb, var(--color-accent) 17%, var(--cb-flat-card));
+}
+.cb-flat .cb-kit-pane-warn {
+  border-color: color-mix(in srgb, var(--color-warn) 40%, transparent);
+  background: color-mix(in srgb, var(--color-warn) 10%, var(--cb-flat-card));
+}
+/* The user bubble is no card: in ChatGPT a bubble without an edge, dark #303030 (`--color-bubble`), light one step below the
+   reading surface. The mixing stands in the rule, not in a variable at the root: it must resolve AT THE ELEMENT, where the cool
+   roles apply under `.cb-kit`. */
+.cb-flat .cb-kit-pane.cb-bubble {
+  background: color-mix(in srgb, var(--color-fg) 6%, var(--color-panel));
+  border-color: transparent;
+}
+:root[data-theme="dark"] .cb-flat .cb-kit-pane.cb-bubble {
+  background: var(--color-bubble);
+}
+/* The cards of the right chat rail (Background Tasks: subagent, workflow run, graph run, command/monitor; plus the channel cards in
+   the same form) are borderless and stand out from the rail's ground by their surface alone. In the dark `bg-panel` #181818 on `bg`
+   #121212 are only six steps apart and the cards blurred. So in the dark the card sets its roles itself: `panel` (the surface,
+   also for every child with `bg-panel`) one step higher, `hover` too, so the half-transparent hover rows in it keep their distance.
+   Light the colours stay; the channel card hovers with full `bg-hover` instead of `/60` (60 % over the rail's ground would lie
+   dark under the card). */
+:root[data-theme="dark"] .cb-task-card {
+  --color-panel: #202020;
+  --color-hover: #2c2c2c;
+}
+
+/* ── The input field (ChatComposer) ─────────────────────────────
+   The composer of the coding chat is ONE large, round surface: one step above the ground, a fine edge a shade lighter (dark) or
+   darker (light) than the surface, NO shadow, no glass, no blur, no glow on focus; the focus is the caret.
+
+   Opaque instead of glass, and that is more than taste: the strip base above is pushed a bit UNDER the field (`--strip-deep`),
+   and through glass its bottom line would shine; now it disappears under the edge. The colours stand as color-mix over the colour
+   roles, not as fixed values: they resolve AT THE ELEMENT and so also hit the cool roles under `.cb-kit` (light). Unlayered like
+   `.cb-kit-pane`: a utility on the element (`bg-…`, `border-…`) would lose against this rule, so the drag state stands here too
+   (`data-drag`, files over the field); it is the only one that pulls the edge into the accent colour. */
+.cb-composer {
+  /* Dark: 14 % and 18 % text over the reading surface match ChatGPT's input field (#363636, edge ≈ #3d3d3d on #181818). */
+  background: color-mix(in srgb, var(--color-fg) 14%, var(--color-panel));
+  border: 1px solid color-mix(in srgb, var(--color-fg) 18%, var(--color-panel));
+  box-shadow: none;
+}
+/* Light, "one step above" is the lightest: the surface goes toward white (under `.cb-kit` `panel` is a cool #f7f8fa and would lie
+   almost on the veil beneath it), the edge a shade darker than the surface. */
+:root:not([data-theme="dark"]) .cb-composer {
+  background: color-mix(in srgb, var(--color-panel) 35%, white);
+  border-color: color-mix(in srgb, var(--color-fg) 13%, var(--color-panel));
+}
+.cb-composer[data-drag="1"] {
+  border-color: color-mix(in srgb, var(--color-accent) 60%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-panel));
+}
+
+/* ── Type of the chat histories ──────────────────────────────────────────────
+   The text size from Settings → Appearance applies to the whole app: the plugin `web/postcss-text-scale.cjs` inserts
+   `--cb-text-scale` into EVERY font size at build time, including these. The values here are therefore the sizes at 100 %; code
+   blocks in the artifact modal or on the context page grow along, deliberately: "relative" means everywhere.
+
+   Unlayered on purpose: only so the classes beat Tailwind's `text-[…px]`, and all steps stand in ONE place. The names stay
+   (bubble fixtures, AssistantBlocks, Markdown); the number in the name is the size at 100 %. */
+.cb-chat-text {
+  font-size: 15.5px;
+}
+.cb-cs-10 { font-size: 10px; }
+.cb-cs-10-5 { font-size: 10.5px; }
+.cb-cs-11 { font-size: 11px; }
+.cb-cs-11-5 { font-size: 11.5px; }
+.cb-cs-12 { font-size: 12px; }
+.cb-cs-12-5 { font-size: 12.5px; }
+.cb-cs-13 { font-size: 13px; }
+
+/* ── Fixed text size for a subtree ─────────────────────────────────────────────────────────
+   Surfaces with fixed geometry do NOT grow with the text size: the nodes of the workflow editor (232 × 84, bound to iOS) with
+   their edge labels, the control rows of the text-size slider itself (it should stand still under the pointer while everything
+   around it reflows) and the logo of the splash. The variable applies to the whole subtree.
+
+   RULE: the root of a fixed subtree carries a size class itself (`text-[Npx]`). Without it it inherits the already scaled px of
+   its parent, and everything in it without a class of its own would grow anyway. Unlayered so no utility overrules it. */
+.cb-text-fixed {
+  --cb-text-scale: 1;
+}
+
+/* ── The text-size slider (Settings → Appearance) ─────────────────────────────────
+   A native <input type="range">: arrow keys, Home/End and the screen reader come for free. Track and thumb are styled via the
+   pseudo-elements: `-webkit-` applies in Chromium (client) AND Safari, `-moz-` for Firefox. The five detent points lie as a
+   layer of their own beneath. */
+.cb-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  height: 22px;
+  margin: 0;
+  cursor: pointer;
+}
+.cb-slider:focus-visible {
+  outline: none;
+}
+/* `--fill` is set by the slider (share up to the chosen step): accent to its left, the track to its right. */
+.cb-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    var(--color-accent) 0 var(--fill, 0%),
+    color-mix(in srgb, var(--color-fg) 16%, transparent) var(--fill, 0%) 100%
+  );
+}
+.cb-slider::-moz-range-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--color-fg) 16%, transparent);
+}
+.cb-slider::-moz-range-progress {
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--color-accent);
+}
+.cb-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -7px;
+  border-radius: 9999px;
+  background: var(--color-panel);
+  border: 1px solid color-mix(in srgb, var(--color-fg) 22%, transparent);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.18);
+  transition: transform 120ms ease;
+}
+.cb-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: var(--color-panel);
+  border: 1px solid color-mix(in srgb, var(--color-fg) 22%, transparent);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.18);
+}
+.cb-slider:active::-webkit-slider-thumb {
+  transform: scale(1.08);
+}
+.cb-slider:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 35%, transparent);
+}
+.cb-slider:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 35%, transparent);
+}
+
+/* ── Docked strip above the composer ──────────────────────────────────────
+   What runs next to the main agent and what the user has queued. A narrow strip that sits BEHIND the composer and is overlapped
+   by it at the top edge (the model is the Codex app). One glass with rows, not one glass per message.
+
+   Four things make up the construction:
+
+   ONE SURFACE, ROWS SEPARATED BY HAIRLINES. The base carries the surface, not the row; otherwise four chips with four frames and
+   4 px of air would stand one over the other, and "what is pending" would read like four messages instead of a list. The same
+   rule as for every list of the house (ONE surface, hairlines between). The line sits on every OPEN row except the first
+   (sibling selector on `data-open`), so a row just sliding out neither carries a line nor leaves one.
+
+   NEUTRAL, not blue. A waiting message is no alarm; the accent stays free for signals (run, focus, send). The base surface is
+   opaque and flat (see `.cb-strip-surface` below); "one glass" now means: ONE surface.
+
+   NARROWER than the composer and OVERLAPPED by it (`--strip-inset` at the sides, `--strip-deep` downward). That is the whole
+   picture: a card peeking out from behind the input field. The bottom row therefore gets `cb-strip-last`: its content must stay
+   above the covered zone, else half a word shows through the composer.
+
+   PUSHED OUT, not faded in. The slot grows its height via `grid-template-rows: 0fr → 1fr`, and because the content in it is
+   anchored at the BOTTOM and clipped, the row comes out from behind the composer from below instead of dropping from above; the
+   base grows upward because the composer is anchored at the bottom. The same pattern as the action panel of the mobile island.
+
+   `overflow: hidden` applies only DURING the movement (`data-finished="0"`) and only on the slot, NEVER on the base: the chip card
+   of the run display hangs `absolute bottom-full` in the first row and would otherwise be permanently clipped (composer-strip.mjs
+   checks exactly that). The corners do not bleed anyway: no row has a surface of its own. */
+/* The inset hangs on the composer's RADIUS (`rounded-[24px]` in ChatComposer). Slightly SMALLER than the radius: the strip should
+   not touch the input field where the rounded corner ends but a little earlier. With field radius 18 and inset 13 the strip's sides
+   meet the curve ≈ 0.7 px below the top edge, slightly IN the curve; at radius 24, an inset of 18 px gives the same depth
+   (24 − √(24² − 6²) ≈ 0.77 px). Applies to `.cb-strip-bottom` too. Whoever changes the field's radius moves this number along. */
+:root {
+  --strip-inset: 18px;
+  --strip-deep: 16px;
+}
+.cb-strip-base {
+  position: relative;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0 var(--strip-inset) calc(var(--strip-deep) * -1);
+  border-radius: 15px;
+}
+/* The SURFACE of all messages above the composer: the base and the agent's task bar (`NativeTaskBar`, `.cb-strip-surface`). Opaque
+   and flat like the queue row of the ChatGPT app: surface #2d2d2d, edge #3b3b3b on #181818, no shadow, no blur; dark 9.6 % and
+   16 % text over the reading surface, so between the reading surface and the input field (14 %) lying above it. Light one step
+   BELOW the almost white field: a neutral grey from text over white (#f4f4f4, edge #e4e4e4); mixed over `panel` it would inherit
+   its cool blue cast, and the probe (composer-strip.mjs, "neutral, not accent blue") measures the spread of the channels.
+   Mixing happens AT THE ELEMENT (same reason as for `.cb-composer`); the edge stands as a variable on the element so the
+   hairlines between the rows inherit it. `hover` and `edge` are reset: the dark `hover` (#262626) would lie BELOW the surface,
+   the hairline (#2f2f2f) would vanish on it; the boxes of the task bar draw `border-edge`. */
+:is(.cb-strip-base, .cb-strip-surface) {
+  --strip-edge: color-mix(in srgb, var(--color-fg) 16%, var(--color-panel));
+  --color-hover: color-mix(in srgb, var(--color-fg) 7%, transparent);
+  --color-edge: var(--strip-edge);
+  border: 1px solid var(--strip-edge);
+  background: color-mix(in srgb, var(--color-fg) 9.6%, var(--color-panel));
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+:root:not([data-theme="dark"]) :is(.cb-strip-base, .cb-strip-surface) {
+  --strip-edge: color-mix(in srgb, var(--color-fg) 12%, white);
+  background: color-mix(in srgb, var(--color-fg) 5%, white);
+}
+.cb-strip-surface {
+  border-radius: 15px;
+}
+.cb-strip-slot {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 180ms cubic-bezier(0.22, 1, 0.36, 1), opacity 140ms ease;
+}
+.cb-strip-slot[data-open="1"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.cb-strip-slot > .cb-strip-clip {
+  display: flex;
+  align-items: flex-end;
+  min-height: 0;
+  /* A flex/grid child has min-width:auto, so at least its min-content width. With `whitespace-nowrap` in the text that is the FULL
+     text width, and as soon as the row below switches to `overflow: visible`, the strip grows beyond the composer instead of
+     truncating. The 0 gives truncation back without forbidding the overhang. */
+  min-width: 0;
+  overflow: hidden;
+}
+.cb-strip-slot[data-finished="1"] > .cb-strip-clip { overflow: visible; }
+.cb-strip-row {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+/* Hairline between two OPEN rows, unlayered so no utility on the element wins. A slot at `data-open="0"` (sliding out) does not
+   count as predecessor and carries no line itself; during the movement the clip cuts it off anyway. */
+.cb-strip-slot[data-open="1"] ~ .cb-strip-slot[data-open="1"] > .cb-strip-clip > .cb-strip-row {
+  border-top: 1px solid var(--strip-edge);
+}
+.cb-strip-last { padding-bottom: var(--strip-deep); }
+/* The strip UNDER the field in the empty chat (the model is "Choose project · Plugins" in ChatGPT, measured #1f1f1f on #181818,
+   no edge): the same construction as the base above, mirrored: inset by the field's radius and pushed under the field at the top
+   by `--strip-deep` (the field lies above with `z-[1]`). The 6 px are the `mb-1.5` gap under the composer. `hover` is reset: in
+   light the cool `hover` would lie almost on the strip's surface. */
+.cb-strip-bottom {
+  position: relative;
+  z-index: 0;
+  margin: calc(-6px - var(--strip-deep)) var(--strip-inset) 0;
+  padding-top: calc(var(--strip-deep) + 4px);
+  padding-bottom: 4px;
+  border-radius: 0 0 16px 16px;
+  background: color-mix(in srgb, var(--color-fg) 3%, var(--color-panel));
+  --color-hover: color-mix(in srgb, var(--color-fg) 7%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .cb-strip-slot { transition: none; }
+}
+
+/* ── Explorer like VS Code ─────────────
+   The colours of git decoration and problems after Dark Modern / Light Modern (gitDecoration.*, list.errorForeground,
+   list.warningForeground, tree.indentGuidesStroke; every value checked against the git extension's defaults, untracked our own);
+   lib/explorer-decoration.ts computes which row carries which. Dark as the default, the light ones on top (same order as above).
+   The row's surfaces (selection, focus, drop) stand UNLAYERED so no utility on the element beats them; drawn in
+   components/code/explorer/TreeRow.tsx. */
+:root {
+  --git-changed: #e2c08d;
+  --git-new: #81b88b;
+  --git-untracked: #73c991;
+  --git-deleted: #c74e39;
+  --git-renamed: #73c991;
+  --git-conflict: #e4676b;
+  --git-ignored: #8c8c8c;
+  --problem-error: #f88070;
+  --problem-warning: #cca700;
+  --tree-line: #58585866;
+  --tree-line-active: #585858;
+  --tree-hits: #2aaaff;
+  --tree-shadow: #000000;
+}
+:root:not([data-theme="dark"]) {
+  --git-changed: #895503;
+  --git-new: #587c0c;
+  --git-untracked: #007100;
+  --git-deleted: #ad0707;
+  --git-renamed: #007100;
+  --git-conflict: #ad0707;
+  --git-ignored: #8e8e90;
+  --problem-error: #b01011;
+  --problem-warning: #855f00;
+  --tree-line: #a9a9a966;
+  --tree-line-active: #a9a9a9;
+  --tree-hits: #0066bf;
+  --tree-shadow: #dddddd;
+}
+/* Explorer windowing: the window carries the full height of all rows, only the visible ones are drawn, each ABSOLUTE at its `top`
+   (index × row height, TreeWindow.tsx; VS Code `.monaco-list-row { position: absolute }`). No `contain` (VS Code `strict`):
+   measured without effect, the layout per swapped row costs the whole page the same with containment. */
+.cb-tree-window { position: relative; }
+.cb-tree-window > .cb-tree-row { position: absolute; left: 0; right: 0; }
+/* One row: 22 px (the row height grows with the text scale), full width without rounding, 13 px. */
+.cb-tree-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding-right: 4px;
+  font-size: 13px;
+  line-height: 22px;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+.cb-tree-row:hover { background-color: var(--color-hover); }
+/* Selected in the UNFOCUSED tree: neutral (`edge`, the app's selection step); in the focused one tinted in the focus colour, the row
+   with the focus additionally with a frame (VS Code list.activeSelectionBackground / list.focusOutline). */
+.cb-tree-row[data-selected] { background-color: var(--color-edge); }
+.cb-tree[data-tree-focus] .cb-tree-row[data-selected] { background-color: color-mix(in srgb, var(--color-accent) 24%, transparent); }
+.cb-tree[data-tree-focus] .cb-tree-row[data-focus] { outline: 1px solid var(--color-accent); outline-offset: -1px; }
+/* The target of a drop: the folder with its content, the root as a whole surface. */
+.cb-tree-row[data-deposit],
+.cb-tree[data-deposit-root] { background-color: color-mix(in srgb, var(--color-accent) 12%, transparent); }
+.cb-tree-row[data-cut] .cb-tree-name { opacity: 0.5; }
+.cb-tree-segment:hover { text-decoration: underline; }
+/* Indentation lines: only when the pointer is over the tree (VS Code renderIndentGuides "onHover"); the one of the selection's folder lighter. */
+.cb-tree-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: var(--tree-line);
+  opacity: 0;
+  transition: opacity 0.1s;
+  pointer-events: none;
+}
+.cb-tree:hover .cb-tree-line { opacity: 1; }
+.cb-tree-line[data-active] { background-color: var(--tree-line-active); }
+.cb-tree-header:hover { background-color: var(--color-hover); }
+/* Search hits in the name (VS Code list.highlightForeground, bold). The sticky folders cover the tree in the sidebar colour, with the
+   shadow below (VS Code scrollbar.shadow, `0 3px 2px -2px`). */
+.cb-tree-hits { color: var(--tree-hits); font-weight: 700; }
+.cb-tree-sticky .cb-tree-row { background-color: var(--color-panel); }
+.cb-tree-sticky .cb-tree-row:hover { background: linear-gradient(var(--color-hover), var(--color-hover)) var(--color-panel); }
+.cb-tree-sticky-shadow { position: absolute; left: 0; right: 0; height: 3px; box-shadow: var(--tree-shadow) 0 3px 2px -2px; pointer-events: none; }
+/* The field in the row and its message below (VS Code inputValidation.*). */
+/* The height grows with the text scale like the row. */
+.cb-tree-field {
+  height: calc(20px * var(--cb-text-scale, 1));
+  padding: 0 4px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--color-fg);
+  background-color: var(--color-panel);
+  border: 0;
+  outline: 1px solid var(--color-accent);
+  outline-offset: -1px;
+}
+.cb-tree-field[aria-invalid="true"] { outline-color: var(--problem-error); }
+.cb-tree-notice {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  padding: 3px 6px;
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: normal;
+  color: var(--color-fg);
+  background-color: var(--color-panel);
+  border: 1px solid var(--problem-error);
+}
+.cb-tree-notice[data-tree-notice="warning"] { border-color: var(--problem-warning); }
+
+/* ── Panel and layout like VS Code ──────────────
+   Colours after Dark Modern / Light Modern: the severity icons of the problems (problemsErrorIcon/-WarningIcon/-InfoIcon.foreground)
+   and the badge (badge.background/-foreground). The sash is 4 px wide, a line in the focus colour under the pointer after 300 ms
+   (workbench.sash.hoverDelay) and at once while dragging (sash.hoverBorder). Drawn in components/code/panel/. */
+:root {
+  --problem-symbol-error: #f14c4c;
+  --problem-symbol-warning: #cca700;
+  --problem-symbol-info: #3794ff;
+  --badge-background: #616161;
+  --badge-font: #f8f8f8;
+}
+:root:not([data-theme="dark"]) {
+  --problem-symbol-error: #e51400;
+  --problem-symbol-warning: #bf8803;
+  --problem-symbol-info: #1a85ff;
+  --badge-background: #cccccc;
+  --badge-font: #3b3b3b;
+}
+.cb-problem-symbol { display: grid; place-items: center; }
+.cb-problem-symbol[data-severity="error"] { color: var(--problem-symbol-error); }
+.cb-problem-symbol[data-severity="warning"] { color: var(--problem-symbol-warning); }
+.cb-problem-symbol[data-severity="info"] { color: var(--problem-symbol-info); }
+.cb-badge {
+  display: inline-block;
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 11px;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 18px;
+  letter-spacing: normal;
+  text-align: center;
+  text-transform: none;
+  color: var(--badge-font);
+  background-color: var(--badge-background);
+}
+.cb-sash { touch-action: none; transition: background-color 0.1s ease-out; }
+.cb-sash-vertical { width: 4px; cursor: ew-resize; }
+.cb-sash-horizontal { height: 4px; cursor: ns-resize; }
+.cb-sash:hover { background-color: var(--color-accent); transition-delay: 0.3s; }
+.cb-sash[data-dragging] { background-color: var(--color-accent); transition-delay: 0s; }
+/* A maximised panel (VS Code "Maximize") takes the whole editor area: its siblings above it (tabs, breadcrumbs, notices, editor) are
+   switched off but stay mounted (undo, scroll position); the status bar stays. The column itself carries the flag (CodePane,
+   `panelMaximized`): a selector `:has(> [data-lower-panel][data-maximized]) > …` without a subject made Chrome recompute styles on
+   EVERY insertion anywhere in the document (≈ 8 ms per insertion at ≈ 5,500 nodes; the minimap inserts a probe node per token kind
+   while drawing). No `:has()` without a subject in this stylesheet (guard web/test/style-has.test.mjs). */
+[data-panel-maximized] > :not([data-lower-panel]):not([data-editor-status-bar]) { display: none; }
+
+/* ── Quick input like VS Code ─────────────────
+   The window of the command palette (⌘P, ⇧⌘P, ⇧⌘O, ⌘T, ⌃G, `?`) in the colours of Dark Modern / Light Modern: quickInput.*, widget.*,
+   input.*, focusBorder, quickInputList.focus*, list.highlightForeground/hoverBackground, pickerGroup.*, keybindingLabel.*,
+   descriptionForeground, progressBar.background, editor.rangeHighlightBackground. Dimensions from quickInput.css/quickInputList.ts of
+   VS Code 1.143 (Modern UI: radius 8 px, entries 0 4 px; Modern UI's frosted glass is opaque here, the app is flat). Drawn in
+   components/code/CommandPalette.tsx, computed in lib/quick-input.ts. Unlayered: no utility on the element beats it. */
+:root {
+  --qi-background: #222222;
+  --qi-font: #cccccc;
+  --qi-edge: #313131;
+  --qi-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+  --qi-input-background: #313131;
+  --qi-input-edge: #3c3c3c;
+  --qi-input-font: #cccccc;
+  --qi-placeholder: #989898;
+  --qi-focus-edge: #0078d4;
+  --qi-focus-background: #04395e;
+  --qi-focus-font: #ffffff;
+  --qi-focus-symbol: #ffffff;
+  --qi-hits: #2aaaff;
+  --qi-focus-hits: #2aaaff;
+  --qi-hover: #2a2d2e;
+  --qi-group-font: #9d9d9d; /* descriptionForeground (Dark Modern) */
+  --qi-group-edge: #3c3c3c;
+  --qi-key-background: rgba(128, 128, 128, 0.17);
+  --qi-key-font: #cccccc;
+  --qi-key-edge: rgba(51, 51, 51, 0.6);
+  --qi-key-bottom: rgba(68, 68, 68, 0.6);
+  --qi-key-shadow: #0000005c;
+  --qi-description-opacity: 0.7;
+  --qi-progress: #0078d4;
+  --qi-area: #ffffff0b;
+}
+:root:not([data-theme="dark"]) {
+  --qi-background: #f8f8f8;
+  --qi-font: #3b3b3b;
+  --qi-edge: #e5e5e5;
+  --qi-input-background: #ffffff;
+  --qi-input-edge: #cecece;
+  --qi-input-font: #3b3b3b;
+  --qi-placeholder: #767676;
+  --qi-focus-edge: #005fb8;
+  --qi-focus-background: #e8e8e8;
+  --qi-focus-font: #000000;
+  --qi-focus-symbol: #000000;
+  --qi-hits: #0066bf;
+  --qi-focus-hits: #0066bf;
+  --qi-hover: #f2f2f2;
+  --qi-group-font: #3b3b3b; /* descriptionForeground (Light Modern) */
+  --qi-group-edge: #e5e5e5;
+  --qi-key-background: rgba(221, 221, 221, 0.4);
+  --qi-key-font: #3b3b3b;
+  --qi-key-edge: rgba(204, 204, 204, 0.4);
+  --qi-key-bottom: rgba(187, 187, 187, 0.4);
+  --qi-key-shadow: #00000029;
+  --qi-description-opacity: 0.95;
+  --qi-progress: #005fb8;
+  --qi-area: #fdff0033;
+}
+.cb-quick-input {
+  position: fixed;
+  z-index: 60;
+  box-sizing: border-box;
+  border: 1px solid var(--qi-edge);
+  border-radius: 8px;
+  overflow: hidden;
+  color: var(--qi-font);
+  background-color: var(--qi-background);
+  box-shadow: var(--qi-shadow);
+  font-size: 13px;
+  line-height: normal;
+}
+.cb-qi-header { display: flex; padding: 6px 6px 4px; }
+.cb-qi-input {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  height: 26px;
+  padding: 4px 6px;
+  border: 1px solid var(--qi-input-edge);
+  border-radius: 6px;
+  color: var(--qi-input-font);
+  background-color: var(--qi-input-background);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+.cb-qi-input::placeholder { color: var(--qi-placeholder); opacity: 1; }
+.cb-qi-input:focus { outline: 1px solid var(--qi-focus-edge); outline-offset: -1px; }
+/* The progress (VS Code `.quick-input-progress`, endless): a stroke running from left to right. */
+.cb-qi-progress { position: relative; height: 2px; overflow: hidden; }
+.cb-qi-progress[data-running]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2%;
+  height: 2px;
+  background-color: var(--qi-progress);
+  animation: cb-qi-progress 4s linear infinite;
+}
+@keyframes cb-qi-progress {
+  0% { transform: translateX(0) scaleX(1); }
+  50% { transform: translateX(2500%) scaleX(3); }
+  100% { transform: translateX(4900%) scaleX(1); }
+}
+@media (prefers-reduced-motion: reduce) { .cb-qi-progress[data-running]::before { animation-duration: 12s; } }
+.cb-qi-list { overflow-y: auto; padding: 0 6px 7px; }
+/* The row like VS Code 1.143 (Modern UI is the default): entry 4 px inner margin, the content (`quick-input-list-rows`) 5 px further;
+   it starts 9 px into the row; 4 px on the right. */
+.cb-qi-row {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  height: 22px;
+  padding: 0 4px 0 9px;
+  border-radius: 3px;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+.cb-qi-row[data-group-edge] { border-top: 1px solid var(--qi-group-edge); }
+.cb-qi-row:hover { background-color: var(--qi-hover); }
+.cb-qi-row[aria-selected="true"] { color: var(--qi-focus-font); background-color: var(--qi-focus-background); }
+.cb-qi-row[aria-selected="true"][data-group-edge] { border-top-color: transparent; }
+.cb-qi-symbol { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 16px; height: 22px; padding-right: 6px; }
+.cb-qi-row[aria-selected="true"] .cb-qi-symbol[data-codicon] { color: var(--qi-focus-symbol) !important; }
+.cb-qi-name { flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.cb-qi-description { flex-shrink: 100; min-width: 0; margin-left: 0.5em; overflow: hidden; text-overflow: ellipsis; font-size: 0.9em; white-space: pre; opacity: var(--qi-description-opacity); }
+.cb-qi-row[aria-selected="true"] .cb-qi-description { opacity: 1; }
+.cb-qi-hits { font-weight: 700; color: var(--qi-hits); }
+.cb-qi-row[aria-selected="true"] .cb-qi-hits { color: var(--qi-focus-hits); }
+.cb-qi-right { display: flex; flex-shrink: 0; align-items: center; margin-left: auto; padding-left: 8px; }
+.cb-qi-group { margin-left: 4px; font-size: 11px; color: var(--qi-group-font); }
+.cb-qi-row[aria-selected="true"] .cb-qi-group { color: inherit; }
+.cb-qi-keys { display: flex; align-items: center; line-height: 10px; }
+.cb-qi-chord { display: flex; align-items: center; }
+.cb-qi-chord + .cb-qi-chord { margin-left: 6px; }
+/* `.monaco-keybinding-key:first-child`/`:last-child`: the first and the last cap without outer margin. */
+.cb-qi-chord:first-child > .cb-qi-key:first-child { margin-left: 0; }
+.cb-qi-chord:last-child > .cb-qi-key:last-child { margin-right: 0; }
+.cb-qi-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 12px;
+  margin: 0 2px;
+  padding: 3px 5px;
+  border: 1px solid var(--qi-key-edge);
+  border-bottom-color: var(--qi-key-bottom);
+  border-radius: 3px;
+  font-size: 11px;
+  vertical-align: middle;
+  color: var(--qi-key-font);
+  background-color: var(--qi-key-background);
+  box-shadow: inset 0 -1px 0 var(--qi-key-shadow);
+}
+.cb-qi-row:is(:hover, [aria-selected="true"]) .cb-qi-key { background: none; border-color: color-mix(in srgb, currentColor 30%, transparent); }
+.cb-qi-row[aria-selected="true"] .cb-qi-key { color: inherit; }
+/* The buttons of a row (open to the side, remove from history): only under the pointer and on the chosen row. */
+.cb-qi-buttons { display: none; align-items: center; }
+.cb-qi-row:is(:hover, [aria-selected="true"]) .cb-qi-buttons { display: flex; }
+.cb-qi-button { display: grid; place-items: center; width: 20px; height: 20px; margin-left: 4px; padding: 2px; border: 0; border-radius: 5px; color: inherit; background: none; cursor: pointer; }
+.cb-qi-button:hover { background-color: color-mix(in srgb, currentColor 15%, transparent); }
+.cb-qi-error { padding: 2px 10px 6px; color: var(--color-danger); }
+/* The preview in the editor (⌃G, ⇧⌘O): the target's lines like VS Code's `rangeHighlight` (whole lines). */
+.cm-editor .cm-qi-area { background-color: var(--qi-area); }
+
+/* The watermark of an empty editor group like VS Code (components/code/Watermark.tsx, computed in lib/watermark.ts): the letterpress
+   (VS Code `letterpress`: the logo as a surface, dark 30 %, light 5 % black; here cbase's LENS as a mask, never the icon tile), below
+   it the shortcuts. Dimensions from workbench.desktop.main.css: at most 272 px wide (if another group holds editors: 200 px, 70 px
+   shorter, without shortcuts), letterpress at most 256 px, 24 px gap; below 478 px height no shortcuts (container query, not window
+   query: the same group stands alone or beside a second). The key boxes are those of the quick input above (`.cb-qi-key`,
+   `--qi-key-*`, VS Code `keybindingLabel.*`), no second set. */
+:root[data-theme="dark"] { --watermark-embossing: rgb(0 0 0 / 0.3); }
+:root:not([data-theme="dark"]) { --watermark-embossing: rgb(0 0 0 / 0.05); }
+.cb-watermark { position: absolute; inset: 0; container-type: size; container-name: watermark; }
+.cb-watermark-surface { display: flex; height: 100%; max-width: 272px; margin: auto; flex-direction: column; align-items: center; justify-content: center; }
+.cb-watermark[data-narrow] .cb-watermark-surface { max-width: 200px; height: calc(100% - 70px); }
+.cb-watermark-content { display: flex; width: 100%; flex-direction: column; align-items: center; justify-content: center; gap: 24px; }
+.cb-watermark-embossing {
+  width: 100%; max-width: 256px; max-height: 100%; aspect-ratio: 1 / 1;
+  background-color: var(--watermark-embossing);
+  -webkit-mask: url("/cbase-lens.png") center / contain no-repeat;
+  mask: url("/cbase-lens.png") center / contain no-repeat;
+}
+.cb-watermark-shortcut { width: 100%; display: flex; flex-direction: column; font-size: 13px; }
+.cb-watermark[data-narrow] .cb-watermark-shortcut { display: none; }
+@container watermark (max-height: 478px) { .cb-watermark-shortcut { display: none; } }
+.cb-watermark-shortcut dl { display: flex; justify-content: space-between; margin: 4px 0; cursor: default; color: var(--color-dim); }
+.cb-watermark-shortcut dl:first-of-type { margin-top: 0; }
+.cb-watermark-shortcut dl:last-of-type { margin-bottom: 0; }
+.cb-watermark-shortcut dt { letter-spacing: 0.04em; }
+.cb-watermark-shortcut dd { text-align: left; margin-inline-start: 24px; }

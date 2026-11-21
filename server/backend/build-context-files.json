@@ -1,0 +1,16 @@
+{
+  "files": [
+    "Dockerfile",
+    "entry.sh",
+    "headless.js",
+    "package.json",
+    "package-lock.json",
+    "cbase-project",
+    "cbase-git",
+    "cbase-clone",
+    "projectbox-entry.sh",
+    "cbase-wrapper",
+    "cbase-manifest",
+    "cbase-lfs-access"
+  ]
+}

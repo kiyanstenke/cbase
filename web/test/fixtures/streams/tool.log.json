@@ -1,0 +1,37 @@
+[
+  {
+    "id": "<msg-1>",
+    "role": "user",
+    "text": "Sieh nach, was im Testordner liegt.",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-2>",
+    "role": "tool",
+    "text": "{\"name\":\"Bash\",\"detail\":\"ls web/test\",\"id\":\"toolu_01\",\"input\":{\"command\":\"ls web/test\",\"description\":\"Testordner ansehen\"},\"parent\":null}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-3>",
+    "role": "tool_result",
+    "text": "{\"id\":\"toolu_01\",\"result\":\"agents.mjs\\nstream.mjs\\nstreams.mjs\",\"isError\":false}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-4>",
+    "role": "assistant",
+    "text": "Im Ordner liegen drei Testdateien.",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-5>",
+    "role": "meta",
+    "text": "{\"secs\":\"<secs>\",\"inTok\":190,\"outTok\":39}",
+    "ts": "<t>",
+    "attachments": null
+  }
+]

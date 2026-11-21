@@ -1,0 +1,23 @@
+{"type":"harness","subtype":"connected","running":false,"compacting":false,"waiting":false,"monitors":[],"agents":[],"tasks":[],"wakeupAt":0,"wakeupReason":"","wakeupPrompt":"","contextTokens":0,"streamText":"","streamTextTruncated":false,"queued":[]}
+{"type":"harness","subtype":"user_message","text":"Sieh nach, was im Testordner liegt.","attachments":[]}
+{"type":"harness","subtype":"run_started","resume":false,"provider":"claude"}
+{"type":"system","subtype":"init","session_id":"sess-tool","cwd":"<path>/workspace","model":"claude-haiku-4-5-20251001","tools":["Bash","Read","Edit","Agent"],"mcp_servers":[{"name":"cbase","status":"connected"}],"permissionMode":"bypassPermissions","apiKeySource":"none","claude_code_version":"<version>"}
+{"type":"stream_event","event":{"type":"message_start","message":{"id":"msg_1","type":"message","role":"assistant","model":"claude-haiku-4-5-20251001","content":[],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":140,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":0}}}}
+{"type":"stream_event","event":{"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_01","name":"Bash","input":{}}}}
+{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\"command\":\"ls web/test\",\"description\":\"Testordner ansehen\"}"}}}
+{"type":"stream_event","event":{"type":"content_block_stop","index":0}}
+{"type":"stream_event","event":{"type":"message_delta","delta":{"stop_reason":"tool_use","stop_sequence":null},"usage":{"output_tokens":30}}}
+{"type":"stream_event","event":{"type":"message_stop"}}
+{"type":"assistant","message":{"id":"msg_1","type":"message","role":"assistant","model":"claude-haiku-4-5-20251001","content":[{"type":"tool_use","id":"toolu_01","name":"Bash","input":{"command":"ls web/test","description":"Testordner ansehen"}}],"stop_reason":"tool_use","stop_sequence":null,"usage":{"input_tokens":140,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":30}}}
+{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_01","content":"agents.mjs\nstream.mjs\nstreams.mjs","is_error":false}]}}
+{"type":"stream_event","event":{"type":"message_start","message":{"id":"msg_2","type":"message","role":"assistant","model":"claude-haiku-4-5-20251001","content":[],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":190,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":0}}}}
+{"type":"stream_event","event":{"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}}
+{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Im Ordner "}}}
+{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"liegen drei "}}}
+{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Testdateien."}}}
+{"type":"stream_event","event":{"type":"content_block_stop","index":0}}
+{"type":"stream_event","event":{"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null},"usage":{"output_tokens":9}}}
+{"type":"stream_event","event":{"type":"message_stop"}}
+{"type":"assistant","message":{"id":"msg_2","type":"message","role":"assistant","model":"claude-haiku-4-5-20251001","content":[{"type":"text","text":"Im Ordner liegen drei Testdateien."}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":190,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":9}}}
+{"type":"result","subtype":"success","is_error":false,"duration_ms":1234,"duration_api_ms":1000,"num_turns":2,"result":"Im Ordner liegen drei Testdateien.","session_id":"sess-tool","total_cost_usd":0,"usage":{"input_tokens":120,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":18}}
+{"type":"harness","subtype":"run_done","meta":{"secs":"<secs>","inTok":190,"outTok":39}}

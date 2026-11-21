@@ -1,0 +1,16 @@
+{
+  "limit": 2000,
+  "hint": "Exceptions of the guard tools/check/lib/loc-gate.mjs. Every entry needs a reason and a follow-up; the list may only shrink. An entry whose file is under the limit is an error.",
+  "entries": [
+    {
+      "file": "web/src/lib/i18n-de.ts",
+      "reason": "Data table, TS1117 as duplicate guard",
+      "fallsOutWith": "— (stays; a split needs a collision test across file boundaries)"
+    },
+    {
+      "file": "server/backend/electron/server/i18n-de.js",
+      "reason": "Data table: one translation per line, no logic",
+      "fallsOutWith": "— (stays; a split needs a collision test across file boundaries, like the web table)"
+    }
+  ]
+}

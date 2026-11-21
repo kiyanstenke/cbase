@@ -1,0 +1,72 @@
+[
+  {
+    "id": "<msg-1>",
+    "role": "user",
+    "text": "Lass einen Subagenten nebenher den Befund holen.",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-2>",
+    "role": "tool",
+    "text": "{\"name\":\"mcp__cbase__cbase_agent\",\"detail\":\"Nebenher prüfen\",\"id\":\"toolu_agent_bg\",\"input\":{\"description\":\"Nebenher prüfen\",\"prompt\":\"Sieh nach und melde den Befund.\"},\"parent\":null}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-3>",
+    "role": "tool_result",
+    "text": "{\"id\":\"toolu_agent_bg\",\"result\":\"{\\n  \\\"status\\\": \\\"running\\\",\\n  \\\"agentId\\\": \\\"<agentrun-1>\\\",\\n  \\\"name\\\": \\\"agent-1\\\",\\n  \\\"description\\\": \\\"Nebenher prüfen\\\",\\n  \\\"agentType\\\": \\\"general-purpose\\\",\\n  \\\"provider\\\": \\\"claude\\\",\\n  \\\"resolvedModel\\\": \\\"\\\",\\n  \\\"note\\\": \\\"Der Subagent arbeitet im Hintergrund weiter. Arbeite an etwas anderem oder beende deinen Turn — sein Bericht kommt von selbst als Systemmeldung. Wenn du ihn im selben Turn brauchst: cbase_agent_output mit agentId „<agentrun-1>\\\\\\\". Nicht pollen, nicht schlafen.\\\",\\n  \\\"started\\\": true,\\n  \\\"background\\\": true\\n}\",\"isError\":false}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-4>",
+    "role": "assistant",
+    "text": "Der Subagent läuft im Hintergrund.",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-5>",
+    "role": "meta",
+    "text": "{\"secs\":\"<secs>\",\"inTok\":200,\"outTok\":39}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-6>",
+    "role": "sub_text",
+    "text": "{\"text\":\"Befund 42: im Hintergrund gefunden.\",\"parent\":\"toolu_agent_bg\"}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-7>",
+    "role": "user",
+    "text": "<task-notification>\n<task-id><agentrun-1></task-id>\n<tool-use-id>toolu_agent_bg</tool-use-id>\n<output-file><path>/data-root/data/outputs/<chat-1>/agents/<agentrun-1>.output</output-file>\n<status>completed</status>\n<summary>Agent \"Nebenher prüfen\" completed</summary>\n<result>Befund 42: im Hintergrund gefunden.</result>\n<diagnostics>Nachfragen an denselben Subagenten gehen mit cbase_agent_send (agentId <agentrun-1>) — er behält seinen Kontext.</diagnostics>\n<usage><total_tokens>100</total_tokens><tool_uses>0</tool_uses><duration_ms><ms></duration_ms></usage>\n<note>Das ist eine Systemmeldung über deinen Subagenten, keine Nutzerantwort. Werte sie aus und arbeite weiter.</note>\n</task-notification>",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-8>",
+    "role": "tool_result",
+    "text": "{\"id\":\"toolu_agent_bg\",\"result\":\"{\\n  \\\"status\\\": \\\"completed\\\",\\n  \\\"error\\\": \\\"\\\",\\n  \\\"agentId\\\": \\\"<agentrun-1>\\\",\\n  \\\"name\\\": \\\"agent-1\\\",\\n  \\\"description\\\": \\\"Nebenher prüfen\\\",\\n  \\\"agentType\\\": \\\"general-purpose\\\",\\n  \\\"provider\\\": \\\"claude\\\",\\n  \\\"resolvedModel\\\": \\\"\\\",\\n  \\\"skills\\\": [],\\n  \\\"report\\\": \\\"Befund 42: im Hintergrund gefunden.\\\",\\n  \\\"totalTokens\\\": 100,\\n  \\\"tokenKind\\\": \\\"voll\\\",\\n  \\\"totalToolUseCount\\\": 0,\\n  \\\"totalDurationMs\\\": \\\"<ms>\\\",\\n  \\\"cwd\\\": \\\"<path>/workspace\\\",\\n  \\\"worktree\\\": \\\"\\\",\\n  \\\"outputFile\\\": \\\"<path>/data-root/data/outputs/<chat-1>/agents/<agentrun-1>.output\\\",\\n  \\\"notes\\\": \\\"\\\",\\n  \\\"note\\\": \\\"Fortsetzen mit cbase_agent_send (agentId „<agentrun-1>\\\\\\\") — der Subagent behält seinen Kontext.\\\"\\n}\",\"isError\":false}",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-9>",
+    "role": "assistant",
+    "text": "Meldung verarbeitet: Befund 42",
+    "ts": "<t>",
+    "attachments": null
+  },
+  {
+    "id": "<msg-10>",
+    "role": "meta",
+    "text": "{\"secs\":\"<secs>\",\"inTok\":260,\"outTok\":8}",
+    "ts": "<t>",
+    "attachments": null
+  }
+]

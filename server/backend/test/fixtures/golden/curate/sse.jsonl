@@ -1,0 +1,42 @@
+{"stream":"global","type":"init","running":[],"dynWorkflows":[],"browsers":[]}
+{"stream":"global","type":"chat_title","chatId":"<chat-1>","title":"Prüfen wir zuerst das Testsystem der Kas…"}
+{"stream":"global","type":"run","chatId":"<chat-1>","running":true}
+{"stream":"global","type":"run","chatId":"<chat-1>","running":false,"answered":true,"title":"New chat","workspaceId":"<ws-1>","projectId":"<project-1>","category":"finished","pushTitle":"New chat","pushSubtitle":"Antwort fertig","pushBody":"Entschieden: erst Testsystem, dann Umbau.","push":false}
+{"stream":"global","type":"run","chatId":"<chat-1>","running":true}
+{"stream":"global","type":"chat_title","chatId":"<chat-1>","title":"Kasse: Testsystem prüfen"}
+{"stream":"global","type":"run","chatId":"<chat-1>","running":false,"answered":true,"title":"Prüfen wir zuerst das Testsystem der Kas…","workspaceId":"<ws-1>","projectId":"<project-1>","category":"finished","pushTitle":"Prüfen wir zuerst das Testsystem der Kas…","pushSubtitle":"Antwort fertig","pushBody":"Gern kurz: Testsystem prüfen, dann Umbau.","push":false}
+{"stream":"<chat-1>","type":"harness","subtype":"connected","lastId":0,"total":0,"running":false,"compacting":false,"waiting":false,"monitors":[],"agents":[],"tasks":[],"wakeupAt":0,"wakeupReason":"","wakeupPrompt":"","contextTokens":0,"streamText":"","streamTextTruncated":false,"queued":[]}
+{"stream":"<chat-1>","type":"harness","subtype":"title","chatId":"<chat-1>","title":"Prüfen wir zuerst das Testsystem der Kas…"}
+{"stream":"<chat-1>","type":"harness","subtype":"user_message","text":"Prüfen wir zuerst das Testsystem der Kasse oder bauen wir gleich um?","attachments":[]}
+{"stream":"<chat-1>","type":"harness","subtype":"run_started","resume":false,"provider":"claude"}
+{"stream":"<chat-1>","type":"system","subtype":"init","session_id":"sess-curate","cwd":"<path>/workspace","model":"claude-haiku-4-5-20251001","tools":["Bash","Read","Edit","Agent"],"mcp_servers":[{"name":"cbase","status":"connected"}],"permissionMode":"bypassPermissions","apiKeySource":"none","claude_code_version":"<version>"}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"message_start","message":{"id":"msg_1","type":"message","role":"assistant","model":"claude-haiku-4-5-20251001","content":[],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":230,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":0}}}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Entschieden: wir prüfen zuerst "}}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"das Testsystem der Kasse, "}}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"dann bauen wir um."}}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"content_block_stop","index":0}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null},"usage":{"output_tokens":17}}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"message_stop"}}
+{"stream":"<chat-1>","type":"assistant","message":{"id":"msg_1","type":"message","role":"assistant","model":"claude-haiku-4-5-20251001","content":[{"type":"text","text":"Entschieden: wir prüfen zuerst das Testsystem der Kasse, dann bauen wir um."}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":230,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":17}}}
+{"stream":"<chat-1>","type":"result","subtype":"success","is_error":false,"duration_ms":"<ms>","duration_api_ms":1000,"num_turns":1,"result":"Entschieden: erst Testsystem, dann Umbau.","session_id":"sess-curate","total_cost_usd":0,"usage":{"input_tokens":120,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":18}}
+{"stream":"<chat-1>","type":"harness","subtype":"message_queue","queued":[{"id":"<id-1>","text":"Und bitte kurz halten.","controllable":true}]}
+{"stream":"<chat-1>","type":"harness","subtype":"run_done","meta":{"secs":"<secs>","inTok":230,"outTok":17}}
+{"stream":"<chat-1>","type":"harness","subtype":"user_message","text":"Und bitte kurz halten.","attachments":[]}
+{"stream":"<chat-1>","type":"harness","subtype":"message_queue","queued":[]}
+{"stream":"<chat-1>","type":"harness","subtype":"run_started","resume":true,"provider":"claude"}
+{"stream":"<chat-1>","type":"harness","subtype":"curator_suggestions","count":1,"projectId":"<project-1>"}
+{"stream":"<chat-1>","type":"harness","subtype":"title","chatId":"<chat-1>","title":"Kasse: Testsystem prüfen"}
+{"stream":"<chat-1>","type":"system","subtype":"init","session_id":"sess-curate","cwd":"<path>/workspace","model":"claude-haiku-4-5-20251001","tools":["Bash","Read","Edit","Agent"],"mcp_servers":[{"name":"cbase","status":"connected"}],"permissionMode":"bypassPermissions","apiKeySource":"none","claude_code_version":"<version>"}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"message_start","message":{"id":"msg_2","type":"message","role":"assistant","model":"claude-haiku-4-5-20251001","content":[],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":260,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":0}}}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Gern kurz: "}}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Testsystem prüfen, "}}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"dann Umbau."}}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"content_block_stop","index":0}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null},"usage":{"output_tokens":10}}}
+{"stream":"<chat-1>","type":"stream_event","event":{"type":"message_stop"}}
+{"stream":"<chat-1>","type":"assistant","message":{"id":"msg_2","type":"message","role":"assistant","model":"claude-haiku-4-5-20251001","content":[{"type":"text","text":"Gern kurz: Testsystem prüfen, dann Umbau."}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":260,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":10}}}
+{"stream":"<chat-1>","type":"result","subtype":"success","is_error":false,"duration_ms":"<ms>","duration_api_ms":1000,"num_turns":1,"result":"Gern kurz: Testsystem prüfen, dann Umbau.","session_id":"sess-curate","total_cost_usd":0,"usage":{"input_tokens":120,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":18}}
+{"stream":"<chat-1>","type":"harness","subtype":"run_done","meta":{"secs":"<secs>","inTok":260,"outTok":10}}
+{"stream":"<chat-1>","type":"harness","subtype":"curator_suggestions","count":1,"projectId":"<project-1>"}

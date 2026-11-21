@@ -1,0 +1,271 @@
+{
+  "mounts": [
+    {
+      "rule": "project",
+      "source": "/v/ws/till",
+      "target": "/v/ws/till",
+      "kind": "folder",
+      "rw": true
+    },
+    {
+      "rule": "ws-CLAUDE.md",
+      "source": "/v/ws/CLAUDE.md",
+      "target": "/v/ws/CLAUDE.md",
+      "kind": "file",
+      "rw": false
+    },
+    {
+      "rule": "ws-.mcp.json",
+      "source": "/v/ws/.mcp.json",
+      "target": "/v/ws/.mcp.json",
+      "kind": "file",
+      "rw": false
+    },
+    {
+      "rule": "ws-.claude/settings.json",
+      "source": "/v/ws/.claude/settings.json",
+      "target": "/v/ws/.claude/settings.json",
+      "kind": "file",
+      "rw": false
+    },
+    {
+      "rule": "ws-.claude/settings.local.json",
+      "source": "/v/ws/.claude/settings.local.json",
+      "target": "/v/ws/.claude/settings.local.json",
+      "kind": "file",
+      "rw": false
+    },
+    {
+      "rule": "runtime",
+      "source": "/v/cbase/data/projects/p1",
+      "target": "/v/cbase/data/projects/p1",
+      "kind": "folder",
+      "rw": true
+    },
+    {
+      "rule": "cache-.npm",
+      "source": "/v/home/.npm",
+      "target": "/v/home/.npm",
+      "kind": "folder",
+      "rw": true
+    },
+    {
+      "rule": "cache-.cache/uv",
+      "source": "/v/home/.cache/uv",
+      "target": "/v/home/.cache/uv",
+      "kind": "folder",
+      "rw": true
+    },
+    {
+      "rule": "cache-.cache/ms-playwright",
+      "source": "/v/home/.cache/ms-playwright",
+      "target": "/v/home/.cache/ms-playwright",
+      "kind": "folder",
+      "rw": true
+    },
+    {
+      "rule": "cache-.cache/pip",
+      "source": "/v/home/.cache/pip",
+      "target": "/v/home/.cache/pip",
+      "kind": "folder",
+      "rw": true
+    },
+    {
+      "rule": "home-.gitconfig",
+      "source": "/v/home/.gitconfig",
+      "target": "/v/home/.gitconfig",
+      "kind": "file",
+      "rw": false
+    },
+    {
+      "rule": "home-.bashrc",
+      "source": "/v/home/.bashrc",
+      "target": "/v/home/.bashrc",
+      "kind": "file",
+      "rw": false
+    },
+    {
+      "rule": "system-bin",
+      "source": "/v/sys/bin",
+      "target": "/v/sys/bin",
+      "kind": "folder",
+      "rw": false
+    },
+    {
+      "rule": "system-node_modules",
+      "source": "/v/sys/nm",
+      "target": "/v/sys/nm",
+      "kind": "folder",
+      "rw": false
+    },
+    {
+      "rule": "system-mcp",
+      "source": "/v/sys/mcp",
+      "target": "/v/sys/mcp",
+      "kind": "folder",
+      "rw": false
+    },
+    {
+      "rule": "login",
+      "source": "/v/home/.claude-login",
+      "target": "/v/home/.claude-login",
+      "kind": "folder",
+      "rw": true
+    },
+    {
+      "rule": "cli-local",
+      "source": "/v/cbase/data/projects/p1/home/.local",
+      "target": "/v/home/.local",
+      "kind": "folder",
+      "rw": true
+    },
+    {
+      "rule": "cli-vscode-server",
+      "source": "/v/cbase/data/projects/p1/home/.vscode-server",
+      "target": "/v/home/.vscode-server",
+      "kind": "folder",
+      "rw": true
+    },
+    {
+      "rule": "cli-claude-settings",
+      "source": "/v/home/.claude/settings.json",
+      "target": "/v/cbase/data/projects/p1/home/.claude/settings.json",
+      "kind": "file",
+      "rw": false
+    },
+    {
+      "rule": "cli-claude-md",
+      "source": "/v/home/.claude/CLAUDE.md",
+      "target": "/v/cbase/data/projects/p1/home/.claude/CLAUDE.md",
+      "kind": "file",
+      "rw": false
+    },
+    {
+      "rule": "cli-claude-agents",
+      "source": "/v/home/.claude/agents",
+      "target": "/v/cbase/data/projects/p1/home/.claude/agents",
+      "kind": "folder",
+      "rw": false
+    },
+    {
+      "rule": "cli-codex-config",
+      "source": "/v/home/.codex/config.toml",
+      "target": "/v/cbase/data/projects/p1/home/.codex/config.toml",
+      "kind": "file",
+      "rw": false
+    },
+    {
+      "rule": "cli-codex-auth",
+      "source": "/v/home/.codex/auth.json",
+      "target": "/v/cbase/data/projects/p1/home/.codex/auth.json",
+      "kind": "file",
+      "rw": true
+    }
+  ],
+  "hash": "48cbc9a282776937bedcd62e4a8c1593d0c76c55c98a87054d5fdb10cff115b6",
+  "hashV1": "2620e805c8ecc9e11cf3474ba00eb25ade112ea1c1479d09aaeebcca8722ce2d",
+  "networkArgs": [
+    "network",
+    "create",
+    "--driver",
+    "bridge",
+    "--subnet",
+    "10.230.4.0/24",
+    "--gateway",
+    "10.230.4.1",
+    "-o",
+    "com.docker.network.bridge.name=cbp-4",
+    "--label",
+    "cbase.project=p1",
+    "--label",
+    "cbase.instance=main",
+    "cbase-pn-p1"
+  ],
+  "creationArgs": [
+    "run",
+    "-d",
+    "--privileged",
+    "--restart",
+    "unless-stopped",
+    "--stop-timeout",
+    "30",
+    "--name",
+    "cbase-p-p1",
+    "--hostname",
+    "cbp-4",
+    "--label",
+    "cbase.project=p1",
+    "--label",
+    "cbase.instance=main",
+    "--label",
+    "cbase.mounts=2620e805c8ecc9e11cf3474ba00eb25ade112ea1c1479d09aaeebcca8722ce2d",
+    "--label",
+    "cbase.mounts.v2=48cbc9a282776937bedcd62e4a8c1593d0c76c55c98a87054d5fdb10cff115b6",
+    "--network",
+    "cbase-pn-p1",
+    "--ip",
+    "10.230.4.2",
+    "-e",
+    "CBASE_DOCKER_POOL=10.241.0.0/16",
+    "-e",
+    "CLAUDE_CONFIG_DIR=/v/cbase/data/projects/p1/home/.claude",
+    "-e",
+    "CODEX_HOME=/v/cbase/data/projects/p1/home/.codex",
+    "-e",
+    "HISTFILE=/v/cbase/data/projects/p1/home/.bash_history",
+    "--mount",
+    "type=volume,src=cbase-p-p1-docker,dst=/var/lib/docker",
+    "--mount",
+    "type=bind,src=/v/ws/till,dst=/v/ws/till",
+    "--mount",
+    "type=bind,src=/v/ws/CLAUDE.md,dst=/v/ws/CLAUDE.md,readonly",
+    "--mount",
+    "type=bind,src=/v/ws/.mcp.json,dst=/v/ws/.mcp.json,readonly",
+    "--mount",
+    "type=bind,src=/v/ws/.claude/settings.json,dst=/v/ws/.claude/settings.json,readonly",
+    "--mount",
+    "type=bind,src=/v/ws/.claude/settings.local.json,dst=/v/ws/.claude/settings.local.json,readonly",
+    "--mount",
+    "type=bind,src=/v/cbase/data/projects/p1,dst=/v/cbase/data/projects/p1",
+    "--mount",
+    "type=bind,src=/v/home/.npm,dst=/v/home/.npm",
+    "--mount",
+    "type=bind,src=/v/home/.cache/uv,dst=/v/home/.cache/uv",
+    "--mount",
+    "type=bind,src=/v/home/.cache/ms-playwright,dst=/v/home/.cache/ms-playwright",
+    "--mount",
+    "type=bind,src=/v/home/.cache/pip,dst=/v/home/.cache/pip",
+    "--mount",
+    "type=bind,src=/v/home/.gitconfig,dst=/v/home/.gitconfig,readonly",
+    "--mount",
+    "type=bind,src=/v/home/.bashrc,dst=/v/home/.bashrc,readonly",
+    "--mount",
+    "type=bind,src=/v/sys/bin,dst=/v/sys/bin,readonly",
+    "--mount",
+    "type=bind,src=/v/sys/nm,dst=/v/sys/nm,readonly",
+    "--mount",
+    "type=bind,src=/v/sys/mcp,dst=/v/sys/mcp,readonly",
+    "--mount",
+    "type=bind,src=/v/home/.claude-login,dst=/v/home/.claude-login",
+    "--mount",
+    "type=bind,src=/v/cbase/data/projects/p1/home/.local,dst=/v/home/.local",
+    "--mount",
+    "type=bind,src=/v/cbase/data/projects/p1/home/.vscode-server,dst=/v/home/.vscode-server",
+    "--mount",
+    "type=bind,src=/v/home/.claude/settings.json,dst=/v/cbase/data/projects/p1/home/.claude/settings.json,readonly",
+    "--mount",
+    "type=bind,src=/v/home/.claude/CLAUDE.md,dst=/v/cbase/data/projects/p1/home/.claude/CLAUDE.md,readonly",
+    "--mount",
+    "type=bind,src=/v/home/.claude/agents,dst=/v/cbase/data/projects/p1/home/.claude/agents,readonly",
+    "--mount",
+    "type=bind,src=/v/home/.codex/config.toml,dst=/v/cbase/data/projects/p1/home/.codex/config.toml,readonly",
+    "--mount",
+    "type=bind,src=/v/home/.codex/auth.json,dst=/v/cbase/data/projects/p1/home/.codex/auth.json",
+    "sha256:4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f"
+  ],
+  "names": {
+    "container": "cbase-p-p1",
+    "network": "cbase-pn-p1",
+    "volume": "cbase-p-p1-docker"
+  }
+}
