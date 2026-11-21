@@ -18,6 +18,11 @@
 // The one long suite. Everything else counts as short and runs first.
 export const LONG_SUITES = ["Backend"];
 
+/** `./check --short` (the CI of every push and PR): the suites to run and the long ones left out. [[name, command]] → { run, leftOut }. */
+export function shortSelection(suites) {
+  return { run: suites.filter(([name]) => !LONG_SUITES.includes(name)), leftOut: suites.filter(([name]) => LONG_SUITES.includes(name)).map(([name]) => name) };
+}
+
 // The base load already contained in the measured 10: the measurements ran on this Mac with a running UI —
 // WindowServer, the apps, Chrome. Measured without a single test process, `loadavg[0]` sat at ≈ 5.5–7 there (macOS
 // counts runnable THREADS, not busy cores; the processes summed to ≈ 3.5 cores of CPU). Subtracting the raw load

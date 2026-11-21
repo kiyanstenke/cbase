@@ -160,7 +160,7 @@ const without = (src) => src.replace(/^[ \t]*\/\/.*$/gm, "").replace(/[ \t]\/\/ 
 test("check.mjs takes the plan: no hard-coded register file, line-count file, manifest or marker scope", () => {
   const check = read("targets/check.mjs");
   const code = without(check);
-  assert.match(check, /export async function check\(\{ quick = false, quickReason = "--quick", plan = DEFAULT_PLAN \} = \{\}\)/);
+  assert.match(check, /export async function check\(\{ quick = false, quickReason = "--quick", plan = DEFAULT_PLAN, short = false \} = \{\}\)/);
   assert.match(code, /\[\]\.concat\(plan\.registerFile\)/);
   assert.match(code, /locGate\(REPO, path\.join\(REPO, plan\.locAllowFile\)\)/);
   assert.match(code, /const MANIFEST = plan\.manifest \? path\.join\(REPO, plan\.manifest\) : null;/);

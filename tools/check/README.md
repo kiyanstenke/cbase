@@ -6,6 +6,7 @@ device — only this repository. (The private part of a clone, when there is one
 ```
 ./check --quick        # no suites: node --check, import smoke test, tree guards, line count, guard register, git diff --check
 ./check                # the full gate: the quick checks, then the suites
+./check --short        # the quick checks and the short suites, without the long backend suite (CI on push/PR; writes no marker)
 ./check --recheck      # run the suites even if this exact tree was green within the last hour
 ./check --skip-tests   # the same as --quick
 ```

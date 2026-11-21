@@ -10,8 +10,11 @@ import { parseArgs } from "./run.mjs";
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
-test("parseArgs: the three switches, none, and a refusal of anything else", () => {
-  assert.deepEqual(parseArgs([]), { quick: false, recheck: false, skipTests: false });
+test("parseArgs: the four switches, none, and a refusal of anything else", () => {
+  assert.deepEqual(parseArgs([]), { quick: false, recheck: false, skipTests: false, short: false });
+  assert.equal(parseArgs(["--short"]).short, true);
+  assert.throws(() => parseArgs(["--short", "--quick"]), /leave all suites out/);
+  assert.throws(() => parseArgs(["--short", "--skip-tests"]), /leave all suites out/);
   assert.equal(parseArgs(["--quick"]).quick, true);
   assert.equal(parseArgs(["--skip-tests"]).skipTests, true);
   assert.equal(parseArgs(["--recheck"]).recheck, true);
@@ -31,6 +34,18 @@ test("the root script `check` is executable, starts run.mjs and passes its argum
   assert.match(r.stdout, /--quick/);
   const bad = spawnSync(file, ["--nonsense"], { encoding: "utf8" });
   assert.equal(bad.status, 2, "a wrong call must exit 2 and start nothing");
+  assert.equal(spawnSync(file, ["--short", "--quick"], { encoding: "utf8" }).status, 2, "--short with --quick is a wrong call");
+});
+
+// `--short` (the CI of every push and PR): the gate leaves out exactly the long suite (lib/gate-plan.mjs shortSelection, held in
+// gate-plan.test.mjs), names it in a row, and writes NO marker — a short run must never pass for a full gate with ./deploy.
+// COUNTER-TEST: drop `if (short) return;` in targets/check.mjs => red here.
+test("check --short: the selection goes through shortSelection, the left-out suite gets a row, no marker after a short run", () => {
+  const src = fs.readFileSync(path.join(REPO, "tools/check/targets/check.mjs"), "utf8");
+  assert.match(src, /const selection = short \? shortSelection\(built\.suites\)/);
+  assert.match(src, /for \(const name of selection\.leftOut\) log\.table/);
+  const tail = src.slice(src.indexOf('log.ok("all checks passed")'));
+  assert.ok(tail.indexOf("if (short) return;") >= 0 && tail.indexOf("if (short) return;") < tail.indexOf("writeGateMarker("), "a short run writes the gate marker");
 });
 
 test("the gate's default plan is the public one, with the public marker scope", async () => {

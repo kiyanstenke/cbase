@@ -32,7 +32,9 @@ that is a sabotaged copy that must turn it red, over a test without one. Tests w
 ## Changes
 
 - Work on `main` or on a short-lived branch and open a pull request against `main`.
-- Continuous integration (`.github/workflows/check.yml`) runs the same `./check` on Linux for every pull request.
+- Continuous integration (`.github/workflows/check.yml`) runs `./check --short` on Linux for every push and pull request (the backend
+  suite needs about an hour on the runner's two cores), and the full `./check` every night and on demand. Run the full gate locally
+  before you ask for a review.
 - Note a user-visible change under "Unreleased" in `CHANGELOG.md`.
 - Keep a change focused. Move code and change behavior in separate commits.
 - Commit messages: a short imperative subject (about 70 characters), then a body that says why, not what.

@@ -1,9 +1,14 @@
 name: check
 
+# Every push and pull request: `./check --short` (all checks and the short suites, about ten minutes). The long backend suite needs
+# about an hour on the runner's two cores — it runs in the full `./check` every night and on demand (Actions → check → Run workflow).
 on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -11,7 +16,8 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 120 # the backend suite alone takes about 65 min on the runner's two cores
+    # The full gate (nightly, on demand): the backend suite alone takes about 65 min on the runner's two cores. The short one: ~10 min.
+    timeout-minutes: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 120 || 40 }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -48,4 +54,6 @@ jobs:
           # The gate's emergency cap per suite is one hour (tools/check/lib/gate-plan.mjs SUITE_CAP_MS); the backend suite needs about
           # 65 min on the runner's two cores (run 44865499914: 3267 of ~3570 tests after 60 min). The stall rule (300 s) still applies.
           CBASE_SUITE_TIMEOUT_MS: "5400000"
-        run: ./check
+          FULL: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+        run: |
+          if [ "$FULL" = "true" ]; then ./check; else ./check --short; fi

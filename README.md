@@ -65,6 +65,7 @@ then the test suites (backend, gateway, web, client, the gate's own tests):
 ./check --quick          # everything but the suites (a few seconds); the pre-push hook runs this
 ./check                  # the full gate (start it in the background; a green run leaves a marker for the same bytes)
 ./check --recheck        # the suites again, even if this exact tree was green within the hour
+./check --short          # everything but the long backend suite (what CI runs on every push and pull request)
 ```
 
 How the gate is built, how to add a test and what the guards promise: [tools/check/README.md](tools/check/README.md).

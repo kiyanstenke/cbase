@@ -11,7 +11,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { BASE_LOAD_PER_CORE, LONG_SUITES, SUITE_CAP_MS, SUITE_STALL_MS, backendParallelism, backendParallelismText, runSuites, shortParallelism, suiteDeadlines } from "./lib/gate-plan.mjs";
+import { BASE_LOAD_PER_CORE, LONG_SUITES, SUITE_CAP_MS, SUITE_STALL_MS, backendParallelism, backendParallelismText, runSuites, shortParallelism, shortSelection, suiteDeadlines } from "./lib/gate-plan.mjs";
 import { PUBLIC_PLAN, buildSuites, suiteContext } from "./lib/gate-plans.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -255,4 +255,15 @@ test("suite deadlines: 300 s stall, emergency cap 1 h; the regulators override e
   assert.match(t, /^3 \(.*; abort after 300 s without a test result, hard cap 3600 s\)$/, t);
   const v = backendParallelismText(backendParallelism({ cores: 14, last: 0 }), { lastStart: 0, lastBackend: 0, deadlines: suiteDeadlines({ defaultStillMs: 60000, defaultCapMs: 600000 }) });
   assert.match(v, /; abort after 60 s without a test result \(CBASE_SUITE_STALL_MS\), hard cap 600 s \(CBASE_SUITE_TIMEOUT_MS\)\)$/, v);
+});
+
+// `./check --short`: everything but the long suite runs, in plan order; the long one is named, never dropped silently.
+// COUNTER-TEST: shortSelection returning all suites (or dropping a short one) => red.
+test("shortSelection: the public plan without exactly the long suite(s), order kept, the left-out ones named", () => {
+  const suites = PUBLIC_PLAN.suites.map((s) => [s.name, `cmd ${s.name}`]);
+  const { run, leftOut } = shortSelection(suites);
+  assert.deepEqual(leftOut, LONG_SUITES);
+  assert.deepEqual(run.map(([n]) => n), suites.map(([n]) => n).filter((n) => !LONG_SUITES.includes(n)));
+  assert.ok(run.length >= 5, "the short suites stay");
+  assert.deepEqual(run[0], suites.find(([n]) => !LONG_SUITES.includes(n)), "commands are passed through unchanged");
 });

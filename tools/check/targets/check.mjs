@@ -14,7 +14,7 @@ import { report, manifestDiff, manifestOpen, readManifest } from "../lib/manifes
 import * as log from "../lib/log.mjs";
 import { workingTreeHash, writeGateMarker } from "../lib/gate-marker.mjs";
 import { DEFAULT_PLAN, buildSuites, planGlobs, planSuiteNames, suiteContext } from "../lib/gate-plans.mjs";
-import { backendParallelism, backendParallelismText, runSuites, shortParallelism, suiteDeadlines } from "../lib/gate-plan.mjs";
+import { backendParallelism, backendParallelismText, runSuites, shortParallelism, shortSelection, suiteDeadlines } from "../lib/gate-plan.mjs";
 import { takeLock } from "../lib/gate-lock.mjs";
 import { isFlat } from "../lib/git.mjs";
 import { publicFiles } from "../cleanliness.mjs";
@@ -138,7 +138,7 @@ async function cleanTestLeftovers() {
 
 // `plan` (lib/gate-plans.mjs) says WHAT is run: the suites, the register file, the line-count exceptions, the manifest-diff step
 // and the marker scope. The default is the merged plan = what the gate has always run.
-export async function check({ quick = false, quickReason = "--quick", plan = DEFAULT_PLAN } = {}) {
+export async function check({ quick = false, quickReason = "--quick", plan = DEFAULT_PLAN, short = false } = {}) {
   log.step("Checks");
   // The load before the gate itself does anything — the one measurement that contains only FOREIGN work
   // (reasoning at the backend width below, computation in lib/gate-plan.mjs).
@@ -422,7 +422,10 @@ export async function check({ quick = false, quickReason = "--quick", plan = DEF
     getBackend: () => backend, onMac: process.platform === "darwin",
   });
   const built = buildSuites(plan, ctx);
-  const suites = built.suites;
+  // `--short`: the long suite stays out, in ONE row that says so (never a silent gap), and no marker is written below.
+  const selection = short ? shortSelection(built.suites) : { run: built.suites, leftOut: [] };
+  const suites = selection.run;
+  for (const name of selection.leftOut) log.table([[`${name} tests`, "left out (--short: the nightly CI and the full gate run it)", "warn"]]);
   // A suite that cannot be built (directory gone, no files) is a red row with its reason — never a silent "none".
   for (const e of built.errors) {
     log.table([[`${e.name} tests`, e.message, "bad"]]);
@@ -557,7 +560,8 @@ export async function check({ quick = false, quickReason = "--quick", plan = DEF
 
   if (failures.length) throw new Error(`Checks failed:\n  - ${failures.join("\n  - ")}`);
   log.ok("all checks passed");
-  // The marker only AFTER the verdict and only for a full gate (see lib/gate-marker.mjs).
+  // The marker only AFTER the verdict and only for a full gate (see lib/gate-marker.mjs) — `--short` is none.
+  if (short) return;
   const marker = writeGateMarker({ hash: treeHash, result: resultsValue.join(" · "), scope: plan.markerScope, suites: planSuiteNames(plan) });
   if (marker) log.detail(`Gate marker written (${treeHash.slice(0, 12)}) — a deploy on the same tree within an hour does not repeat the suites (--recheck forces it).`);
 }

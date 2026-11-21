@@ -18,6 +18,7 @@ import path from "node:path";
 import test from "node:test";
 
 import { config } from "./config.mjs";
+import { importPrivate } from "./lib/private-part.mjs";
 import { setDryRun } from "../check/lib/sh.mjs";
 import { UNIT_NAME, UNIT_TEMPLATE, ROOT_DIRS, assertInitValues, init, initScript, renderUnit } from "./targets/init.mjs";
 
@@ -124,12 +125,16 @@ test("(3) an existing root or unit refuses without --force and touches nothing; 
   assert.match(fs.readFileSync(UNIT, "utf8"), /GW_PORT=7729/);
 });
 
-test("(4) the old installation's identity and values that do not fit the script are refused before any ssh call", async () => {
-  for (const patch of [{ root: `/home/maintainer/${OLD}-server` }, { gatewayPort: 7719 }, { containerPrefix: `${OLD}-u-` }]) {
-    fresh(patch);
-    await assert.rejects(init({}), /Rollout refused.*old installation/, JSON.stringify(patch));
-    assert.equal(calls(), 0, `${JSON.stringify(patch)}: no ssh call`);
-  }
+test("(4) the old installation's identity and values that do not fit the script are refused before any ssh call", async (t) => {
+  // The identity of the old installation lives in the private part (config.mjs assertOwnInstallation → lib/old-installation.mjs); a
+  // public clone without it has nothing to refuse (first seen on the public repo's CI, 21.11.2026: the call went on to ssh).
+  if (await importPrivate("lib/old-installation.mjs")) {
+    for (const patch of [{ root: `/home/maintainer/${OLD}-server` }, { gatewayPort: 7719 }, { containerPrefix: `${OLD}-u-` }]) {
+      fresh(patch);
+      await assert.rejects(init({}), /Rollout refused.*old installation/, JSON.stringify(patch));
+      assert.equal(calls(), 0, `${JSON.stringify(patch)}: no ssh call`);
+    }
+  } else t.diagnostic("no private part in this tree: the old-installation refusal is not this clone's to check");
   for (const [patch, pattern] of [[{ root: "relative/path" }, /absolute path/], [{ root: "/" }, /absolute path/], [{ root: "/srv/a b" }, /absolute path/], [{ root: "/srv/../x" }, /absolute path/],
     [{ gatewayPort: 80 }, /1024 to 65535/], [{ gatewayPort: 70000 }, /1024 to 65535/], [{ image: "Bad Image;rm" }, /plain image name/]]) {
     fresh(patch);
