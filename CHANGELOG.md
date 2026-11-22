@@ -9,6 +9,10 @@ the project uses [Semantic Versioning](https://semver.org/) once it reaches 1.0.
 - First public release: gateway with one container per user, per-user backend (Claude Code and Codex harness), shared web UI,
   desktop client (Electron) and iOS app.
 
+### Changed
+- cbase is licensed under the GNU Affero General Public License, version 3 (AGPL-3.0-only), instead of the Apache License 2.0.
+  The settings page "Third-party notices" links the licence and the source code.
+
 ### Security
 - The first-time setup needs a one-time setup token from the gateway's log (or `GW_SETUP_TOKEN`); before, whoever reached a fresh
   gateway first could create the admin account.

@@ -139,6 +139,8 @@ and how to send a change: [CONTRIBUTING.md](CONTRIBUTING.md). Conduct: [CODE_OF_
 
 ## Licence and trademarks
 
-cbase is licensed under the Apache License, Version 2.0 — [LICENSE](LICENSE), [NOTICE](NOTICE); third-party notices in
+cbase is free software under the GNU Affero General Public License, version 3 (AGPL-3.0-only) — [LICENSE](LICENSE),
+[NOTICE](NOTICE). You may use, change and run it, also commercially; if you offer a modified version to users over a network, you
+must give them its source code (section 13). Third-party notices are in
 [web/public/THIRD_PARTY_NOTICES.txt](web/public/THIRD_PARTY_NOTICES.txt). cbase is not affiliated with or endorsed by Anthropic,
 OpenAI, Microsoft or any other provider it works with; their names describe compatibility. See [TRADEMARKS.md](TRADEMARKS.md).

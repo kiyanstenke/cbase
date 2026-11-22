@@ -1,5 +1,7 @@
 cbase — Third-Party Notices
 
+cbase itself is licensed under the GNU AGPL-3.0-only (https://www.gnu.org/licenses/agpl-3.0.html); its source code is at https://github.com/kiyanstenke/cbase.
+
 cbase contains third-party material. Per entry: author, license with link, source (repo and tag), changes and per part the path
 in the repo with the files of cbase that carry it (each with the same marker in its header).
 

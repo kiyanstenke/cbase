@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "cbase client — desktop app in remote mode (connects to a cbase gateway)",
   "private": true,
-  "license": "Apache-2.0",
+  "license": "AGPL-3.0-only",
   "homepage": "https://github.com/kiyanstenke/cbase#readme",
   "repository": { "type": "git", "url": "git+https://github.com/kiyanstenke/cbase.git", "directory": "client" },
   "engines": { "node": ">=22" },

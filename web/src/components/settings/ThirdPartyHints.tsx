@@ -6,7 +6,7 @@
 // its own row at the bottom of the settings list (SettingsModal.tsx `HINTS`), like "About" in other programs.
 import { Group, Row } from "@/components/settings/SettingsKit";
 import { useT } from "@/lib/i18n";
-import { ATTRIBUTIONS, HINTS, HINT_FILE, PACKAGES, originOf, sourceOf } from "@/lib/thirdParty";
+import { ATTRIBUTIONS, HINTS, HINT_FILE, PACKAGES, PROJECT, originOf, sourceOf } from "@/lib/thirdParty";
 
 const reference = "text-accent underline-offset-2 hover:underline";
 
@@ -14,6 +14,15 @@ export function ThirdPartyHints() {
   const t = useT();
   return (
     <div data-third-party>
+      {/* cbase's own licence and source (AGPL-3.0, section 13: network users can get the source). */}
+      <Group title="cbase">
+        <Row title={t("License")} wide>
+          <a className={`text-[12.5px] ${reference}`} href={PROJECT.licenseUrl} target="_blank" rel="noreferrer" data-project-license>{PROJECT.license}</a>
+        </Row>
+        <Row title={t("Source code")} wide>
+          <a className={`text-[12.5px] ${reference}`} href={PROJECT.source} target="_blank" rel="noreferrer" data-project-source>{PROJECT.source.replace(/^https:\/\//, "")}</a>
+        </Row>
+      </Group>
       {HINTS.map((h) => (
         <Group key={h.name} title={h.name}>
           <Row title={t("Author")}><span className="text-[12.5px]">{h.originator}</span></Row>

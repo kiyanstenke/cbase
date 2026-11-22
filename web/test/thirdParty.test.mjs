@@ -283,7 +283,9 @@ const Q = {
 };
 function sources(q) {
   const s = withoutComments(q.page), m = withoutComments(q.modal);
-  assert.ok(s.includes("import { ATTRIBUTIONS, HINTS, HINT_FILE, PACKAGES, originOf, sourceOf } from \"@/lib/thirdParty\";") && s.includes("{HINTS.map((h) => ("), "page: not from the ONE list");
+  assert.ok(s.includes("import { ATTRIBUTIONS, HINTS, HINT_FILE, PACKAGES, PROJECT, originOf, sourceOf } from \"@/lib/thirdParty\";") && s.includes("{HINTS.map((h) => ("), "page: not from the ONE list");
+  // AGPL-3.0 section 13: a network user must be able to get the source — the page links cbase's licence and repository.
+  assert.ok(s.includes("href={PROJECT.source}") && s.includes("href={PROJECT.licenseUrl}"), "page: cbase's own licence and source link are missing");
   assert.ok(s.includes("<Group title={t(\"Further attributions\")}>") && s.includes("{ATTRIBUTIONS.map((a) => (") && s.includes("{t(a.what)}") && s.includes("href={a.licenseUrl}"), "page: the attributions are missing or do not go through t()");
   assert.ok(s.includes("<Group title={t(\"Backend packages\")}>") && s.includes("{PACKAGES.map((p) => (") && s.includes("data-third-party-package>{p.name} {p.version}</span>} hint={p.license}"), "page: the packages are missing");
   assert.ok(s.includes("<Row title={t(\"Author\")}><span className=\"text-[12.5px]\">{h.originator}</span></Row>"), "page: no originator");

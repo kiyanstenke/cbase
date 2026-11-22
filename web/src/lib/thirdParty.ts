@@ -375,6 +375,12 @@ Codicons license text (CC BY 4.0): https://creativecommons.org/licenses/by/4.0/l
 
 /** Where the file lives on the web (web/public → the site root). */
 export const HINT_FILE = "/THIRD_PARTY_NOTICES.txt";
+/** cbase's own licence and where its source is — the AGPL (section 13) asks that network users can get the source. */
+export const PROJECT = {
+  license: "GNU AGPL-3.0-only",
+  licenseUrl: "https://www.gnu.org/licenses/agpl-3.0.html",
+  source: "https://github.com/kiyanstenke/cbase",
+} as const;
 
 /** A piece's row — the same on the page and in the file. */
 export const chunkRow = (s: Chunk): string => `${s.kind}: ${s.path} — ${s.what}`;
@@ -384,6 +390,8 @@ export function hintText(): string {
   const stroke = "-".repeat(78);
   const parts = [
     "cbase — Third-Party Notices",
+    "",
+    `cbase itself is licensed under the ${PROJECT.license} (${PROJECT.licenseUrl}); its source code is at ${PROJECT.source}.`,
     "",
     "cbase contains third-party material. Per entry: author, license with link, source (repo and tag), changes and per part the path",
     "in the repo with the files of cbase that carry it (each with the same marker in its header).",

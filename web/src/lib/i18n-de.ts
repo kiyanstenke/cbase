@@ -4212,6 +4212,7 @@ export const DE: Record<string, string> = {
   "Third-Party Notices": "Drittanbieter-Hinweise",
   "Author": "Urheber",
   "License": "Lizenz",
+  "Source code": "Quellcode",
   "Full text including licenses": "Vollständiger Text samt Lizenzen",
   "Outlines converted to a 16×16 grid and rounded": "Umrisse auf ein 16×16-Raster umgerechnet und gerundet",
   "Further glyphs taken over unchanged as SVG paths": "Weitere Zeichen als SVG-Pfade unverändert übernommen",

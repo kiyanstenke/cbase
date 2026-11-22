@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "cbase gateway — control plane of the client/server operation (no external dependencies)",
   "private": true,
-  "license": "Apache-2.0",
+  "license": "AGPL-3.0-only",
   "homepage": "https://github.com/kiyanstenke/cbase#readme",
   "repository": {
     "type": "git",

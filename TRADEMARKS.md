@@ -1,8 +1,8 @@
 # Third-party marks in cbase
 
 cbase shows a few logos of services it connects to, only to name that service next to the feature that talks to it. Every mark
-below belongs to its owner. cbase is not affiliated with, sponsored or endorsed by any of them, and the Apache License of this
-repository grants no right to use any of these marks (Apache-2.0, section 6; see `NOTICE`). Copyright notices for the drawings
+below belongs to its owner. cbase is not affiliated with, sponsored or endorsed by any of them, and the GNU AGPL of this
+repository grants no right to use any of these marks (AGPL-3.0, section 7 e; see `NOTICE`). Copyright notices for the drawings
 themselves (Simple Icons, CC0) are in `web/public/THIRD_PARTY_NOTICES.txt`, generated from `web/src/lib/thirdParty.ts`.
 
 If you fork cbase and ship it, check each owner's terms yourself: permission to use a mark is usually given to a person or

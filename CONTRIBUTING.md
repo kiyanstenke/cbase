@@ -63,5 +63,6 @@ credentials, tokens, device identifiers, internal host names or routable IP addr
 
 ## Licence
 
-By contributing you agree that your contribution is licensed under the Apache License, Version 2.0 (see `LICENSE`).
+By contributing you agree that your contribution is licensed under the GNU Affero General Public License, version 3 (AGPL-3.0-only,
+see `LICENSE`).
 Conduct in the project is governed by `CODE_OF_CONDUCT.md`; security problems go through `SECURITY.md`, not public issues.
