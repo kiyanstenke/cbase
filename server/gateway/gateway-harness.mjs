@@ -181,6 +181,7 @@ export async function prepareSetup({ env = {} } = {}) {
   let subprocess = null;
   let log = "";
   let ended = null;
+  let closed = null;
   // A start that is still looking for the port (start() without await, e.g. to hold the gateway at a gate mid-start): until the
   // spawn there is no `kind`, and `alive()` would be wrong. The waiters count such a start as alive, and end() awaits it before
   // killing — otherwise the gateway would come into being AFTER the cleanup and run on as an orphan (the test process hung on its
@@ -240,6 +241,7 @@ export async function prepareSetup({ env = {} } = {}) {
         });
       } finally { beforeTheSpawn = null; spawned(); }
       ended = new Promise((r) => subprocess.on("exit", (code, signal) => r({ code, signal })));
+      closed = new Promise((r) => subprocess.on("close", (code, signal) => r({ code, signal })));
       await new Promise((resolve, reject) => {
         // The gateway is ready when it listens AND the resources initial fill is done: it asks `docker inspect` per user, and a test
         // that sets a marker afterwards (hangs-inspect) should see ITS path at the gate, not that one. The initial-fill line comes on
@@ -344,6 +346,16 @@ export async function prepareSetup({ env = {} } = {}) {
         },
         end: v.end,
       };
+    },
+    // Ends the gateway and waits until its stdio is CLOSED — only then is everything it ever wrote in `log()`. `start()` waits for a
+    // line on STDOUT, and a line the gateway wrote to STDERR just before it can still be undelivered at that moment: under load the
+    // gate saw startup-warnings (3) read the log without the warning block that was long since printed. A test that reads the whole
+    // log — above all one that asserts a line is ABSENT — takes this instead of reading right after `start()`.
+    async drain() {
+      if (beforeTheSpawn) await beforeTheSpawn;
+      if (!closed) return;
+      try { if (gw.alive()) subprocess.kill("SIGKILL"); } catch { /* already gone */ }
+      await closed;
     },
     async end() {
       if (beforeTheSpawn) await beforeTheSpawn; // a start that is still looking for the port would otherwise spawn AFTER the cleanup (see `beforeTheSpawn`)

@@ -32,16 +32,21 @@ test("(2) a non-loopback GW_HOST without GW_SECURE=1 warns about cookies without
   assert.equal(isLoopbackHost("127.0.0.1.example.org"), false);
 });
 
+// `drain()`, not a read right after `start()`: the warnings go to STDERR, the line `start()` waits for to STDOUT, and under load the
+// gate read the log while the warning block was still undelivered. After `drain()` the gateway's stdio is closed and its whole log
+// is there — for the absent lines as much as for the present ones.
 test("(3) the real gateway logs both warnings for a weak configuration and none for the production one", async () => {
   const weak = await prepareSetup({ env: { GW_RUNTIME: "", GW_HOST: "0.0.0.0", GW_SECURE: "" } });
   try {
     await weak.start();
+    await weak.drain();
     assert.match(weak.log(), SYSBOX);
     assert.match(weak.log(), COOKIE);
   } finally { await weak.end(); }
   const prod = await prepareSetup({ env: { GW_RUNTIME: "sysbox-runc", GW_HOST: "127.0.0.1", GW_SECURE: "1" } });
   try {
     await prod.start();
+    await prod.drain();
     assert.doesNotMatch(prod.log(), SYSBOX);
     assert.doesNotMatch(prod.log(), COOKIE);
     assert.match(prod.log(), /cbase gateway v\S+ on /, "the log was read at all");
