@@ -64,6 +64,10 @@ function scheduleTriggerDrain() {
   if (process.env.CBASE_TRIGGER_POLL === "0" || triggerDrainTimer) return;
   triggerDrainTimer = setTimeout(() => {
     triggerDrainTimer = null;
+    // The switch is read again when the timer fires, not only when it is set: a drain scheduled just before the switch went
+    // to "0" (a test that ends and gives the store to the next server) would otherwise poll the NEXT server's triggers,
+    // alongside that server's own polls. Counter-test in gitlab-trigger.test.js ("a drain scheduled before the switch …").
+    if (process.env.CBASE_TRIGGER_POLL === "0") return;
     // `force`, because the regular tick would otherwise get stuck on the trigger's minimum interval
     // (default 30 s) — but the wait should end with the holder, not with the tick. A run ends
     // rarely, so the extra poll is cheap.
@@ -97,9 +101,27 @@ async function pollAllTriggers({ force = false } = {}) {
   }
 }
 
+// ONE poll per trigger at a time. A poll reads its state (`seen`, the lines) BEFORE it waits for GitLab and writes it after
+// firing; two polls of the same trigger that overlap (the tick or the drain and the "Fire now" button) both saw an event as new
+// and started it twice. The next one waits for the previous one and then reads the state it left. The dry run writes nothing
+// and does not wait. Counter-test in gitlab-trigger.test.js ("two polls of the same trigger at once …").
+const triggerQueues = new Map();
+function oneAtATime(key, fn) {
+  const run = (triggerQueues.get(key) || Promise.resolve()).then(fn);
+  const tail = run.catch(() => {});
+  triggerQueues.set(key, tail);
+  tail.then(() => { if (triggerQueues.get(key) === tail) triggerQueues.delete(key); });
+  return run;
+}
+
 // Poll one trigger and start a run for each new event.
 // `dryRun` only answers "what would fire now" (button "Check now") and changes nothing.
-async function pollTriggerNode(flow, node, { dryRun = false, force = false } = {}) {
+function pollTriggerNode(flow, node, options = {}) {
+  if (options.dryRun) return pollTriggerNodeNow(flow, node, options);
+  return oneAtATime(`${flow.id}/${node.id}`, () => pollTriggerNodeNow(flow, node, options));
+}
+
+async function pollTriggerNodeNow(flow, node, { dryRun = false, force = false } = {}) {
   const trigger = node.trigger || wf.normalizeTrigger(null);
   const now = Date.now();
   const why = wf.triggerReady(trigger);

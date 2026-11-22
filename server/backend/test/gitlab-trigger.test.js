@@ -6,7 +6,7 @@ import fs from "node:fs";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
-import test from "node:test";
+import test, { mock } from "node:test";
 
 import { RIPCORD } from "./ripcord.mjs";
 import { waitForQuiet } from "./quiet.mjs";
@@ -15,7 +15,8 @@ import { waitForQuiet } from "./quiet.mjs";
 // import, and the server follows dynamically. The poller itself starts only where CBASE_TRIGGER_POLL is not "0".
 process.env.CBASE_TRIGGER_TICK_MS ??= "150";
 const { startServer } = await import("../electron/server/server.js");
-const { triggerCycles } = await import("../electron/server/workflows/triggers.js");
+const { triggerCycles, pollTriggerNode, scheduleTriggerDrain } = await import("../electron/server/workflows/triggers.js");
+const wf = await import("../electron/server/workflows.js");
 // The chats WITHOUT the filter of the client list (GET /api/chats shows only chats with at least one message). What is measured here
 // is whether a trigger CREATES a chat — a created but still empty one (waiting at the lock, half failed) must count, otherwise "no
 // chat" and "not past the lock" would pass silently.
@@ -428,6 +429,49 @@ test("when one event kind fails, ITS waterline stays put — the others carry on
 // keeps them (`positions` -> line, `further` -> pointer); the way through the trigger itself the test goes afterwards.
 // Counter-test: with the descending version red (the backlog delivers nothing, no `further`, !5000 never comes); with the one-page
 // version red (20).
+// Two polls of one trigger that overlap (the tick or the drain and "Fire now") both read the state before they wait for GitLab:
+// both saw the MR as new and started it twice. Both calls are made in the same tick, so without the queue in workflows/triggers.js
+// both snapshots are taken before either fires — the counter-test is deterministic, no timing involved.
+test("two polls of the same trigger at once start an event once — the second waits and reads what the first left", async () => {
+  process.env.CBASE_TRIGGER_POLL = "0";
+  await withServer(async ({ base, ws, glBase, gl }) => {
+    const acc = await json(`${base}/api/gitlab/accounts`, { method: "POST", body: JSON.stringify({ host: glBase, token: "glpat-test" }) });
+    const flow = await makeFlow(base, ws, acc.id, { lock: { scope: "off" } });
+    gl.mrs.push(mr(8, "Only MR", Date.now() + 2_000));
+    await json(`${base}/api/workspaces/${ws.id}/workflows/${flow.id}`, { method: "PUT", body: JSON.stringify({ active: true }) });
+    const stored = store.getWorkflow(flow.id);
+    const [node] = wf.triggerNodes(wf.normalizeGraph(stored.graph));
+    const [r1, r2] = await Promise.all([
+      pollTriggerNode(stored, node, { force: true }),
+      pollTriggerNode(stored, node, { force: true }),
+    ]);
+    assert.equal(r1.fired + r2.fired, 1, `fired ${r1.fired} + ${r2.fired}`);
+    assert.equal(chatList().filter((c) => c.title === "!8 Only MR").length, 1);
+  });
+});
+
+// The drain reads the switch again when its timer fires. One scheduled in the last moments of a test (POLL "1") used to fire in
+// the NEXT test, against that server's store, and polled its trigger alongside the test's own polls: the 502 the test had queued
+// for its second poll went to the drain, and the MR fired twice ("when one event kind fails …" turned red under load). Mocked
+// timers instead of a wait: the 400 ms pass on `tick`.
+test("a drain scheduled before the switch went to \"0\" polls nothing when it fires", async () => {
+  process.env.CBASE_TRIGGER_POLL = "0";
+  await withServer(async () => {
+    mock.timers.enable({ apis: ["setTimeout"] });
+    try {
+      process.env.CBASE_TRIGGER_POLL = "1";
+      scheduleTriggerDrain();
+      process.env.CBASE_TRIGGER_POLL = "0";
+      const before = triggerCycles();
+      mock.timers.tick(400);
+      await new Promise((r) => setImmediate(r));
+      assert.equal(triggerCycles(), before, "the drain polled although the switch is \"0\"");
+    } finally {
+      mock.timers.reset();
+    }
+  });
+});
+
 test("a backlog over 1,000 entries drains over several polls — nothing drops, no kind stands still, a new MR comes without re-arming", async () => {
   const gitlab = await import("../electron/server/gitlab.js");
   const gl = fakeGitlab();

@@ -1677,7 +1677,10 @@ function eventsStream(o, ctx) {
   const file = path.join(ctx.folder, "stream.jsonl");
   const marker = path.join(ctx.root, "streams", String(process.pid));
   fs.mkdirSync(path.dirname(marker), { recursive: true });
-  fs.writeFileSync(marker, JSON.stringify({ since, filter }));
+  // Atomically (write, then rename): `writeFileSync` creates the file empty before it writes, and a harness reading in that moment
+  // saw an empty marker.
+  fs.writeFileSync(`${marker}.tmp`, JSON.stringify({ since, filter }));
+  fs.renameSync(`${marker}.tmp`, marker);
   let pos = since === null && fs.existsSync(file) ? fs.statSync(file).size : 0;
   let rest = "";
   const read2 = () => {
@@ -1718,8 +1721,13 @@ function streamsOf(root) {
   const out = [];
   for (const n of fs.existsSync(dir) ? fs.readdirSync(dir) : []) {
     const pid = Number(n);
-    try { process.kill(pid, 0); out.push({ pid, ...JSON.parse(fs.readFileSync(path.join(dir, n), "utf8")) }); }
-    catch { fs.rmSync(path.join(dir, n), { force: true }); }
+    if (!Number.isInteger(pid) || pid <= 0) continue; // `<pid>.tmp` while a stream writes its marker
+    // Only a DEAD process loses its marker. An unreadable marker of a living one still counts: the old version deleted it on a
+    // parse error, and the stream ran on uncounted — (4a) of projectbox-resumption waited until the ripcord (120 s, exit 9).
+    try { process.kill(pid, 0); } catch { fs.rmSync(path.join(dir, n), { force: true }); continue; }
+    let marker = {};
+    try { marker = JSON.parse(fs.readFileSync(path.join(dir, n), "utf8")); } catch { /* being written or gone: the pid counts */ }
+    out.push({ pid, ...marker });
   }
   return out;
 }

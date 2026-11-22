@@ -635,6 +635,24 @@ test("(3) tick: rewrites the desired state (then equal, without writing); not re
 
 // ── (4) The stream ends ─────────────────────────────────────────────────────────────────────────────────────────────
 
+// The harness's count of streams (fake-docker.mjs `streams()`) must see a stream from the moment its process lives. It used to delete
+// a marker it could not parse — one being written — and the stream ran on uncounted: (4a) waited for "new stream" until the fake's
+// ripcord ended it after 120 s, and counted a second restart. COUNTER-TEST: the old `streamsOf` returns [] here and deletes the marker.
+test("(4-) the harness counts a living stream whose marker is still empty, and leaves the marker in place", async () => {
+  const fd = await fakeDocker();
+  const child = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"], { stdio: "ignore" });
+  try {
+    const marker = path.join(fd.dir, "streams", String(child.pid));
+    fs.mkdirSync(path.dirname(marker), { recursive: true });
+    fs.writeFileSync(marker, "");
+    assert.deepEqual(fd.streams().map((x) => x.pid), [child.pid]);
+    assert.ok(fs.existsSync(marker), "the marker of a living stream was deleted");
+  } finally {
+    child.kill("SIGKILL");
+    fd.cleanUp();
+  }
+});
+
 test("(4a) stream ends ⇒ restart with --since and reconcile: a container that ended WITHOUT an event starts again — exactly one docker start", async () => {
   await withAgentsServer(async (ctx) => {
     const s = scenario(ctx);

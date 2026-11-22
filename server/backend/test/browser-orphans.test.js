@@ -167,12 +167,23 @@ async function deadPid() {
 test("(4) the sweep at server start ends a leftover of a dead owner — never one of a living owner, never one without the marker", { timeout: 120_000 }, async () => {
   const dead = await deadPid();
   const livingOwner = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"], { stdio: "ignore" });
-  const orphan = plant([ownerMarker(dead), "--headless=new"]);
   const foreign = plant([ownerMarker(livingOwner.pid), "--headless=new"]);
   const unmarked = plant([`${OWNER_SWITCH}x=${dead}`, "--headless=new"]); // similar, but not the marker
+  const planted = [];
   try {
-    await until(async () => (await markedProcesses()).some((r) => r.pid === orphan.p.pid), "the planted orphan is visible with its marker", dead);
-    const seen = (await markedProcesses()).find((r) => r.pid === orphan.p.pid);
+    // Test servers starting in parallel sweep too: one may end the orphan between two reads (seen in the gate: the second read found it
+    // gone — "reading 'owner' of undefined"). So the row comes from the read the wait sees, and an orphan a foreign sweep took before
+    // it was seen at all is planted anew. Who ends it later does not matter (see (2)): only a sweep kills a marked process.
+    let orphan = null;
+    let seen = null;
+    while (!seen) {
+      orphan = plant([ownerMarker(dead), "--headless=new"]);
+      planted.push(orphan.p);
+      await until(async () => {
+        seen = (await markedProcesses()).find((r) => r.pid === orphan.p.pid) || null;
+        return seen || !alive(orphan.p.pid);
+      }, "the planted orphan is visible with its marker", dead);
+    }
     assert.equal(seen.owner, dead);
     assert.equal(seen.pgid, orphan.p.pid, "the planted orphan leads its group");
     assert.equal((await markedProcesses()).some((r) => r.pid === unmarked.p.pid), false, "a look-alike switch is no marker");
@@ -186,6 +197,6 @@ test("(4) the sweep at server start ends a leftover of a dead owner — never on
     const again = await sweepOrphanedBrowsers();
     assert.equal(again.ended.some((e) => e.pid === foreign.p.pid || e.pid === unmarked.p.pid), false, JSON.stringify(again));
   } finally {
-    for (const x of [orphan.p, foreign.p, unmarked.p, livingOwner]) { try { x.kill("SIGKILL"); } catch {} }
+    for (const x of [...planted, foreign.p, unmarked.p, livingOwner]) { try { x.kill("SIGKILL"); } catch {} }
   }
 });
