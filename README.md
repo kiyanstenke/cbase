@@ -41,7 +41,7 @@ workflow while you do something else.
 
 ## Status
 
-cbase is pre-1.0. The author uses it daily on one self-hosted server; there are no releases or stability guarantees yet, and
+cbase is pre-1.0. The author uses it daily on one self-hosted server; there are no stability guarantees yet, and
 `main` is the only supported branch. The provider CLIs are pinned and moved deliberately. Parts are macOS-only: the desktop app,
 the iOS build and the macOS test suite.
 
@@ -118,9 +118,9 @@ tools or an API key, and each user is responsible for following their provider's
 the person who holds them; whether a provider allows using one through a self-hosted tool like this is for the provider to decide.
 For shared, team or commercial use, use API keys.
 
-Images built from `server/backend/Dockerfile` install the proprietary Claude Code and Codex CLIs and download Microsoft's VS Code
-CLI (Microsoft Software License Terms, <https://aka.ms/vscode-server-license>; the VS Code tunnel asks each user to accept them
-once). Such images are for your own use: do not push them to a public registry.
+Images built from `server/backend/Dockerfile` install the Claude Code CLI (proprietary, Anthropic's terms apply) and the Codex CLI
+(Apache-2.0), and download Microsoft's VS Code CLI (Microsoft Software License Terms, <https://aka.ms/vscode-server-license>; the
+VS Code tunnel asks each user to accept them once). Such images are for your own use: do not push them to a public registry.
 
 ## Documentation
 

@@ -1,6 +1,6 @@
 name: check
 
-# Every push and pull request: `./check --short` (all checks and the short suites, about ten minutes). The long backend suite needs
+# Every pull request and every push to `main`: `./check --short` (all checks and the short suites, about ten minutes). The long backend suite needs
 # about an hour on the runner's two cores — it runs in the full `./check` every night and on demand (Actions → check → Run workflow).
 on:
   push:

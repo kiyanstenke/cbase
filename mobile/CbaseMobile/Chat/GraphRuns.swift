@@ -306,7 +306,7 @@ enum GraphRuns {
     // What the card under "Background Tasks" shows and which response it offers: the same computation as
     // `cardOf`/`responseForm`/`responseRequest` in web/src/lib/graph-runs.ts, bound in graph-runs-binding. Answers go
     // through the EXISTING routes on the child chat (`chatId`): `/message` (question, cap, review, completion, stop),
-    // `/ask-answer`, `/permission-decision`, `/dyn-workflows/freigabe`. Foreground runs have no card, an unknown
+    // `/ask-answer`, `/permission-decision`, `/dyn-workflows/approval`. Foreground runs have no card, an unknown
     // wait kind has no form (only "Open").
 
     /// The tone of the card: blue = running, warning = waits for the human, calm = not started yet, then the outcomes.

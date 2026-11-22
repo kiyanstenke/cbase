@@ -43,9 +43,10 @@ in public spaces.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be reported privately to the community leaders responsible for
-enforcement. The conduct contact is the maintainer: write to the repository owner through the contact on their GitHub profile, with
-"Code of Conduct report" in the subject. Please do not use the vulnerability reporting form for this; it is reserved for security
-problems (see SECURITY.md). All complaints will be reviewed and investigated promptly and fairly.
+enforcement. The conduct contact is the maintainer. This project has one private channel, and that is the report form in the
+**Security** tab of this repository (**Report a vulnerability**): use it for a conduct report as well, with "Code of Conduct report"
+as the title. It is otherwise reserved for security problems (see SECURITY.md). All complaints will be reviewed and investigated
+promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the reporter of any incident.
 

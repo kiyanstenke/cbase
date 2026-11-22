@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-// Static export — served by the embedded server of the Electron app.
+// Static export — the gateway serves the built web/out.
 const nextConfig: NextConfig = {
   output: "export",
   trailingSlash: true,
