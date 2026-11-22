@@ -685,6 +685,7 @@
     "tree-sha.test.mjs",
     "uitests.test.mjs",
     "unknown-names.test.mjs",
+    "version.test.mjs",
     "wrapper.test.mjs"
   ],
   "Deploy tool": [

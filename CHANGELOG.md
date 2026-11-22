@@ -1,13 +1,15 @@
 # Changelog
 
 All notable changes to cbase are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
-the project uses [Semantic Versioning](https://semver.org/) once it reaches 1.0.
+versions follow [Semantic Versioning](https://semver.org/); before 1.0, a minor release (0.x.0) may break compatibility.
 
 ## [Unreleased]
 
 ### Added
 - First public release: gateway with one container per user, per-user backend (Claude Code and Codex harness), shared web UI,
   desktop client (Electron) and iOS app.
+- One product version for every part (packages, gateway, iOS app), checked by the gate; `node tools/version.mjs release x.y.z`
+  prepares a release.
 
 ### Changed
 - cbase is licensed under the GNU Affero General Public License, version 3 (AGPL-3.0-only), instead of the Apache License 2.0.

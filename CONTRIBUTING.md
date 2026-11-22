@@ -55,6 +55,17 @@ that is a sabotaged copy that must turn it red, over a test without one. Tests w
   red; if you cannot write German, say so in the pull request and a maintainer adds it.
 - Ported third-party code carries a header naming its origin and licence and is listed in `web/public/THIRD_PARTY_NOTICES.txt`.
 
+## Versions and releases
+
+- cbase has one version for all its parts (web UI, desktop client, backend, gateway, iOS app). `node tools/version.mjs` prints it
+  and fails if the files that carry it disagree; the list of those files is the table `PLACES` in `tools/version.mjs`, and the gate
+  holds it (`tools/check/version.test.mjs`). Do not edit a version number by hand.
+- Versions follow [Semantic Versioning](https://semver.org/). Until 1.0, a minor release (0.x.0) carries new features and may break
+  compatibility; a patch release (0.x.y) carries fixes only.
+- To release, a maintainer runs `node tools/version.mjs release x.y.z` (it writes the version everywhere and turns "Unreleased" in
+  `CHANGELOG.md` into the section of the release), commits, tags `vx.y.z` and publishes the GitHub release with that `CHANGELOG.md`
+  section as its notes.
+
 ## Keep private data out
 
 The gate includes a cleanliness guard (`node tools/check/cleanliness.mjs`). Do not commit real names of people, companies or customers,

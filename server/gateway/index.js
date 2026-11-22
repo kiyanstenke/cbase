@@ -37,7 +37,8 @@ const WEB_DIR = process.env.GW_WEB_DIR || path.resolve(__dirname, "..", "..", "w
 const IDLE_STOP_MIN = Number(process.env.GW_IDLE_STOP_MIN || 0); // 0 = never put to sleep
 const SECURE = process.env.GW_SECURE === "1";
 const COOKIE = "cbase_gw";
-const VERSION = "0.1.0";
+// The product version (one for the whole tree, tools/version.mjs): read from the package.json shipped next to this file.
+const VERSION = JSON.parse(fs.readFileSync(path.join(__dirname, "package.json"), "utf8")).version;
 
 users.initUsers(DATA_DIR);
 // First-time setup needs a token only the operator can read (setup-token.js): null once the first user exists.

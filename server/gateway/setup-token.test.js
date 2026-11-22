@@ -1,5 +1,5 @@
 // First-time setup needs the setup token (setup-token.js) — against the REAL gateway (gateway-harness.mjs) and as pure functions.
-//   (1) a fresh gateway reports setup + setupToken, stores the token with mode 0600 and prints it in its log
+//   (1) a fresh gateway reports setup + setupToken (and the version of its package.json), stores the token with mode 0600 and prints it in its log
 //   (2) without the token, or with a wrong one: 403 SETUP_TOKEN and NO user — the stranger who comes first gets nothing
 //   (3) with the token: 201, the admin exists, the token file is gone, a second setup is refused
 //   (4) GW_SETUP_TOKEN wins over the file, and its value is not written to the log
@@ -21,6 +21,8 @@ test("(1)-(3) the first admin needs the token from the log or <data>/setup-token
     await gw.start();
     const info = await fetch(`${gw.base}/gw/info`).then((r) => r.json());
     assert.equal(info.setup, true);
+    // The product version comes from the package.json next to index.js (tools/version.mjs keeps it in step with the tree).
+    assert.equal(info.version, JSON.parse(fs.readFileSync(new URL("./package.json", import.meta.url), "utf8")).version);
     assert.equal(info.setupToken, true, "the setup form must know it has to ask for the token");
     const file = tokenFile(gw.data);
     const token = fs.readFileSync(file, "utf8").trim();
