@@ -132,7 +132,13 @@ const ENTRY = "### Fixed\n- Something.\n";
 test("(4) release turns Unreleased into the release section — byte-exact on the real CHANGELOG and with link references", () => {
   const dir = copy();
   try {
-    const real = read(dir, "CHANGELOG.md");
+    // The real file's SHAPE is the subject here, not its momentary content. Its link footer is left out: the second half below
+    // checks the rewriting of those links literally, so here only the body may change.
+    const real = read(dir, "CHANGELOG.md")
+      .replace(/\n\[Unreleased\]: .*$/s, "\n")
+      .replace(/^## \[Unreleased\]\n\n/m, `## [Unreleased]\n\n${ENTRY}`);
+    write(dir, "CHANGELOG.md", real);
+    assert.match(real, /^## \[Unreleased\]\n\n### Fixed$/m, "the real CHANGELOG no longer has an empty line after '## [Unreleased]'");
     let r = run(["release", "0.2.0", "--date", "2026-12-01"], dir);
     assert.equal(r.code, 0, r.err);
     assert.equal(read(dir, "CHANGELOG.md"), real.replace(/^## \[Unreleased\]$/m, "## [Unreleased]\n\n## [0.2.0] - 2026-12-01"));
@@ -158,6 +164,9 @@ test("(5) malformed, lower, already released, empty Unreleased and bad dates are
   const dir = copy();
   try {
     const snapshot = () => PLACES.map((f) => read(dir, f)).join("\0");
+    // A deterministic CHANGELOG: what the real one holds depends on whether a release was just prepared, and that would decide
+    // WHICH refusal a too-low version gets ("lower than the current version" or "not higher than the last release").
+    write(dir, "CHANGELOG.md", `# Changelog\n\n## [Unreleased]\n\n${ENTRY}`);
     const before = snapshot();
     const refused = (args, why) => {
       const r = run(args, dir);
