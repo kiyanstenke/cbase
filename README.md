@@ -141,6 +141,7 @@ and how to send a change: [CONTRIBUTING.md](CONTRIBUTING.md). Conduct: [CODE_OF_
 
 cbase is free software under the GNU Affero General Public License, version 3 (AGPL-3.0-only) — [LICENSE](LICENSE),
 [NOTICE](NOTICE). You may use, change and run it, also commercially; if you offer a modified version to users over a network, you
-must give them its source code (section 13). Third-party notices are in
+must give them its source code (section 13) — build the UI with `NEXT_PUBLIC_SOURCE_URL=<your repository>` so that **Settings →
+Third-Party Notices** points your users at your source, not at this repository. Third-party notices are in
 [web/public/THIRD_PARTY_NOTICES.txt](web/public/THIRD_PARTY_NOTICES.txt). cbase is not affiliated with or endorsed by Anthropic,
 OpenAI, Microsoft or any other provider it works with; their names describe compatibility. See [TRADEMARKS.md](TRADEMARKS.md).

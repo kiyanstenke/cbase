@@ -986,6 +986,9 @@ let LocDEMobile: [String: String] = [
     "Behavior": "Verhalten",
     "Appearance & device": "Darstellung & Gerät",
     "Explanation": "Erklärung",
+    // Settings → About (wording identical to the web)
+    "License": "Lizenz",
+    "Source code": "Quellcode",
     // Models page groups (a duplicate key crashes at start)
     "Chat side tasks": "Chat-Nebenaufgaben",
     "Projects & context": "Projekte & Kontext",

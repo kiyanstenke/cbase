@@ -12,9 +12,8 @@ company and does not pass to you through this repository.
 
 | Mark | Owner | Where | Source of the drawing | Terms |
 |---|---|---|---|---|
-| GitLab (tanuki, single colour) | GitLab Inc. | `mobile/CbaseMobile/Assets.xcassets/IntegrationGitLab.imageset/gitlab.svg` | Simple Icons 16.38.0, `icons/gitlab.svg`, unchanged | [GitLab trademark guidelines](https://handbook.gitlab.com/handbook/marketing/brand-and-product-marketing/brand/brand-activation/trademark-guidelines/) |
-| GitLab (tanuki, four colours) | GitLab Inc. | `web/src/components/settings/IntegrationsSettings.tsx` (`GitlabLogo`) | GitLab press kit (about.gitlab.com/press/press-kit) | as above |
-| ngrok (wordmark) | ngrok Inc. | `mobile/CbaseMobile/Assets.xcassets/IntegrationNgrok.imageset/ngrok.svg`, `web/src/components/settings/IntegrationsSettings.tsx` (`NgrokLogo`) | Simple Icons 16.38.0, `icons/ngrok.svg`, unchanged (web: viewBox cropped) | owner's terms, no published guideline found |
+| GitLab (tanuki, single colour) | GitLab Inc. | `mobile/CbaseMobile/Assets.xcassets/IntegrationGitLab.imageset/gitlab.svg`, `web/src/components/settings/IntegrationsSettings.tsx` (`GitlabLogo`) | Simple Icons 16.38.0, `icons/gitlab.svg`, unchanged | [GitLab trademark guidelines](https://handbook.gitlab.com/handbook/marketing/brand-and-product-marketing/brand/brand-activation/trademark-guidelines/) |
+| ngrok (wordmark) | ngrok Inc. | `mobile/CbaseMobile/Assets.xcassets/IntegrationNgrok.imageset/ngrok.svg`, `web/src/components/settings/IntegrationsSettings.tsx` (`NgrokLogo`) | Simple Icons 16.38.0, `icons/ngrok.svg`, unchanged (viewBox cropped to the wordmark in both copies) | owner's terms, no published guideline found |
 | Logos of MCP servers (Notion, Linear, Asana, Atlassian, Sentry, Stripe, Intercom, PayPal, Square, Cloudflare, Webflow, Zapier, HubSpot, Vercel, Neon, Supabase, Prisma, Wix, GitHub, Git, PostgreSQL, SQLite, Brave, Puppeteer, GitLab, Google Maps) | their respective owners | `web/src/components/brandLogos.ts` (shown by `web/src/components/McpIcon.tsx`) | Simple Icons 16.38.0, unchanged | each owner's terms |
 
 ## Marks that do not ship

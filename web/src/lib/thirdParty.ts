@@ -130,11 +130,11 @@ export const HINTS: readonly ThirdHint[] = [
     licenseUrl: "https://github.com/microsoft/vscode-loc/blob/62d5443b567022539ba6e8565b0f43f5f6b3682b/LICENSE.md",
     changes: ["Wording adopted entry by entry, “...” as “…”, typographic quotes, placeholders named after their content, informal “du” instead of “Sie”"],
     chunks: [
-      { kind: "Taken from", path: "i18n/vscode-language-pack-de/translations/main.i18n.json", what: "German wording of Explorer and editor adopted", files: ["web/test/fixtures/vscode-de-wordings.json"] },
-      { kind: "Taken from", path: "i18n/vscode-language-pack-de/translations/extensions/vscode.git.i18n.json", what: "German wording of the Git commands adopted", files: ["web/test/fixtures/vscode-de-wordings.json"] },
-      { kind: "Taken from", path: "i18n/vscode-language-pack-de/translations/extensions/vscode.references-view.i18n.json", what: "German wording of the References view adopted", files: ["web/test/fixtures/vscode-de-wordings.json"] },
-      { kind: "Taken from", path: "i18n/vscode-language-pack-de/translations/extensions/vscode.typescript-language-features.i18n.json", what: "German wording of “Go to Source Definition” adopted", files: ["web/test/fixtures/vscode-de-wordings.json"] },
-      { kind: "Taken from", path: "i18n/vscode-language-pack-de/translations/extensions/vscode.markdown-language-features.i18n.json", what: "German wording of the Markdown preview adopted", files: ["web/test/fixtures/vscode-de-wordings.json"] },
+      { kind: "Taken from", path: "i18n/vscode-language-pack-de/translations/main.i18n.json", what: "German wording of Explorer and editor adopted", files: ["web/src/lib/i18n-de.ts", "web/test/fixtures/vscode-de-wordings.json"] },
+      { kind: "Taken from", path: "i18n/vscode-language-pack-de/translations/extensions/vscode.git.i18n.json", what: "German wording of the Git commands adopted", files: ["web/src/lib/i18n-de.ts", "web/test/fixtures/vscode-de-wordings.json"] },
+      { kind: "Taken from", path: "i18n/vscode-language-pack-de/translations/extensions/vscode.references-view.i18n.json", what: "German wording of the References view adopted", files: ["web/src/lib/i18n-de.ts", "web/test/fixtures/vscode-de-wordings.json"] },
+      { kind: "Taken from", path: "i18n/vscode-language-pack-de/translations/extensions/vscode.typescript-language-features.i18n.json", what: "German wording of “Go to Source Definition” adopted", files: ["web/src/lib/i18n-de.ts", "web/test/fixtures/vscode-de-wordings.json"] },
+      { kind: "Taken from", path: "i18n/vscode-language-pack-de/translations/extensions/vscode.markdown-language-features.i18n.json", what: "German wording of the Markdown preview adopted", files: ["web/src/lib/i18n-de.ts", "web/test/fixtures/vscode-de-wordings.json"] },
       { kind: "Taken from", path: "i18n/vscode-language-pack-de/translations/extensions/vscode.markdown-language-features.i18n.json", what: "German messages of the Markdown language server taken over unchanged", files: ["server/backend/electron/server/lsp/l10n/de/vscode.markdown-language-features.i18n.json"] },
       { kind: "Taken from", path: "i18n/vscode-language-pack-de/translations/extensions/vscode.css-language-features.i18n.json", what: "German messages of the CSS language server taken over unchanged", files: ["server/backend/electron/server/lsp/l10n/de/vscode.css-language-features.i18n.json"] },
       { kind: "Taken from", path: "i18n/vscode-language-pack-de/translations/extensions/vscode.json-language-features.i18n.json", what: "German messages of the JSON language server taken over unchanged", files: ["server/backend/electron/server/lsp/l10n/de/vscode.json-language-features.i18n.json"] },
@@ -182,7 +182,7 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     license: "Creative Commons Zero v1.0 Universal (CC0 1.0)",
     licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/",
     source: "https://github.com/simple-icons/simple-icons",
-    what: "GitLab logo in the iOS app, ngrok wordmark in the web UI and the iOS app (the logos remain trademarks of their owners; list: TRADEMARKS.md)",
+    what: "GitLab logo and ngrok wordmark in the web UI and the iOS app (the logos remain trademarks of their owners; list: TRADEMARKS.md)",
     files: [
       "web/src/components/settings/IntegrationsSettings.tsx",
       "mobile/CbaseMobile/Assets.xcassets/IntegrationGitLab.imageset/gitlab.svg",
@@ -288,8 +288,10 @@ export const EXTRA_NOTICES = `--------------------------------------------------
 Web bundle — runtime dependencies
 ------------------------------------------------------------------------------
 Direct dependencies of web/package.json, version as resolved in web/package-lock.json, license as given there. Shipped unmodified; each
-package's license text is in its npm package. Transitive packages are listed with their license in web/package-lock.json (all MIT, ISC,
-BSD-3-Clause, 0BSD or Apache-2.0, plus caniuse-lite data under CC BY 4.0, used at build time only).
+package's license text is in its npm package. Transitive packages are listed with their license in web/package-lock.json (mostly MIT,
+ISC, BSD-3-Clause, 0BSD or Apache-2.0; the @img/sharp-libvips-* packages pulled in by sharp are LGPL-3.0-or-later and the
+@img/sharp-{win32,wasm32}-* packages are Apache-2.0 AND LGPL-3.0-or-later — see the libvips note under Image contents; the
+lightningcss* packages are MPL-2.0 and used at build time only; caniuse-lite data is CC BY 4.0, build time only).
   @codemirror/autocomplete 6.20.3 — MIT — https://github.com/codemirror/autocomplete
   @codemirror/commands 6.10.4 — MIT — https://github.com/codemirror/commands
   @codemirror/lang-markdown 6.5.1 — MIT — https://github.com/codemirror/lang-markdown
@@ -375,12 +377,20 @@ Codicons license text (CC BY 4.0): https://creativecommons.org/licenses/by/4.0/l
 
 /** Where the file lives on the web (web/public → the site root). */
 export const HINT_FILE = "/THIRD_PARTY_NOTICES.txt";
-/** cbase's own licence and where its source is — the AGPL (section 13) asks that network users can get the source. */
-export const PROJECT = {
+// `process` for the one build-time variable below. Declared here, module-scoped, because the guard (web/test/thirdParty.test.mjs)
+// compiles THIS FILE alone, without the node types; in the app the Next build replaces the whole `process.env.NEXT_PUBLIC_…` term
+// with its value, so nothing of it reaches the browser.
+declare const process: { env: Record<string, string | undefined> };
+
+/**
+ * cbase's own licence and where its source is — the AGPL (section 13) asks that network users can get the source. A fork that offers
+ * a modified version over a network sets NEXT_PUBLIC_SOURCE_URL at build time to ITS OWN repository; this repository is the default.
+ */
+export const PROJECT: { license: string; licenseUrl: string; source: string } = {
   license: "GNU AGPL-3.0-only",
   licenseUrl: "https://www.gnu.org/licenses/agpl-3.0.html",
-  source: "https://github.com/kiyanstenke/cbase",
-} as const;
+  source: process.env.NEXT_PUBLIC_SOURCE_URL || "https://github.com/kiyanstenke/cbase",
+};
 
 /** A piece's row — the same on the page and in the file. */
 export const chunkRow = (s: Chunk): string => `${s.kind}: ${s.path} — ${s.what}`;

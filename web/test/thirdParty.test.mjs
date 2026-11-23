@@ -48,7 +48,7 @@ const EXCEPTIONS = {
 // Whoever names the installed product as the origin (product license, not MIT).
 const PRODUCT = /workbench\.desktop\.main|Visual Studio Code\.app|installed bundle|from the bundle|workbench bundle/i;
 // The notices themselves name licenses and markers without being material.
-const ITSELF = new Set(["web/src/lib/thirdParty.ts", "web/src/components/settings/ThirdPartyHints.tsx", "web/src/lib/i18n-de.ts"]);
+const ITSELF = new Set(["web/src/lib/thirdParty.ts", "web/src/components/settings/ThirdPartyHints.tsx"]);
 const SEARCHED = ["web/src", "server/backend/electron/server", "server/backend/electron/mcp"];
 
 function allFiles(rel) {
@@ -135,7 +135,7 @@ const SABOTAGES = {
   "attribution without license link": { old: "    licenseUrl: \"https://creativecommons.org/publicdomain/zero/1.0/\",\n    source: \"https://github.com/simple-icons/simple-icons\",\n    what: \"Brand logos", fresh: "    licenseUrl: \"\",\n    source: \"https://github.com/simple-icons/simple-icons\",\n    what: \"Brand logos" },
   "packages not in the file": { old: "    ...PACKAGES.map((p) => `  ${packageRow(p)}`),\n", fresh: "" },
   // The German language pack.
-  "language pack without table": { old: "what: \"German wording of Explorer and editor adopted\", files: [\"web/test/fixtures/vscode-de-wordings.json\"]", fresh: "what: \"German wording of Explorer and editor adopted\", files: []" },
+  "language pack without table": { old: "what: \"German wording of Explorer and editor adopted\", files: [\"web/src/lib/i18n-de.ts\", \"web/test/fixtures/vscode-de-wordings.json\"]", fresh: "what: \"German wording of Explorer and editor adopted\", files: []" },
   "language pack without license text": { old: "stroke, MIT_VSCODE_LOC);", fresh: "stroke);" },
   "language pack without fixed state": { old: "revision: \"62d5443b567022539ba6e8565b0f43f5f6b3682b\"", fresh: "revision: \"main\"" },
   "language pack without references view": { old: "path: \"i18n/vscode-language-pack-de/translations/extensions/vscode.references-view.i18n.json\"", fresh: "path: \"i18n/vscode-language-pack-de/translations/extensions/vscode.references.i18n.json\"" },

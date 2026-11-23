@@ -484,6 +484,7 @@
     "drag-region.test.mjs",
     "thirdParty.test.mjs",
     "trademarks.test.mjs",
+    "project-facts-binding.test.mjs",
     "dyn-tree-binding.test.mjs",
     "dyn-tree.test.mjs",
     "dyn-library.test.mjs",

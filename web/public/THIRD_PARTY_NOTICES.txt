@@ -121,14 +121,19 @@ Origin: microsoft/vscode-loc, Tag 62d5443b567022539ba6e8565b0f43f5f6b3682b — b
 Changes: Wording adopted entry by entry, “...” as “…”, typographic quotes, placeholders named after their content, informal “du” instead of “Sie”.
 Parts:
   Taken from: i18n/vscode-language-pack-de/translations/main.i18n.json — German wording of Explorer and editor adopted
+    web/src/lib/i18n-de.ts
     web/test/fixtures/vscode-de-wordings.json
   Taken from: i18n/vscode-language-pack-de/translations/extensions/vscode.git.i18n.json — German wording of the Git commands adopted
+    web/src/lib/i18n-de.ts
     web/test/fixtures/vscode-de-wordings.json
   Taken from: i18n/vscode-language-pack-de/translations/extensions/vscode.references-view.i18n.json — German wording of the References view adopted
+    web/src/lib/i18n-de.ts
     web/test/fixtures/vscode-de-wordings.json
   Taken from: i18n/vscode-language-pack-de/translations/extensions/vscode.typescript-language-features.i18n.json — German wording of “Go to Source Definition” adopted
+    web/src/lib/i18n-de.ts
     web/test/fixtures/vscode-de-wordings.json
   Taken from: i18n/vscode-language-pack-de/translations/extensions/vscode.markdown-language-features.i18n.json — German wording of the Markdown preview adopted
+    web/src/lib/i18n-de.ts
     web/test/fixtures/vscode-de-wordings.json
   Taken from: i18n/vscode-language-pack-de/translations/extensions/vscode.markdown-language-features.i18n.json — German messages of the Markdown language server taken over unchanged
     server/backend/electron/server/lsp/l10n/de/vscode.markdown-language-features.i18n.json
@@ -147,7 +152,7 @@ Further attributions
     Origin of the Seti file icon colours (taken over through VS Code's theme-seti, see above)
     web/src/lib/file-symbols.ts
   Simple Icons (provider and integration logos) — Simple Icons contributors — Creative Commons Zero v1.0 Universal (CC0 1.0) — https://creativecommons.org/publicdomain/zero/1.0/ — https://github.com/simple-icons/simple-icons
-    GitLab logo in the iOS app, ngrok wordmark in the web UI and the iOS app (the logos remain trademarks of their owners; list: TRADEMARKS.md)
+    GitLab logo and ngrok wordmark in the web UI and the iOS app (the logos remain trademarks of their owners; list: TRADEMARKS.md)
     web/src/components/settings/IntegrationsSettings.tsx
     mobile/CbaseMobile/Assets.xcassets/IntegrationGitLab.imageset/gitlab.svg
     mobile/CbaseMobile/Assets.xcassets/IntegrationNgrok.imageset/ngrok.svg
@@ -220,8 +225,10 @@ SOFTWARE
 Web bundle — runtime dependencies
 ------------------------------------------------------------------------------
 Direct dependencies of web/package.json, version as resolved in web/package-lock.json, license as given there. Shipped unmodified; each
-package's license text is in its npm package. Transitive packages are listed with their license in web/package-lock.json (all MIT, ISC,
-BSD-3-Clause, 0BSD or Apache-2.0, plus caniuse-lite data under CC BY 4.0, used at build time only).
+package's license text is in its npm package. Transitive packages are listed with their license in web/package-lock.json (mostly MIT,
+ISC, BSD-3-Clause, 0BSD or Apache-2.0; the @img/sharp-libvips-* packages pulled in by sharp are LGPL-3.0-or-later and the
+@img/sharp-{win32,wasm32}-* packages are Apache-2.0 AND LGPL-3.0-or-later — see the libvips note under Image contents; the
+lightningcss* packages are MPL-2.0 and used at build time only; caniuse-lite data is CC BY 4.0, build time only).
   @codemirror/autocomplete 6.20.3 — MIT — https://github.com/codemirror/autocomplete
   @codemirror/commands 6.10.4 — MIT — https://github.com/codemirror/commands
   @codemirror/lang-markdown 6.5.1 — MIT — https://github.com/codemirror/lang-markdown

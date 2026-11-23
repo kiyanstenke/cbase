@@ -2,6 +2,15 @@
 // A missing entry falls back to the English key (see i18n.ts); tools/check/translations.mjs reports it.
 // {name} placeholders are interpolated by t()/tr() and carry the same name in both languages.
 // A key may carry a context suffix "##<context>" where one English text needs two German ones; it is never shown.
+//
+// Part of the German wording of the explorer, the editor, the Git commands and the References view was adopted from the VS Code
+// language pack, so that cbase reads in German the way VS Code does (the table of the adopted entries, with key and the pack's
+// value, is web/test/fixtures/vscode-de-wordings.json; the notice is in web/src/lib/thirdParty.ts).
+// Taken from: microsoft/vscode-loc i18n/vscode-language-pack-de/translations/main.i18n.json (MIT)
+// Taken from: microsoft/vscode-loc i18n/vscode-language-pack-de/translations/extensions/vscode.git.i18n.json (MIT)
+// Taken from: microsoft/vscode-loc i18n/vscode-language-pack-de/translations/extensions/vscode.references-view.i18n.json (MIT)
+// Taken from: microsoft/vscode-loc i18n/vscode-language-pack-de/translations/extensions/vscode.typescript-language-features.i18n.json (MIT)
+// Taken from: microsoft/vscode-loc i18n/vscode-language-pack-de/translations/extensions/vscode.markdown-language-features.i18n.json (MIT)
 export const DE: Record<string, string> = {
   "Continue automatically when the limit resets": "Am Limit automatisch weitermachen",
   "When a chat, a workflow or a scheduled task runs into the 5-hour or weekly limit, the work is parked and resumed as soon as the limit resets — even across a restart. After 12 consecutive continuations it gives up. Usage credits and spend caps do not recover on their own, so those are not waited on. Switching this off discards waiting continuations — except those parked by the usage gate, which belong to the switch below.": "Läuft ein Chat, ein Workflow oder ein geplanter Auftrag gegen das 5-Stunden- oder Wochenlimit, wird die Arbeit geparkt und fortgesetzt, sobald das Limit zurückgesetzt ist — auch über einen Neustart hinweg. Nach 12 Fortsetzungen in Folge wird aufgegeben. Guthaben- und Ausgabengrenzen laufen nicht von selbst zurück; dort wird nicht gewartet. Ausschalten verwirft wartende Fortsetzungen — außer den vom Guthaben-Gate geparkten, die gehören dem Schalter darunter.",
@@ -4247,7 +4256,7 @@ export const DE: Record<string, string> = {
   "Further attributions": "Weitere Nennungen",
   "File icon colours of the Seti theme taken over": "Farben der Dateisymbole des Seti-Themas übernommen",
   "Brand logos and colours of the MCP servers taken over (the logos remain trademarks of their owners)": "Markenlogos und -farben der MCP-Server übernommen (die Logos bleiben Marken ihrer Inhaber)",
-  "GitLab logo in the iOS app, ngrok wordmark in the web UI and the iOS app (the logos remain trademarks of their owners; list: TRADEMARKS.md)": "GitLab-Logo in der iOS-App, ngrok-Schriftzug in der Web-Oberfläche und der iOS-App (die Logos bleiben Marken ihrer Inhaber; Liste: TRADEMARKS.md)",
+  "GitLab logo and ngrok wordmark in the web UI and the iOS app (the logos remain trademarks of their owners; list: TRADEMARKS.md)": "GitLab-Logo und ngrok-Schriftzug in der Web-Oberfläche und der iOS-App (die Logos bleiben Marken ihrer Inhaber; Liste: TRADEMARKS.md)",
   "Origin of the Seti file icon colours (taken over through VS Code's theme-seti, see above)": "Herkunft der Seti-Farben der Dateisymbole (übernommen über theme-seti von VS Code, siehe oben)",
   "Case preservation on replace reimplemented": "Groß-/Kleinschreibung beim Ersetzen nachgebaut",
   "Sticky folders in the tree reimplemented": "Haftende Ordner im Baum nachgebaut",

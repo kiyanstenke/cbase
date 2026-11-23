@@ -81,6 +81,15 @@ struct SettingsView: View {
                         }
                     }
                 }
+                // About — NOT a group of the list above: those are bound one-to-one to `SETTINGS_GROUPS` on the web
+                // (web/test/settings-form.test.mjs), and on the web the same two facts stand outside the groups too, in the
+                // "Third-Party Notices" row at the foot of the modal (SettingsModal.tsx `HINTS`). Hence a footer section
+                // without a header, the place iOS keeps licence and version in. The AGPL (section 13) asks that whoever uses
+                // cbase over the network can reach its source; on the phone this is the only place that says so.
+                Section {
+                    aboutRow(L("License"), "doc.text", Self.licenseName, Self.licenseURL)
+                    aboutRow(L("Source code"), "chevron.left.forwardslash.chevron.right", Self.sourceLabel, Self.sourceURL)
+                }
             }
             .navigationTitle(L("Settings"))
             .navigationBarTitleDisplayMode(.inline)
@@ -137,5 +146,45 @@ struct SettingsView: View {
             CbSettingRow(title: title, hint: subtitle, symbol: symbol, withInfo: false)
         }
         .accessibilityIdentifier("settings-\(symbol)")
+    }
+
+    // ── About ──
+
+    /// cbase's own licence and where its source is — the same values as `PROJECT` in `web/src/lib/thirdParty.ts`. They are
+    /// facts about the program, not UI text, so they stay untranslated (`Text(verbatim:)` in the row).
+    static let licenseName = "GNU AGPL-3.0-only"
+    static let licenseURL = "https://www.gnu.org/licenses/agpl-3.0.html"
+    static let sourceURL = "https://github.com/kiyanstenke/cbase"
+    /// The address shortened to owner and name, for the row. Derived, not written out a second time: the address belongs in
+    /// exactly one place here, and the cleanliness guard counts a bare “owner/name” outside a repository URL as private.
+    static var sourceLabel: String { sourceURL.split(separator: "/").suffix(2).joined(separator: "/") }
+
+    /// A row of the About section: it leads out of the app, so it is a `Link`, not a `NavigationLink` — and like the rows
+    /// above it carries no (i) (`withInfo: false`): in the label of a link the whole cell is the button.
+    ///
+    /// `.foregroundStyle(CbColor.text)` on the link: a `Link` paints its whole label in the accent, which would make these two
+    /// titles the only colored ones in the list. The symbol keeps the accent of the rows above it — it reads `.tint` inside
+    /// `CbSettingRow` and that is untouched. `layoutPriority` goes to the value: without it the title takes the width first and
+    /// the address ends up as "github....e/cbase", which is exactly the thing the row is here to say.
+    @ViewBuilder
+    private func aboutRow(_ title: String, _ symbol: String, _ value: String, _ address: String) -> some View {
+        if let url = URL(string: address) {
+            Link(destination: url) {
+                CbSettingRow(title: title, symbol: symbol, withInfo: false) {
+                    HStack(spacing: 5) {
+                        Text(verbatim: value)
+                            .font(.subheadline)
+                            .foregroundStyle(CbColor.textMuted)
+                            .lineLimit(1)
+                        Image(systemName: "arrow.up.right")
+                            .font(.symbol(12))
+                            .foregroundStyle(CbColor.textMuted)
+                    }
+                    .layoutPriority(1)
+                }
+                .foregroundStyle(CbColor.text)
+            }
+            .accessibilityIdentifier("settings-about-\(symbol)")
+        }
     }
 }
