@@ -4,7 +4,7 @@ import SwiftUI
 //
 // The same view as the desktop's git bar (web/src/components/GitSidebar.tsx), made for mobile: ONE scroll area with three
 // collapsible sections one below the other —
-//   Repositories — only with more than one repo (as on the desktop): one row per repo with branch, sync button (↓ ↑, or the cloud
+//   Repositories — always, also with a single repo (as on the desktop): one row per repo with branch, sync button (↓ ↑, or the cloud
 //                  for an unpublished branch) and "…". A tap chooses which repo "Changes" shows (a second tap on the only chosen one
 //                  returns to "all"), and the graph follows it.
 //   Changes      — per shown repo the commit field with the primary button (Commit · Publish Branch · Sync · off, computed in
@@ -598,28 +598,27 @@ struct GitPane: View {
     private var sections: some View {
         let several = model.repos.count > 1
         let shown = model.shown
-        if several {
-            GitSectionHeader(id: "repos", title: L("Repositories"), closed: model.isCollapsed("repos"), toggle: { model.toggle("repos") }) {
-                if let choice = model.choice {
-                    Text(L("{n} of {m}", ["n": choice.count, "m": model.repos.count]))
-                        .cbFont(12).monospacedDigit().foregroundStyle(CbColor.textMuted)
-                    Button(L("Show all")) { model.allShow() }
-                        .cbFont(13, weight: .medium)
-                        .buttonStyle(.plain)
-                        .foregroundStyle(.tint)
-                        .accessibilityIdentifier("git-repos-all")
-                }
+        // "Repositories" ALWAYS, also with a single repo (as on the web): otherwise the sheet names no repo at all.
+        GitSectionHeader(id: "repos", title: L("Repositories"), closed: model.isCollapsed("repos"), toggle: { model.toggle("repos") }) {
+            if let choice = model.choice {
+                Text(L("{n} of {m}", ["n": choice.count, "m": model.repos.count]))
+                    .cbFont(12).monospacedDigit().foregroundStyle(CbColor.textMuted)
+                Button(L("Show all")) { model.allShow() }
+                    .cbFont(13, weight: .medium)
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.tint)
+                    .accessibilityIdentifier("git-repos-all")
             }
-            if !model.isCollapsed("repos") {
-                VStack(spacing: 2) {
-                    ForEach(model.repos) { r in
-                        GitRepoRow(repo: r, selected: model.choice?.contains(r.id) ?? false, actions: actions)
-                    }
-                }
-                .padding(.bottom, 8)
-            }
-            CbHairline()
         }
+        if !model.isCollapsed("repos") {
+            VStack(spacing: 2) {
+                ForEach(model.repos) { r in
+                    GitRepoRow(repo: r, selected: model.choice?.contains(r.id) ?? false, actions: actions)
+                }
+            }
+            .padding(.bottom, 8)
+        }
+        CbHairline()
 
         let sole = model.repos[0]
         GitSectionHeader(id: "changes", title: L("Changes"), closed: model.isCollapsed("changes"),
@@ -762,7 +761,8 @@ struct GitRepoRow: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            Button { actions.model.select(repo.id) } label: {
+            // With a single repo a tap selects nothing ("1 of 1" would be noise), as on the web.
+            Button { if actions.model.repos.count > 1 { actions.model.select(repo.id) } } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "book.closed")
                         .font(.symbol(13))

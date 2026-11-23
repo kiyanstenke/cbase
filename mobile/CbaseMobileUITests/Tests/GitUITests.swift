@@ -115,7 +115,7 @@ final class GitUITests: CbaseUITestBase {
         try openGitSheet(app)
         let changes = section(app, "changes"), graph = section(app, "graph")
         XCTAssertTrue(changes.waitForExistence(timeout: 10) && graph.waitForExistence(timeout: 10), "The section headers are missing")
-        XCTAssertFalse(section(app, "repos").exists, "\"Repositories\" shows with ONE repo (on desktop only with several)")
+        XCTAssertTrue(section(app, "repos").waitForExistence(timeout: 5), "\"Repositories\" is missing with ONE repo (it shows always, like on the desktop)")
         // An earlier run that failed before cleaning up may have left something collapsed — open everything first.
         for header in [changes, graph] where isCollapsed(header) {
             header.tap()

@@ -17,7 +17,7 @@
 // - Sections can be moved and resized like in VS Code:
 //   · the ORDER: unknown and duplicate entries drop out, missing ones are appended (never a section that disappears); the
 //     insertion point when dragging the head, "in place" is no movement, "up/down" among the VISIBLE sections, and an invisible
-//     one ("Repositories" with a single repo) keeps its place relative to the others;
+//     one (a section a scope does not offer) keeps its place relative to the others;
 //   · the HEIGHTS: shares → whole pixels summing to the available height, none below `MIN_BODY` (unless the window is too small
 //     for all — then equal), proportional at another panel height; dragging the gap moves only the two neighbours and clamps at
 //     the minimum height; pixels → shares → pixels is lossless (otherwise the gap would wander a pixel away from the pointer
@@ -346,6 +346,8 @@ function checkBinding(git) {
   // The graph (no own timer, reloads only with the repo state, "Load more") is components/git-bar/GitGraph.tsx — its binding
   // with counter-proof is held by web/test/git-graph.test.mjs; here only that the bar mounts it.
   assert.ok(/<GitGraph /.test(git), "GitSidebar.tsx does not mount the graph (<GitGraph …>)");
+  // "Repositories" with EVERY repo count, also with one: otherwise the bar names no repo and only says "GitLab"/"Git".
+  assert.ok(/<SectionStack existing=\{GIT_SECTIONS\} /.test(git) && /\n\s*repos: \(\n/.test(git), "the section \"Repositories\" is hidden for some repo count");
   // The stack: storage, distributing, drag, gaps, moving — all through the computations.
   const sStart = git.indexOf("function SectionStack(");
   const sEnd = git.indexOf("function SplitHandle(", sStart);
@@ -377,6 +379,8 @@ test("binding: GitSidebar.tsx calls the computations (with counter-proof)", () =
     "order unchecked from storage": git.replace("readOrder(localStorage.getItem(ORDER_KEY))", "JSON.parse(localStorage.getItem(ORDER_KEY) ?? \"[]\")"),
     "HTML5 drag and drop on the header": git.replace("<section data-git-section={id}", "<section draggable data-git-section={id}"),
     "every press is a drag": git.replace("< TRANSACTION_THRESHOLD) return;", "< 0) return;"),
+    "Repositories only with several repos (sections)": git.replace("<SectionStack existing={GIT_SECTIONS} ", "<SectionStack existing={multi ? GIT_SECTIONS : GIT_SECTIONS.filter((id) => id !== \"repos\")} "),
+    "Repositories only with several repos (content)": git.replace("\n      repos: (\n", "\n      repos: multi && (\n"),
   };
   for (const [name, copy] of Object.entries(sabotages)) {
     assert.notEqual(copy, git, `sabotage "${name}" no longer applies (wording in GitSidebar.tsx changed?)`);
@@ -398,4 +402,16 @@ test("a folder entry (untracked folder / embedded repository, \"x/\") opens no d
   };
   check(row);
   assert.throws(() => check(row.replace("onClick={folder ? undefined : () => onOpen(false)}", "onClick={() => onOpen(false)}")), "sabotage: a folder row that opens a diff stays green");
+});
+
+test("iOS: \"Repositories\" with every repo count, like the web bar (with counter-proof)", () => {
+  const swift = fs.readFileSync(path.join(webDir, "..", "mobile", "CbaseMobile", "Code", "GitPane.swift"), "utf8");
+  const check = (src) => {
+    const start = src.indexOf("private var sections: some View {");
+    const head = src.indexOf("GitSectionHeader(id: \"repos\"", start);
+    assert.ok(start > 0 && head > start, "GitPane.swift: sections or the \"repos\" head missing");
+    assert.ok(!/\bif\b[^\n]*\{\s*(\/\/[^\n]*\n\s*)*$/.test(src.slice(start, head)), "GitPane.swift shows \"Repositories\" only under a condition");
+  };
+  check(swift);
+  assert.throws(() => check(swift.replace("        GitSectionHeader(id: \"repos\"", "        if several {\n        GitSectionHeader(id: \"repos\"")), "sabotage: \"Repositories\" only with several repos stays green");
 });

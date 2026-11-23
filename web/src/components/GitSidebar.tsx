@@ -30,7 +30,7 @@ import {
 // Git bar in the style of the VS Code source control view. Three collapsible sections one below the other, each with a 22 px
 // header (chevron, title in capitals, actions on the right only on hover or with focus inside); resizable in height and
 // movable like the views in VS Code (see "stack" below):
-//   Repositories: only with more than one repo: ONE row per repo (name; on the right branch with "*" on changes, sync button
+//   Repositories: always, also with a single repo: ONE row per repo (name; on the right branch with "*" on changes, sync button
 //                 (circular arrows, the cloud for an unpublished branch), "..." with the repo actions). The row chooses which repos
 //                 "Changes" shows.
 //   Changes:      a head per shown repo (with ONE repo the section header itself carries branch, sync and actions, no repeated
@@ -356,8 +356,10 @@ export const GitSidebar = memo(function GitSidebar({ apiBase, chatId = null, ins
   // The sections go to the stack as elements: it orders, measures and distributes; a drag at the gap or head only rerenders it and the
   // heads, the contents (up to 300 file rows) are the same elements and stay put.
   const sections = (
-    <SectionStack existing={multi ? GIT_SECTIONS : WITHOUT_REPOS} closed={folded} content={{
-      repos: multi ? (
+    // "Repositories" ALWAYS, also with a single repo: otherwise the bar names no repo at all and the title ("GitLab"/"Git") reads
+    // like the wrong scope. With one repo a click selects nothing ("1 of 1" would be noise).
+    <SectionStack existing={GIT_SECTIONS} closed={folded} content={{
+      repos: (
         <Section
           id="repos" title={t("Repositories")} role="fixed" cap="max-h-[min(32%,176px)]" data={{ "data-git-repositories": "" }}
           right={choice ? <span className="shrink-0 pr-0.5 text-[11px] tabular-nums text-dim">{t("{n} of {m}", { n: choice.length, m: repos.length })}</span> : undefined}
@@ -368,10 +370,10 @@ export const GitSidebar = memo(function GitSidebar({ apiBase, chatId = null, ins
         >
           {repos.map((r) => {
             const k = repoKey(r);
-            return <RepoRow key={k} repo={r} selected={choice?.includes(k) ?? false} onChoice={(addition) => { setSelection((a) => selectRepo(tidySelection(a, keys), k, addition)); setGraphChoice(k); }} />;
+            return <RepoRow key={k} repo={r} selected={choice?.includes(k) ?? false} onChoice={(addition) => { if (!multi) return; setSelection((a) => selectRepo(tidySelection(a, keys), k, addition)); setGraphChoice(k); }} />;
           })}
         </Section>
-      ) : null,
+      ),
       changes: (
         <Section
           id="changes" title={t("Changes")} role={folded.graph ? "fills" : "precedence"} countTo={countShown || undefined} data={{ "data-git-changes": "" }}
@@ -491,7 +493,6 @@ type StackContext = {
   shift: (id: GitSection, direction: -1 | 1) => void;
 };
 const StackK = createContext<StackContext>({ height: () => null, dragging: null, turn: false, headerDown: () => {}, afterDrag: () => false, can: () => false, shift: () => {} });
-const WITHOUT_REPOS: readonly GitSection[] = GIT_SECTIONS.filter((id) => id !== "repos");
 // From this much movement (px) a press on the head is a drag, below it a click.
 const TRANSACTION_THRESHOLD = 4;
 const save = (key: string, value: unknown) => {
