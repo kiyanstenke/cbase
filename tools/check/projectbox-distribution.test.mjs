@@ -211,7 +211,7 @@ test("(1) a candidate whose entrypoint fails: no tag, the loaded name is gone ag
     const r = sh(prepareScript({ container: B, cand: cand(R_NEW), hostId: `sha256:${PB_NEW}` }));
     assert.equal(r.code, EXIT.PROBE, r.stderr);
     assert.match(r.stderr, /no longer running \(Running=false\)/);
-    assert.match(r.stderr, /Entrypoint dieses Images scheiterte/, "the last log lines of the probe are missing in the notice");
+    assert.match(r.stderr, /entrypoint of this image failed/, "the last log lines of the probe are missing in the notice");
     assert.equal(insideLatest(fd), PB_OLD, "inside :latest was repointed despite the failed probe");
     assert.equal(fd.state(B).images[cand(R_NEW)], undefined, "the unchecked candidate still lies inside under its name");
     assert.equal(fresh().some(isTagLatest), false);

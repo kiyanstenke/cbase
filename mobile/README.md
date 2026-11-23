@@ -215,8 +215,8 @@ The seven folders follow the place where the user OPENS a view; each has a `READ
 - **Physical iPhone from Xcode:** connect, unlock, trust the Mac, enable Developer Mode, select the team under Signing &
   Capabilities, run. Without a signed-in Apple account a device build cannot be signed or get APNs.
 - **Signing team:** the project file carries no team (it names your Apple account). The scripts take it from
-  `CBASE_DEVELOPMENT_TEAM`; `./deploy mobile` sets it from `deploy.local.json` → `"mobile": {"team": "<team id>"}`. The id is the
-  `OU` of your "Apple Development" certificate.
+  `CBASE_DEVELOPMENT_TEAM`; `node tools/deploy/deploy.mjs mobile` sets it from `deploy.local.json` →
+  `"mobile": {"team": "<team id>"}`. The id is the `OU` of your "Apple Development" certificate.
 - **Sideloading (SideStore & co.):** `bash make-ipa.command` → `~/Desktop/cbase.ipa` (Release, arm64; `CBASE_IPA_CONFIG=Debug` for
   Debug). Release on purpose: a Debug build puts the code in `cbase.debug.dylib` next to a tiny start binary that the sideloader
   would have to carry along. The script checks `Payload/` at the root, the binary, `arm64` and no debug dylib. Delete the app installed

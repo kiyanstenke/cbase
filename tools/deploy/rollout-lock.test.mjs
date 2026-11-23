@@ -79,6 +79,13 @@ test("(3) check and status are free everywhere; mobile, baseline and unknown wor
   }
   const ok = tree({ local: true, marker: true });
   for (const w of ["mobile", "baseline", "frobnicate"]) assert.ok(locked(run(ok, w)), w);
+  // A refusal that names a way out must name one that works: `mobile` does not run through the wrapper, but it does run
+  // through deploy.mjs. Without this the message could promise any path at all and stay green.
+  const out = run(ok, "mobile").stderr;
+  const named = out.match(/node (tools\/deploy\/deploy\.mjs) mobile/);
+  assert.ok(named, `the refusal of "mobile" does not name "node tools/deploy/deploy.mjs mobile": ${out}`);
+  const direct = spawnSync(process.execPath, [path.join(ok, named[1]), "mobile"], { encoding: "utf8" });
+  assert.ok(direct.status === 0 && direct.stdout.includes("REACHED mobile"), `the path the message names does not work: ${direct.stderr || direct.stdout}`);
 });
 
 test("(1) counter-proof: a copy of the script WITHOUT the marker test lets the dev tree through — the cases above would catch it", () => {

@@ -24,7 +24,7 @@ for word in "$@"; do
     server|web|client|rollback|all|init)
       unlocked || { echo "deploy: locked in the dev tree — '$word' is a rollout command. It needs a rollout checkout: deploy.local.json plus the marker .cbase-rollout-checkout (content: the real path of the checkout). Free here: check, status." >&2
         exit 2; } ;;
-    *) echo "deploy: locked — target '$word' has no installation of its own. Free: check, status; from a rollout checkout also server, web, client, rollback, all, init." >&2
+    *) echo "deploy: locked — '$word' does not run through this wrapper. mobile: node tools/deploy/deploy.mjs mobile [--device|--testflight|--ipa|--tests] (see DEPLOY.md). baseline: the maintainer's tree only. Free here: check, status; from a rollout checkout also server, web, client, rollback, all, init." >&2
        exit 2 ;;
   esac
 done

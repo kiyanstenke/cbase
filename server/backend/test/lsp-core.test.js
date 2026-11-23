@@ -145,7 +145,7 @@ test("(3) the reading actions in their shapes", async () => {
   const c = await ed("completions", doc({ position: pos, trigger: "." }));
   assert.equal(c.body.incomplete, false);
   const { resolve: identifier, ...snip } = c.body.items[1];
-  assert.deepEqual(snip, { label: "snip", kind: 15, documentation: "*doku*", insertText: "snip($1)", snippet: true });
+  assert.deepEqual(snip, { label: "snip", kind: 15, documentation: "*docs*", insertText: "snip($1)", snippet: true });
   assert.match(identifier, /^\d+:1$/, "the server can resolve => every entry carries its id");
   const s = await ed("signature_help", doc({ position: pos }));
   assert.deepEqual(s.body, { signatures: [{ label: "f(a, b)", parameters: [{ label: [2, 3] }, { label: [5, 6], documentation: "das *b*" }] }], active: 0, activeParameter: 1 });
@@ -519,7 +519,7 @@ test("(24) additional edits and command of a suggestion; deprecated as a field; 
     assert.equal(next.withImport.command, "editor.action.triggerSuggest");
     assert.equal(next.foreign.command, undefined, "the editor does not run a foreign command — it does not cross the border");
     assert.equal(next.late.detail, undefined);
-    assert.equal(next.wort1.detail, "eine Variable");
+    assert.equal(next.word1.detail, "a variable");
     // The same id on ANOTHER file: not resolvable (the list belongs to a.ts).
     fs.writeFileSync(path.join(project, "different.ts"), "const z = 1;\n");
     const foreign = await ed("completion_resolve", { file: "different.ts", buffer: "b24a", version: 1, text: "const z = 1;\n", resolve: next.late.resolve });
@@ -534,7 +534,7 @@ test("(24) additional edits and command of a suggestion; deprecated as a field; 
     assert.deepEqual(c.body.items.map((it) => it.label), ["countAll"]);
     assert.equal(c.body.incomplete, true, "something dropped => the editor asks again while typing");
     const r = await ed("completion_resolve", doc({ buffer: "b24", version: 1, text, resolve: c.body.items[0].resolve }));
-    assert.deepEqual(r.body, { resolved: true, detail: "Auto import from './werkzeug'", additionalTextEdits: [{ range: NULL0, newText: "import { countAll } from \"./werkzeug\";\n" }] }, "the import comes along, the foreign command does not");
+    assert.deepEqual(r.body, { resolved: true, detail: "Auto import from './tool'", additionalTextEdits: [{ range: NULL0, newText: "import { countAll } from \"./tool\";\n" }] }, "the import comes along, the foreign command does not");
     const empty = await ed("completions", doc({ buffer: "b24", version: 2, text: "const a = 1;\nconst x = \n", position: { line: 1, character: 10 } }));
     assert.equal(empty.body.items.length, 1000, "without a typed word: capped");
     assert.equal(empty.body.incomplete, true);

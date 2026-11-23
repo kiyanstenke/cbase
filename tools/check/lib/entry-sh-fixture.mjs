@@ -12,15 +12,9 @@ import { BRIDGE_PREFIX } from "../../../server/backend/electron/server/projectbo
 export const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const REPO = path.resolve(HERE, "../../..");
 export const ENTRY = path.join(REPO, "server/backend/entry.sh");
-// The last state BEFORE the network separation — a fixed commit, not HEAD: after its commit HEAD would be the new version, and the
-// counter-proof would check itself.
-export const BEFORE_S1_3 = "4f1eb0d80f20bd12f8aca6f5934860173e5c86d2";
-// The last state BEFORE the login-variable fix — fixed, for the same reason.
-export const BEFORE_PB_1 = "88969b1aab4ceaae79064dac7501c50d8187ec47";
-// The last state BEFORE the missing-marker stop — fixed, for the same reason.
-export const BEFORE_PB_6 = "17bb7a66bebbcdce4568e23acee3bd9aada46bdd";
-// The last state BEFORE the thaw of paused containers — fixed, for the same reason.
-export const BEFORE_ST2_3 = "7013a14";
+// BEFORE_S1_3, BEFORE_PB_1, BEFORE_PB_6, BEFORE_ST2_3 below are names for the states of the entry script before four of its
+// fixes (network separation, login variable, missing-marker stop, thaw of paused containers). Each state is rebuilt from today's
+// script, not fetched from history: the counter-proof has to bite on a checkout without the old revisions.
 export const SHELLS = ["/bin/bash", "/bin/dash"];
 // The ONE jump of the separation — over the bridge prefix of the backend (projectbox/creation.js BRIDGE_PREFIX, `cbp-`): a project
 // network whose bridge entry.sh does not match stands unprotected.

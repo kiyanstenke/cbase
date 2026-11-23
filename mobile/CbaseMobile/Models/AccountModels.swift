@@ -1,6 +1,6 @@
 import Foundation
 
-// ── Anbieter / Konto / Einstellungen ────────────────────────────────────────
+// ── Providers / account / settings ──────────────────────────────────────────
 
 /// The EFFECTIVE capabilities of a provider, as `/api/providers` reports them (preset plus overrides, run through `normalizeCaps`).
 /// Deliberately only the subset the provider card shows as chips — nobody on mobile needs to read the server's other keys

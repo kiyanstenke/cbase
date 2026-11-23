@@ -36,7 +36,7 @@ node client/node_modules/electron/install.js                              # macO
 | `lib/loc-gate.mjs`, `loc-allow.json` | no source file over 2,000 lines; the exceptions are named and may only shrink |
 | `lib/tree-rules.mjs`, `lib/manifest-diff.mjs` | route, schema and hook registers, back-imports; the byte proof of moved code |
 | `cleanliness*.{mjs,json}`, `translations.mjs` | nothing private in the public tree; the translation rules |
-| `baseline/<pin>/` (maintainer-only) | the checked-in reference of the workflow tool for each pinned Claude Code version (`pinSync.json` ties them to the pin) |
+| `baseline/<pin>/` (maintainer-only, not part of this repository) | the checked-in reference of the workflow tool for each pinned Claude Code version (`pinSync.json` ties them to the pin) |
 | `fixtures/` | data a gate test needs from an old state that is not part of the public tree (`monolith-b686294.json`: the routes of the last monolith) |
 | `lib/oldstate.mjs` | reads the recorded old files of the maintainer's private suites (absent from the public tree — public counter-tests carry fixtures of their own) |
 | `*.test.mjs` | the gate's own tests and the product guards that cannot live in a product test folder |

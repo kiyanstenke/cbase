@@ -6,7 +6,7 @@ import SwiftUI
 // (`POST /api/chats/:id/agent/send`, `from: "human"`), without a running turn. Afterwards the sheet shows the server's sentence
 // (`text`, never a wording of its own) and closes after a moment; a rejection stays so the text is not lost. That only holds if
 // the `.sheet` is NOT attached to a view that vanishes when the agent ends: in the tree it hangs on the run's CARD
-// (`DynWorkflowCard.nachricht`), never on the row — that goes with its collapsing phase (guard web/test/dyn-tree.test.mjs). The
+// (`DynWorkflowCard.message`), never on the row — that goes with its collapsing phase (guard web/test/dyn-tree.test.mjs). The
 // path is NOT pre-encoded — `APIClient.makeURL` encodes itself.
 
 /// Whom the sheet writes to: address for the route, name, kind and state (already translated) for the header.

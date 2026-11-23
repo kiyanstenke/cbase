@@ -250,7 +250,8 @@ test("the exec stop leaves out a container with a cbase.project inherited from t
 });
 
 test("counter-test: the script before the thawing stops a paused project container without thawing it — the check is red", () => {
-  // BEFORE_ST2_3 is the script of 7013a14 (server/gateway/containers.js) with its deadline filled in: a stop, no thaw.
+  // BEFORE_ST2_3 is the stop script of server/gateway/containers.js as it stood before the thaw, with its deadline filled in:
+  // a stop, no thaw. It is written out here, not fetched from history, so the counter-test bites on any checkout.
   assert.ok(BEFORE_ST2_3.includes("docker stop -t 30 $ids") && !BEFORE_ST2_3.includes("unpause"), "the fixture is not the form before the thawing");
   const log = runStopScript(BEFORE_ST2_3, ["c-two"]);
   assert.ok(log.includes("hard c-two"), `the counter-test does not bite: ${log.join(" | ")}`);

@@ -88,7 +88,7 @@ test("(1) reading: every action in its shape — lines and columns 1-based, kind
   assert.deepEqual(ol.symbols.map((x) => [x.name, x.kind, x.children?.map((c) => [c.name, c.kind])]), [["Klasse", "class", [["method", "method"]]]]);
   assert.deepEqual(ol.symbols[0].range, { start: { line: 1, column: 1 }, end: { line: 1, column: 1 } });
   const co = await agent("completions", pa, { line: 2, column: 12 });
-  assert.deepEqual(co, { items: [{ label: "wort1", kind: "variable", detail: "eine Variable" }, { label: "snip", kind: "snippet" }, { label: "late", kind: "function", detail: "(a)" }], incomplete: false }, "without docs, without insertText, without an id to resolve");
+  assert.deepEqual(co, { items: [{ label: "word1", kind: "variable", detail: "a variable" }, { label: "snip", kind: "snippet" }, { label: "late", kind: "function", detail: "(a)" }], incomplete: false }, "without docs, without insertText, without an id to resolve");
   const one = await agent("call_hierarchy", pa, { line: 1, column: 8 });
   assert.equal(one.direction, "incoming");
   assert.deepEqual([one.root.name, one.root.kind, one.root.file], ["old", "function", pa]);

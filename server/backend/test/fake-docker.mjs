@@ -158,7 +158,7 @@ export async function fakeDocker({ occupiedNetworks = [], stopGate = null, execG
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cbase-fake-docker-"));
   fs.mkdirSync(path.join(dir, "gates"), { recursive: true });
   const mapped = { [WRAPPER_IN_IMAGE]: WRAPPER_IN_REPO, ...programs };
-  fs.writeFileSync(path.join(dir, "config.json"), JSON.stringify({ occupiedNetworks, stopGate, execGate, inspectGate, rmGate, instanceIp, programs: mapped, infoFailures, infoDriver, brokenImages, execBroken, runStartBroken, startAbort /* Abnahme Scheibe 8 */, stopsInside, compose /* Scheibe E, Welle 2a */, imageContent /* Gegenlesen E, betr#1 */, dryrunSilent /* Abnahme S1-26, Befund 3 */, composeBroken /* ST2-10, Bau 2B */, pauseGate, eventBuffer /* Gegenlesen 2B */, runReference /* NB-2 */, checkUsed /* AN-25 */, upBroken /* IN-7 */ }));
+  fs.writeFileSync(path.join(dir, "config.json"), JSON.stringify({ occupiedNetworks, stopGate, execGate, inspectGate, rmGate, instanceIp, programs: mapped, infoFailures, infoDriver, brokenImages, execBroken, runStartBroken, startAbort, stopsInside, compose, imageContent, dryrunSilent, composeBroken, pauseGate, eventBuffer, runReference, checkUsed, upBroken }));
   const host = emptyState();
   for (const [ref, value] of Object.entries(imageList)) host.images[normRef(ref)] = imageEntry(value && typeof value === "object" ? value : { id: value });
   writeState(daemonFolder(dir, "host"), host);
@@ -324,7 +324,7 @@ function withState(folder, fn) {
   dieAt("built");
   for (;;) {
     try { fs.renameSync(own, lock); break; } catch (e) { if (e.code !== "ENOTEMPTY" && e.code !== "EEXIST") throw e; }
-    cleanOrphanedLock(lock); // S1-29
+    cleanOrphanedLock(lock);
     Atomics.wait(sleepBuffer, 0, 0, 5); // lock poll interval
   }
   dieAt("taken");
@@ -575,24 +575,24 @@ function run(args, ctx) {
       restart: o.one("--restart") || "", runtime: o.one("--runtime") || "", created: new Date(0 + z.counter * 1000).toISOString(),
       autoRemove: detach && o.has("--rm"), // `run -d --rm` as for real: gone after the stop
       status: detach && !broken ? "running" : "exited", exitCode: broken ? 1 : 0, processes: [], init: o.has("--init"),
-      started: detach ? new Date().toISOString() : "", // S1-16: State.StartedAt
-      health: o.one("--health-cmd") || "", // S1-19
-      ...(o.one("--health-retries") ? { healthRetries: Number(o.one("--health-retries")) } : {}), // ST2-10
-      ...(inside && o.all(...RUN_PORT).length ? { ports: o.all(...RUN_PORT).map(portFrom) } : {}), // ST2-10
-      ...(inside && o.all("--network-alias").length ? { aliases: o.all("--network-alias") } : {}), // ST2-10
-      logs: broken ? "fake-docker: der Entrypoint dieses Images scheiterte (brokenImages)\n" : "",
+      started: detach ? new Date().toISOString() : "", // State.StartedAt
+      health: o.one("--health-cmd") || "",
+      ...(o.one("--health-retries") ? { healthRetries: Number(o.one("--health-retries")) } : {}),
+      ...(inside && o.all(...RUN_PORT).length ? { ports: o.all(...RUN_PORT).map(portFrom) } : {}),
+      ...(inside && o.all("--network-alias").length ? { aliases: o.all("--network-alias") } : {}),
+      logs: broken ? "fake-docker: the entrypoint of this image failed (brokenImages)\n" : "",
       ...(ctx.daemon === "host" ? { mountInodes: bindInodes(mounts, ctx.config.runReference) } : {}), // (not in `inspect`)
     };
     if (!detach && o.has("--rm")) return c.id;
     const startBroken = detach && (ctx.config.runStartBroken || []).some((m) => new RegExp(m).test(name));
     if (startBroken) { c.status = "created"; c.exitCode = 128; }
     z.container[c.id] = c;
-    if (c.status === "running") rememberStart(z, c); // ST2-7: events
+    if (c.status === "running") rememberStart(z, c); // events
     return startBroken ? { startBroken: c.id } : c.id;
   });
   if (res?.startBroken) error(125, "docker: Error response from daemon: failed to set up container networking: Address already in use.");
   if (detach && ctx.daemon === "host") lifeLogOf(ctx, res, ["create", "start"]); // the event stream
-  if (detach && ctx.daemon === "host") copyViewAfterRun(ctx, res); // ST2-9
+  if (detach && ctx.daemon === "host") copyViewAfterRun(ctx, res);
   if (detach) ctx.stdout(`${res}\n`);
 }
 
@@ -606,11 +606,11 @@ function start(args, ctx) {
     for (const w of (aborted ? rest.slice(0, 1) : rest)) {
       const c = find(z, w);
       if (!c) error(1, `Error response from daemon: No such container: ${w}`);
-      if (c.paused) error(1, `Error response from daemon: cannot start a paused container, try unpause instead\nError: failed to start containers: ${w}`); // ST2-3
+      if (c.paused) error(1, `Error response from daemon: cannot start a paused container, try unpause instead\nError: failed to start containers: ${w}`);
       c.status = "running";
       delete c.ofHand; // a start withdraws "stopped by hand" (moby)
-      c.started = new Date().toISOString(); // S1-16: State.StartedAt
-      rememberStart(z, c); // ST2-7: events
+      c.started = new Date().toISOString(); // State.StartedAt
+      rememberStart(z, c); // events
       if (ctx.daemon === "host") newInnerDaemon(ctx, c.name); // a fresh dockerd, an empty buffer
       started.push(c);
     }
@@ -639,7 +639,7 @@ function endContainer(c, code) {
   c.processes = [];
   c.status = "exited";
   c.exitCode = code;
-  delete c.paused; // ST2-3
+  delete c.paused;
 }
 
 // pause | unpause (see head).
@@ -675,8 +675,8 @@ function stop(args, ctx) {
   const { rest } = read2(args, { value: ["-t", "--time", "--timeout", "-s", "--signal"] });
   if (!rest.length) error(1, "\"docker stop\" requires at least 1 argument.");
   if (ctx.config.stopGate) waitAtGate(ctx, ctx.config.stopGate);
-  const halted = []; // S1-20 (stopsInside)
-  const stream = []; // P2A-9: [Container, Ereignisse]
+  const halted = []; // stopsInside
+  const stream = []; // [container, events]
   withState(ctx.folder, (z) => {
     for (const w of rest) {
       const c = find(z, w);
@@ -705,8 +705,8 @@ function stop(args, ctx) {
 
 function rm(args, ctx) {
   const o = read2(args, { toggle: ["-f", "--force", "-v", "--volumes"] });
-  if (ctx.config.rmGate && ctx.daemon === "host") waitAtGate(ctx, ctx.config.rmGate); // Gegenlesen 2B, G2-4
-  const stream = []; // P2A-9: [Container, Ereignisse]
+  if (ctx.config.rmGate && ctx.daemon === "host") waitAtGate(ctx, ctx.config.rmGate);
+  const stream = []; // [container, events]
   withState(ctx.folder, (z) => {
     for (const w of o.rest) {
       const c = find(z, w);
@@ -718,7 +718,7 @@ function rm(args, ctx) {
       endContainer(c, 137);
       delete z.container[c.id];
       stream.push([{ ...c }, [...(ran ? [["kill", { signal: "9" }], ["die", { exitCode: "137" }]] : []), ["destroy", {}]]]); // event stream
-      if (ctx.daemon === "host") fs.rmSync(viewFolder(ctx.root, c.name), { recursive: true, force: true }); // ST2-9
+      if (ctx.daemon === "host") fs.rmSync(viewFolder(ctx.root, c.name), { recursive: true, force: true });
     }
   });
   for (const [c, list] of stream) for (const [action, extra] of list) lifeLog(ctx, c, action, extra);
@@ -741,8 +741,8 @@ function inspect(args, ctx, only = null) {
     const n = !c && (!type || type === "network") && findNetwork(z, w);
     const v = !c && !n && (!type || type === "volume") && z.volumes[w];
     const b = !c && !n && !v && (!type || type === "image") && findImage(z, w);
-    const view = c ? liveView(c, ctx) : n ? networkView(n, z) : v ? volumeView(v) : b ? imageView(b) : null; // S1-19
-    if (view) found.push(c && o.has("-s", "--size") ? withSize(view, c) : view); else missing.push(w); // AN-25: `--size`
+    const view = c ? liveView(c, ctx) : n ? networkView(n, z) : v ? volumeView(v) : b ? imageView(b) : null;
+    if (view) found.push(c && o.has("-s", "--size") ? withSize(view, c) : view); else missing.push(w); // `--size`
   }
   output(found, o.one("-f", "--format"), ctx);
   if (missing.length) {
@@ -796,7 +796,7 @@ function network(args, ctx) {
     withState(ctx.folder, (z) => {
       for (const w of o.rest) {
         const n = findNetwork(z, w);
-        if (!n) error(1, `Error response from daemon: network ${w} not found`); networkFree(ctx, z, n, error); // AN-25
+        if (!n) error(1, `Error response from daemon: network ${w} not found`); networkFree(ctx, z, n, error);
         delete z.networks[n.id];
       }
     });
@@ -836,7 +836,7 @@ function volume(args, ctx) {
     const o = read2(rest, { toggle: ["-f", "--force"] });
     withState(ctx.folder, (z) => {
       for (const w of o.rest) {
-        if (!z.volumes[w]) error(1, `Error response from daemon: get ${w}: no such volume`); volumeFree(ctx, z, w, error); // AN-25
+        if (!z.volumes[w]) error(1, `Error response from daemon: get ${w}: no such volume`); volumeFree(ctx, z, w, error);
         delete z.volumes[w];
         fs.rmSync(path.dirname(volumeData(ctx.root, ctx.daemon, w)), { recursive: true, force: true }); // the content goes with it
       }
@@ -850,7 +850,7 @@ function volume(args, ctx) {
 
 async function image(args, ctx) {
   const [what, ...rest] = args;
-  if (what === "inspect") return inspect(rest, ctx, "image"); if (what === "rm" || what === "remove") return rmi(rest, ctx); // AN-25
+  if (what === "inspect") return inspect(rest, ctx, "image"); if (what === "rm" || what === "remove") return rmi(rest, ctx);
   if (what === "save") {
     const o = read2(rest, { value: ["-o", "--output"] });
     const z = readState(ctx.folder);
@@ -875,7 +875,7 @@ async function image(args, ctx) {
   error(125, `fake-docker: image ${what} is not replicated`);
 }
 
-// ── Images benennen, auflisten, entfernen; info, logs (S1-7) ──────────────────────────────────────────────────────────
+// ── Naming, listing and removing images; info, logs ───────────────────────────────────────────────────────────────────
 
 const used = (z, id) => Object.values(z.container).find((c) => c.imageId === id) || null;
 const refsOf = (z, id) => Object.keys(z.images).filter((r) => z.images[r].id === id).sort();
@@ -991,11 +991,11 @@ async function exec(args, ctx) {
   const c = find(z, who);
   if (!c) error(1, `Error response from daemon: No such container: ${who}`);
   if (c.status !== "running") error(1, `Error response from daemon: container ${c.id} is not running`);
-  if (c.paused) error(1, `Error response from daemon: Container ${c.id} is paused, unpause the container before exec`); // ST2-3
+  if (c.paused) error(1, `Error response from daemon: Container ${c.id} is paused, unpause the container before exec`);
   if ((ctx.config.execBroken || []).includes(c.name)) {
     error(126, "OCI runtime exec failed: exec failed: unable to start container process: error executing setns process: exit status 1: unknown");
   }
-  if (ctx.daemon === "host" && !o.has("-d", "--detach") && statInContainer(c, cmd, ctx)) return; // NB-2
+  if (ctx.daemon === "host" && !o.has("-d", "--detach") && statInContainer(c, cmd, ctx)) return;
   // A copy container sees its overlays (copy view): first the transition, then the translation.
   const view = ctx.daemon === "host" && viewExists(ctx.root, c.name);
   if (view) copyViewTransition(ctx, c.name);
@@ -1576,7 +1576,7 @@ function system(args, ctx) {
   if (!o.has("-v", "--verbose") || (format !== "json" && format !== "{{json .}}")) error(125, "fake-docker: system df is replicated only as `-v --format json`");
   const z = readState(ctx.folder);
   const volumes = Object.values(z.volumes).map((v) => ({ Driver: "local", Labels: "", Links: "0", Mountpoint: `/var/lib/docker/volumes/${v.name}/_data`, Name: v.name, Scope: "local", Size: human(v.size) }));
-  ctx.stdout(`${JSON.stringify({ Images: dfImages(z, human) /* AN-25 */, Containers: [], Volumes: volumes, BuildCache: [] })}\n`);
+  ctx.stdout(`${JSON.stringify({ Images: dfImages(z, human), Containers: [], Volumes: volumes, BuildCache: [] })}\n`);
 }
 function diff(args, ctx) {
   const [w] = args;
@@ -1623,7 +1623,7 @@ function newInnerDaemon(ctx, name) {
   if (!fs.existsSync(path.join(folder, "state.json"))) return;
   withState(folder, (zi) => { zi.events = []; });
 }
-// ── End of ST2-7 ───────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ── End of the events head ─────────────────────────────────────────────────────────────────────────────────────────────────
 
 // ── Event stream: the life-cycle events, `docker events` WITHOUT `--until` ───────────────────────────────
 // The host daemon writes every life-cycle event of a container into `<daemon>/stream.jsonl` (APPEND, no lock: one line is one
@@ -1758,7 +1758,7 @@ function crashIn(root, w, { code = 137, oom = false, silent = false, restart = f
   if (restart) writeLifeLog(folder, c, "start");
   return c;
 }
-// ── End of P2A-9 ───────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ── End of the event stream ────────────────────────────────────────────────────────────────────────────────────────────────
 
 // ── The copy view lives in fake-docker-copy-view.mjs (line guard) ─────────
 const { copyView, copyViewAfterRun, copyViewTransition, copyViewPath, mapCopyView, copyViewReconcile, copyViewWaiting, viewExists,
@@ -1787,11 +1787,11 @@ async function program(argv) {
   const [command, ...rest] = argv;
   const table = {
     run, start, stop, rm, inspect, ps, network, volume, image, exec, tag, images, rmi, info, logs,
-    pause, unpause: (a, c) => pause(a, c, true), // ST2-3
-    stats, // S1-16
-    update, builder, compose, // Scheibe E, Welle 2a
+    pause, unpause: (a, c) => pause(a, c, true),
+    stats,
+    update, builder, compose,
     system, diff, // the "collect" part
-    events, rename: (a, c) => rename(a, c, { withState, find, error }), // ST2-7; AN-19: rename (fake-docker-stat.mjs)
+    events, rename: (a, c) => rename(a, c, { withState, find, error }), // rename (fake-docker-stat.mjs)
     save: (a, c) => image(["save", ...a], c), load: (a, c) => image(["load", ...a], c),
   };
   try {

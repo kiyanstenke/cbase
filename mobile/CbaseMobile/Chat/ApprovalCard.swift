@@ -5,7 +5,7 @@ import SwiftUI
 // An agent wants to run a tool that carries an approval mark.
 // The run stands still until it is decided here: approve (also with changed parameters) or
 // deny with a reason — the reason goes to the model as a tool error, the turn continues.
-// Unlike the transient `PermissionCard`, this card lives in the TIMELINE (role "freigabe"): it
+// Unlike the transient `PermissionCard`, this card lives in the TIMELINE (role "approval"): it
 // survives a restart, and the ruling stays readable as a row below it.
 // Counterpart: web/src/components/ApprovalCard.tsx.
 struct ApprovalCardView: View {

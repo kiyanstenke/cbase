@@ -441,7 +441,7 @@ private struct SheetHeader: ViewModifier {
     }
 }
 
-// ── Seiten ───────────────────────────────────────────────────────────────────────
+// ── Pages ────────────────────────────────────────────────────────────────────────
 
 private struct ThinkingProcessPage: View {
     let text: String
@@ -1444,7 +1444,7 @@ struct SubagentsSheet: View {
         }
     }
 
-    // ── Texte ──
+    // ── Texts ──
 
     private func jobText(_ entry: SubagentEntry) -> String {
         entry.job.isEmpty ? L("No description") : entry.job

@@ -174,7 +174,7 @@ test(`fixture ${PIN}: generated in Claude Code, with stamp, generation path and 
   for (const l of behind.slice(1)) assert.notEqual(START2.get(l), START1.get(l), `${l}: new key behind the one run anew`);
 });
 
-// The fixtures that already lay at the last state before the rename to cbase (07417c18): the CLI ran them with the script of THAT
+// The fixtures that already lay at the last state before the rename to cbase: the CLI ran them with the script of THAT
 // state, so their script anchor was taken anew with the rename and carries the hint. A fixture generated later carries none; the
 // pin's fixture loses it when it is run anew (another run).
 const BEFORE_RENAME = ["2.1.280", "2.1.296", "2.1.322"];

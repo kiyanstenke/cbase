@@ -118,12 +118,12 @@ async function answer(method, p) {
       const kind = scenario().suggestions;
       if (kind === "many") {
         const items = Array.from({ length: 1200 }, (_, i) => ({ label: `filler${i}`, kind: 6 }));
-        items.push({ label: "countAll", kind: 3, data: { importFrom: "./werkzeug" } });
+        items.push({ label: "countAll", kind: 3, data: { importFrom: "./tool" } });
         return { isIncomplete: false, items };
       }
       return { isIncomplete: false, items: [
-        { label: "wort1", kind: 6, detail: "eine Variable", insertText: "wort1" },
-        { label: "snip", kind: 15, insertTextFormat: 2, insertText: "snip($1)", documentation: { kind: "markdown", value: "*doku*" } },
+        { label: "word1", kind: 6, detail: "a variable", insertText: "word1" },
+        { label: "snip", kind: 15, insertTextFormat: 2, insertText: "snip($1)", documentation: { kind: "markdown", value: "*docs*" } },
         { label: "late", kind: 3, labelDetails: { detail: "(a)", description: "module" }, tags: [1], data: { seq: 3 } },
         ...(kind === "addition" ? [
           { label: "oldField", kind: 5, deprecated: true },

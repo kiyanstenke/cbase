@@ -230,5 +230,5 @@
     "journal.jsonl": "7241a0b8165134e13bf36e45a0a9022e1c42c57367ccc0ba0f4e147544b471b9",
     "script.js": "cdd1db504bada1c0d3facd6e1cc1b69cd985c5a241ff3785822bdb005021e03b"
   },
-  "filesHint": "script.js: sha256 taken anew on 12.11.2026 with the rename to cbase; the only difference to the old anchor is the name (one word in meta.description, held against the recorded state at the branch point 07417c18). journal.jsonl is unchanged — it was run with the script from before the rename."
+  "filesHint": "script.js: sha256 taken anew on 12.11.2026 with the rename to cbase; the only difference to the old anchor is the name (one word in meta.description, held against the recorded state at the branch point before the rename, recorded in the maintainers' suite outside this tree). journal.jsonl is unchanged — it was run with the script from before the rename."
 }

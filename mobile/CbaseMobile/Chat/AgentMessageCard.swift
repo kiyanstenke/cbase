@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The card of an agent message in the timeline (role `.nachricht`): heading "Message from <from>" (outer loop: "Outer Loop
+/// The card of an agent message in the timeline (role `.message`): heading "Message from <from>" (outer loop: "Outer Loop
 /// <from>"), below it the text. In the shape of the channel card (`Chat/ChannelPane.swift`, `ChannelCardView`) — neither a
 /// user bubble nor an agent reply, hence a full-width surface. The reading lives in `InboundAgentMessage.swift` (without
 /// SwiftUI, so the binding can run it alone); web counterpart: `web/src/components/chat/AgentMessageCard.tsx`.
