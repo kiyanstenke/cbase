@@ -17,13 +17,20 @@ fi
 TEAM_SETTING=${CBASE_DEVELOPMENT_TEAM:+DEVELOPMENT_TEAM=$CBASE_DEVELOPMENT_TEAM}
 export DEVELOPER_DIR="$XCODE_APP/Contents/Developer"
 
+# The build number (VERSIONING.md): CBASE_BUILD_NUMBER, else `node tools/version.mjs ios-build` (100 + commits on HEAD), passed to
+# xcodebuild as CURRENT_PROJECT_VERSION like the store builds. A device build is no release: in a shallow clone, where the count is
+# refused, it keeps the project's value instead of failing.
+REPO_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+BUILD_NUMBER="${CBASE_BUILD_NUMBER:-$(node "$REPO_DIR/tools/version.mjs" ios-build 2>/dev/null || true)}"
+BUILD_SETTING=${BUILD_NUMBER:+CURRENT_PROJECT_VERSION=$BUILD_NUMBER}
+
 echo "Signing cbase for the connected iPhone …"
 xcodebuild -quiet \
   -project "$PROJECT_PATH" \
   -scheme CbaseMobile \
   -destination "platform=iOS,id=$DEVICE_UDID" \
   -derivedDataPath "$DERIVED_DATA" \
-  ${TEAM_SETTING} -allowProvisioningUpdates \
+  ${TEAM_SETTING} ${BUILD_SETTING} -allowProvisioningUpdates \
   -allowProvisioningDeviceRegistration \
   build
 

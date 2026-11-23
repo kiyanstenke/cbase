@@ -27,6 +27,7 @@ import * as log from "../../check/lib/log.mjs";
 import { readCliPins } from "../../check/lib/cli-pins.mjs";
 import { importPrivate, needsPrivatePart } from "../lib/private-part.mjs";
 import { containerSituation, situationCommand } from "../lib/stopped-b.mjs"; // stopped B
+import { BUILD_JSON, describeBuild, stampBuildText } from "../lib/build-stamp.mjs";
 
 // The TREE under electron/server, not one file: server.js is only the facade, and a file hash would
 // report "== working tree" while a feature folder runs something else. Recipe in asar.mjs, once for JS and shell.
@@ -76,7 +77,9 @@ export async function status() {
     const n = (await shProbe(`git rev-list --count ${branch}..${b}`, { cwd: REPO })).stdout.trim();
     if (n && n !== "0") behind.push(`${b} (+${n})`);
   }
+  const described = await describeBuild();
   log.table([
+    ["Build (working tree)", described.describe.build, described.warning || described.describe.dirty ? "warn" : null],
     ["Branch", branch === config.git.branch ? branch : `${branch} — work always happens on ${config.git.branch}`, branch === config.git.branch ? "ok" : "bad"],
     ["uncommitted changes", dirty.length ? `${dirty.length} file(s)` : "none", dirty.length ? "warn" : "ok"],
     ["not pushed", unpushed.length ? `${unpushed.length} commit(s)` : "none", unpushed.length ? "warn" : "ok"],
@@ -145,6 +148,11 @@ export async function status() {
           network: (await sshProbe(networkSeparationCommand(name))).stdout,
         });
       }
+      // The build stamps the deploy wrote: the live server release (the gateway reports it on /gw/info) and the web UI.
+      const currentStampText = (await sshProbe(`cat ${config.remote.root}/current/${BUILD_JSON} 2>/dev/null || true`, { check: false })).stdout;
+      let currentStamp = null;
+      try { currentStamp = JSON.parse(currentStampText); } catch { /* missing: an older release */ }
+      const webStampText = (await sshProbe(`cat ${config.remote.root}/web-out/${BUILD_JSON} 2>/dev/null || true`, { check: false })).stdout;
       const relSha = (await sshProbe(`${treeShaShell(`${config.remote.root}/current/backend/electron/server`)} 2>/dev/null || true`)).stdout.trim().split(/\s+/)[0];
       const localIndex = fileSha(path.join(REPO, "web/out/index.html"));
       const remoteIndex = (await sshProbe(`sha256sum ${config.remote.root}/web-out/index.html 2>/dev/null || true`)).stdout.split(/\s+/)[0];
@@ -156,6 +164,8 @@ export async function status() {
 
       log.table([
         ["current release", rel || "—", null],
+        ["build in current/", stampBuildText(currentStampText), currentStamp ? null : "warn"],
+        ["build of web-out", stampBuildText(webStampText), null],
         ["releases in stock", String(all.length), null],
         ["Image", short(img), null],
         projectbox.header,

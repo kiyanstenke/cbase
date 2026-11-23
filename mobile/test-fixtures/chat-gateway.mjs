@@ -1,6 +1,6 @@
 // Entry point of the UI-test fixture gateway: port, server, router order, 404, shutdown. The routes live in chat-gateway/ (map in the README there).
 import http from "node:http";
-import { routesSettings } from "./chat-gateway/routes-settings.mjs";
+import { routesSettings, recordClient } from "./chat-gateway/routes-settings.mjs";
 import { routesUsage } from "./chat-gateway/routes-usage.mjs";
 import { routesScheduled } from "./chat-gateway/routes-scheduled.mjs";
 import { routesFixture } from "./chat-gateway/routes-fixture.mjs";
@@ -41,6 +41,7 @@ const server = http.createServer(async (req, res) => {
   const method = req.method || "GET";
 
   try {
+    recordClient(req, path);
     const ctx = { req, res, url, path, method };
     for (const r of ROUTERS) if ((await r(ctx)) !== NEXT) return;
 

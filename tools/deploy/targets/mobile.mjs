@@ -16,6 +16,7 @@ import { act, isDryRun, probe, shProbe, sleep } from "../../check/lib/sh.mjs";
 import { confirm } from "../lib/prompt.mjs";
 import { findIphones, xcrunCaller } from "../lib/iphone.mjs";
 import * as log from "../../check/lib/log.mjs";
+import { buildNumber, storeGateVerdict, storeGitState } from "../lib/build-stamp.mjs";
 import {
   LIVE_WALKTHROUGH, NOT_IN_FULL_RUN, LOAD_LIMIT, WARMUP, WARMUP_DEADLINE_MS, deviationVerdict, bootTime, draftsResult,
   HW_KEYBOARD_PREDICATE, SIM_DOMAIN, hwKeyboardInDevice, hwKeyboardPreference, hwKeyboardKey, logShowTime,
@@ -35,6 +36,18 @@ const MOBILE = path.join(REPO, "mobile");
 export async function deployMobile({ mode = "device", force }) {
   const script = SCRIPTS[mode];
   if (!script) throw new Error(`Unknown mobile mode: ${mode} (device | testflight | ipa)`);
+
+  // The store gate (lib/build-stamp.mjs): TestFlight and IPA only from a clean tree exactly at v<version> — `force` is not passed
+  // on purpose, there is no escape. Then the build number of this build (100 + commits on HEAD), handed to the script.
+  const storeVars = [];
+  if (mode !== "device") {
+    const gate = await storeGate({ mode });
+    if (gate.refused) throw new Error(gate.refused);
+    const b = await buildNumber();
+    if (b.warning) throw new Error(`${b.warning} A store build needs it.`);
+    // Both handed over: under `sudo -u <user>` the script may not find node.
+    storeVars.push(`CBASE_VERSION=${gate.state.version}`, `CBASE_BUILD_NUMBER=${b.number}`);
+  }
 
   const user = desktopUser();
   const me = os.userInfo().username;
@@ -67,6 +80,7 @@ export async function deployMobile({ mode = "device", force }) {
   if (config.mobile.udid) vars.push(`CBASE_DEVICE_UDID=${config.mobile.udid}`);
   // The signing team is personal (it names the Apple account): never in the project file, only in deploy.local.json `mobile.team`.
   if (config.mobile.team) vars.push(`CBASE_DEVELOPMENT_TEAM=${config.mobile.team}`);
+  vars.push(...storeVars);
   if (needSudo) await act("sudo", ["-u", user, "-H", "env", ...vars, cmd], { cwd: MOBILE, timeout: 3600000 });
   else {
     const env = { ...process.env };
@@ -99,6 +113,18 @@ export function hatAppleAccount(output) {
   // Every "( … )" group; an account is only what in it is not mere whitespace.
   const groups = String(output || "").match(/\(([\s\S]*?)\)/g) || [];
   return groups.some((g) => g.slice(1, -1).trim().length > 0);
+}
+
+/**
+ * The store gate with its git state read (or injected, for the test) → { refused, state }; `refused` is null when free. The verdict is
+ * lib/build-stamp.mjs storeGateVerdict; this function exists so the wiring of deployMobile is testable without git.
+ */
+export async function storeGate({ mode, state = null, read = storeGitState }) {
+  if (mode !== "testflight" && mode !== "ipa") return { refused: null, state: null };
+  const s = state ?? await read();
+  const refused = storeGateVerdict({ mode, ...s });
+  log.table([["Store build (clean tree at v<version>)", refused ? "REFUSED" : `v${s.version} at HEAD, clean`, refused ? "bad" : "ok"]]);
+  return { refused, state: s };
 }
 
 async function preflight({ user, needSudo, mode, force }) {

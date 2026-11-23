@@ -1044,4 +1044,9 @@ let LocDEMobile: [String: String] = [
     "Deleting…": "Löscht…",
     "Wrong password.": "Falsches Passwort.",
     "You are the last active admin. Make someone else an admin first, then delete your account.": "Du bist der letzte aktive Admin. Mach zuerst jemand anderen zum Admin und lösche dann dein Konto.",
+    // Server compatibility (Shell/ServerCompatibility.swift, Models/ApiContract.swift)
+    "This server needs a newer app": "Dieser Server braucht eine neuere App",
+    "The server at {address} no longer supports this version of cbase. Update cbase from the App Store, then connect again.": "Der Server unter {address} unterstützt diese Version von cbase nicht mehr. Aktualisiere cbase im App Store und verbinde dich dann erneut.",
+    "Open the App Store": "App Store öffnen",
+    "This server runs an older cbase; some features may be unavailable.": "Auf diesem Server läuft ein älteres cbase; manche Funktionen sind womöglich nicht verfügbar.",
 ]

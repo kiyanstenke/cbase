@@ -16,7 +16,7 @@ import fs from "node:fs";
 import nodeNet from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildWorld, untilWindow, EXTERN_ALLOWED, EXTERN_DISMISSED, foreignSender, foreignOrigin, loadMainProcess, loadPreload, webThemeModes } from "./shell-harness.mjs";
+import { buildWorld, untilWindow, FAKE_APP_VERSION, EXTERN_ALLOWED, EXTERN_DISMISSED, foreignSender, foreignOrigin, loadMainProcess, loadPreload, webThemeModes } from "./shell-harness.mjs";
 import { DECODE_STAGES, externalTarget, ipcSenderAllowed, OAUTH_PREFIX, oauthRelayTarget } from "../shell-rules.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -185,7 +185,8 @@ test("preload: setTheme only for the server origin, in the same branch as the wi
   const shell = server.exposed.cbaseShell;
   assert.ok(shell, "the server origin gets no cbaseShell");
   // Plus the app's text size (`setTextSize`/`onTextSize`, client only).
-  assert.deepEqual(Object.keys(shell).sort(), ["onTextSize", "setTextSize", "setTheme", "windowClose", "windowMinimize", "windowZoom"]);
+  // Plus the desktop app's version (`appVersion`, Settings → About).
+  assert.deepEqual(Object.keys(shell).sort(), ["appVersion", "onTextSize", "setTextSize", "setTheme", "windowClose", "windowMinimize", "windowZoom"]);
   shell.setTheme("dark");
   assert.deepEqual(server.sent.at(-1), ["send", "cbase:theme", "dark"], "setTheme does not send via \"cbase:theme\"");
   // The connect page (file://) and a foreign origin do not see the bridge.
@@ -993,6 +994,7 @@ test("IPC sender rule: window, main frame and the surface's origin — each line
 const CHANNELS = {
   handle: {
     "cbase:window-button": ["server", ["close"], false],
+    "cbase:app-version": ["server", [], null],
     "cbase:ports:list": ["server", [], []],
     // Port 0 is invalid: a handler WITHOUT the check would answer "invalid port" and bind nothing.
     "cbase:ports:forward": ["server", [0, 0, null], { error: "foreign sender" }],
@@ -1094,5 +1096,31 @@ test("IPC sender client: the native browser asks the same check — browser.js h
   });
   for (const helper of ["function withScope(ev, scope, fn) {\n    if (!fromWindow(ev)", "function withState(ev, scope, fn) {\n    if (!fromWindow(ev)"]) {
     assert.ok(browser.includes(helper), `${helper.split("(")[0]} does not check the sender first`);
+  }
+});
+
+// Settings → About shows the desktop app's version (web/src/lib/about.ts, web/src/lib/shell-bridge.ts `shellAppVersion`). The
+// seam has three pieces, each read through the REAL file: the preload's `cbaseShell.appVersion` invokes a channel, main.js
+// answers on exactly that channel with `app.getVersion()` (the fake world answers FAKE_APP_VERSION, so a constant in main.js
+// would not pass), and a foreign sender gets null — the web shows "unknown" then, never a version.
+// Counter-tests: main.js answers `"0.0.0"` instead of app.getVersion() ⇒ red; the preload invokes "cbase:version" ⇒ red (no
+// handler for the channel); `appVersion` struck from the preload ⇒ red here and in the bridge key list above.
+test("About: cbaseShell.appVersion reaches app.getVersion() through the real preload and main.js — foreign senders get null", async () => {
+  const { world, win } = await startClient();
+  try {
+    const page = loadPreload(CLIENT_PRELOAD, { location: { protocol: "http:", origin: GATEWAY }, serverUrl: GATEWAY });
+    const shell = page.exposed.cbaseShell;
+    assert.equal(typeof shell?.appVersion, "function", "the preload does not expose cbaseShell.appVersion — Settings → About shows \"unknown\"");
+    await shell.appVersion();
+    const call = page.sent.at(-1);
+    assert.equal(call?.[0], "invoke", "appVersion does not ask via invoke");
+    const channel = call[1];
+    assert.equal(await world.calls(channel, win), FAKE_APP_VERSION, `${channel} does not answer with app.getVersion()`);
+    assert.equal(await world.calls(channel, foreignOrigin(win)), null, `${channel} answers a foreign origin`);
+    // The connect page (file://) never sees the bridge at all.
+    const connect = loadPreload(CLIENT_PRELOAD, { location: { protocol: "file:", origin: "null" }, serverUrl: GATEWAY });
+    assert.equal(connect.exposed.cbaseShell?.appVersion, undefined);
+  } finally {
+    world.cleanUp();
   }
 });

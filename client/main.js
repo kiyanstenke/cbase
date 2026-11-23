@@ -243,6 +243,11 @@ ipcMain.handle("cbase:window-button", onlyOf("server", (ev, action) => {
   return true;
 }, () => false));
 
+// The app's own version for Settings → About in the web (preload.cjs → cbaseShell.appVersion, web/src/lib/about.ts):
+// `app.getVersion()`, i.e. the version in client/package.json. Only the server origin may ask; a rejected call gets null,
+// which the web shows as "unknown". Guard: client/test/shell-client.test.mjs.
+ipcMain.handle("cbase:app-version", onlyOf("server", () => app.getVersion(), () => null));
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1440,

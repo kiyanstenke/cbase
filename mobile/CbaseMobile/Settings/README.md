@@ -4,7 +4,7 @@ One file per settings page, named as on the web (`web/src/components/settings/`)
 
 | File | What |
 |---|---|
-| `SettingsView.swift` | The list of pages, in the order of the desktop. |
+| `SettingsView.swift` | The list of pages, in the order of the desktop; below it the About footer (licence, source, privacy, `settings-about-version` "App <version> (<build>)" and `settings-about-server` "<build or version> · API <level>", "unknown" for a server without an API level; re-read on opening via `SessionStore.refreshGatewayInfo`). |
 | `ProviderSettings.swift` | Providers: `ProviderSettingsView`, `AuthLoginConsoleView`. Exactly three cards: Claude, Codex and the FIXED OpenRouter card (set or remove the key, the two privacy toggles, default model from the catalog with search; `GET/PUT/DELETE /api/openrouter`, PUT always with BOTH toggles), plus the default effort level per provider (`defaultLevel`, `PUT /api/default-effort`, entries from `EffortSelection.entries` without an empty entry: the default IS a level). |
 | `AgentModelSettings.swift` | Models of the internal tasks, with an effort level per task (`EffortSelection` showing "Default · <level>" on the row's EFFECTIVE model from `GET /api/agent-models`). |
 | `AgentHooksSettings.swift` | Hooks (`HooksSettingsView`; the three blocks next to it live in `HooksExtras.swift`). |

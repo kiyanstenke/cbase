@@ -57,14 +57,10 @@ that is a sabotaged copy that must turn it red, over a test without one. Tests w
 
 ## Versions and releases
 
-- cbase has one version for all its parts (web UI, desktop client, backend, gateway, iOS app). `node tools/version.mjs` prints it
-  and fails if the files that carry it disagree; the list of those files is the table `PLACES` in `tools/version.mjs`, and the gate
-  holds it (`tools/check/version.test.mjs`). Do not edit a version number by hand.
-- Versions follow [Semantic Versioning](https://semver.org/). Until 1.0, a minor release (0.x.0) carries new features and may break
-  compatibility; a patch release (0.x.y) carries fixes only.
-- To release, a maintainer runs `node tools/version.mjs release x.y.z` (it writes the version everywhere and turns "Unreleased" in
-  `CHANGELOG.md` into the section of the release), commits, tags `vx.y.z` and publishes the GitHub release with that `CHANGELOG.md`
-  section as its notes.
+- cbase has one version for all its parts; only `node tools/version.mjs` writes it — never edit a version number by hand.
+- Add your change under "Unreleased" in `CHANGELOG.md`; a maintainer cuts releases with `node tools/version.mjs release x.y.z`.
+- What a version promises (the HTTP API, self-hosting, the database), the API level, build ids and the release procedure:
+  [VERSIONING.md](VERSIONING.md).
 
 ## Keep private data out
 

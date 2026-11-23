@@ -22,6 +22,9 @@ export type CbaseShell = {
   // menu or a step (radio item); it returns the unsubscribe function.
   setTextSize?: (stage: string) => void;
   onTextSize?: (cb: (command: unknown) => void) => () => void;
+  // The desktop app's own version (`app.getVersion()`, channel `cbase:app-version`), client only. Missing in an older
+  // client — then the settings say "unknown" for the desktop app, never a guessed number.
+  appVersion?: () => Promise<unknown>;
 };
 
 // The bridge of window `w`, else null (browser, foreign page in the client). Takes `unknown` because
@@ -97,4 +100,18 @@ export function hasTextShortcut(w: unknown): boolean {
 // in a shell a shortcut, in a browser its own zoom.
 export function inShell(w: unknown): boolean {
   return shellBridge(w) !== null;
+}
+
+// The desktop app's version for the "About" rows (lib/about.ts): `undefined` = no shell (browser, no row), `null` = a shell
+// that does not report it (older client) or a throw/odd answer from the bridge, else the version string.
+export async function shellAppVersion(w: unknown): Promise<string | null | undefined> {
+  const s = shellBridge(w);
+  if (!s) return undefined;
+  if (typeof s.appVersion !== "function") return null;
+  try {
+    const v = await s.appVersion();
+    return typeof v === "string" && v.trim() ? v.trim() : null;
+  } catch {
+    return null;
+  }
 }

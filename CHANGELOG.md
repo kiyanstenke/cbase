@@ -1,9 +1,23 @@
 # Changelog
 
 All notable changes to cbase are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
-versions follow [Semantic Versioning](https://semver.org/); before 1.0, a minor release (0.x.0) may break compatibility.
+versions follow [Semantic Versioning](https://semver.org/) as [VERSIONING.md](VERSIONING.md) defines it; before 1.0, a minor release
+(0.x.0) may break compatibility. A switch-off is announced under "Deprecated" in an earlier release.
 
 ## [Unreleased]
+
+### Added
+
+- Settings in web and desktop show the running version under About.
+- The iOS app tells the server its version and API level, shows app and server version in Settings, and says clearly when a
+  server needs a newer app.
+- `GET /api/version` and build fields in `/gw/info` report the product version, build id and API level.
+- `VERSIONING.md` describes how versions, build ids, build numbers and the API level work.
+
+### Changed
+
+- iOS build numbers are computed from the commit count instead of being set by App Store Connect; store builds are made only
+  from a release tag.
 
 ## [0.2.0] - 2026-11-23
 

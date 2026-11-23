@@ -346,7 +346,9 @@ final class APIClient: @unchecked Sendable {
         var request = URLRequest(url: try makeURL(path, query: query))
         request.httpMethod = method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue("CbaseMobile/1.0", forHTTPHeaderField: "User-Agent")
+        // The app names itself on EVERY request (Models/ApiContract.swift); the server counts a request without the header as API level 1.
+        request.setValue(ApiContract.currentUserAgent, forHTTPHeaderField: "User-Agent")
+        request.setValue(ApiContract.currentClientHeader, forHTTPHeaderField: "X-Cbase-Client")
         return request
     }
 

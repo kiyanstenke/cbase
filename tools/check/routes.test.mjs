@@ -222,6 +222,7 @@ const NEW_SINCE_SPLIT = [
   "/api/workspaces/{ws}/approval-marks", // the approval marks of the built-in tools (toolchain/routes.js → toolchain/approval-marks.js) — always 200
   "/api/workspaces/{ws}/scheduled", // the list of scheduled jobs (scheduled/routes.js) — always 200
   "/api/workspaces/{ws}/instructions", // the instruction sections per workspace/project (workspaces/instructions-routes.js) — always 200
+  "/api/version", // product version and API level (version.js) — always 200, reads no store
 ];
 // Routes of the monolith REMOVED since the split — each with its reason. The tree no longer carries them.
 const GONE_SINCE_SPLIT = [

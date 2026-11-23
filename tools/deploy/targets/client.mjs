@@ -17,6 +17,7 @@ import { machoSignatureVerdict } from "../../check/lib/macho-signature.mjs";
 import { assertNoRootArtifacts } from "./web.mjs";
 import { confirm } from "../lib/prompt.mjs";
 import * as log from "../../check/lib/log.mjs";
+import { buildNumber } from "../lib/build-stamp.mjs";
 
 const BUILT = path.join(REPO, "client/dist/mac-arm64/cbase Client.app");
 const MAIN_SRC = path.join(REPO, "client/main.js");
@@ -97,7 +98,10 @@ export async function deployClient({ release, force }) {
 
   if (shellChanged) {
     await assertNoRootArtifacts(["client/dist"]);
-    await act("npm", ["--prefix", "client", "run", "dist"], { cwd: REPO, timeout: 900000 });
+    // The build number (CFBundleVersion of the bundle): the same as the iOS app's, 100 + commits on HEAD (lib/build-stamp.mjs).
+    const b = await buildNumber();
+    if (b.warning) log.warn(`${b.warning} The client is built with electron-builder's default.`);
+    await act("npm", distArgs(b.number), { cwd: REPO, timeout: 900000 });
     if (!isDryRun()) {
       if (!fs.existsSync(BUILT)) throw new Error(`Build result missing: ${BUILT}`);
       const builtSha = bundleSha(BUILT, "main.js");
@@ -157,6 +161,12 @@ export async function deployClient({ release, force }) {
   ]);
   if (!up || nowSha !== srcSha || rest.length || !el.equal) throw new Error("Client deploy not confirmed.");
   log.ok(`Client on release ${release}`);
+}
+
+/** Pure: the npm arguments of the client build — with a build number, electron-builder gets it as `buildVersion`. */
+export function distArgs(number) {
+  const args = ["--prefix", "client", "run", "dist"];
+  return Number.isInteger(number) ? [...args, "--", `-c.buildVersion=${number}`] : args;
 }
 
 async function clientPids(app) {

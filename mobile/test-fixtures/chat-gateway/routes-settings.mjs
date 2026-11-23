@@ -1,4 +1,4 @@
-// Settings routes of the fixture gateway: gw/info, account self-deletion, push, adjust, autocompact, TTS, web search, permission rules, auto-continue, credit gate, hooks, GitLab accounts, notify, env, logout, health.
+// Settings routes of the fixture gateway: gw/info (with the server-api variants and the recorded client header), account self-deletion, push, adjust, autocompact, TTS, web search, permission rules, auto-continue, credit gate, hooks, GitLab accounts, notify, env, logout, health.
 import { S, json, body, defaultLevelOf, AGENT_MODEL_KEYS, agentEffective, autocompactDoc, AUTOCOMPACT_STAGES, AUTOCOMPACT_MAX_STAGES, TTS_VOICES, WEB_SEARCH_PROVIDERS, autoContinueList, limitEvent, CREDIT_GATE_THRESHOLD, HOOK_EVENTS, gitlabCheck, NOTIFY_KINDS, NOTIFY_CHAT_KINDS, NOTIFY_SCHEDULE_KINDS, SERVICES_HOST_GATEWAY, NEXT } from "./state.mjs";
 
 // The stages of the size guideline, as the real server delivers them (dynworkflows/size.js SIZES).
@@ -21,6 +21,47 @@ const ACCOUNT_DELETE_MODES = ["202", "403", "409"];
 let accountDelete = { mode: "202", bodies: [] };
 export function resetAccountDelete() {
   accountDelete = { mode: "202", bodies: [] };
+}
+
+// The server's version and API range in `GET /gw/info` (VERSIONING.md "API level"; the app's side is
+// mobile/CbaseMobile/Models/ApiContract.swift). `POST /fixture/server-api { variant }` picks the server the app meets:
+// "current" (the default: a build record and `api: { level: 1, oldest: 1 }`), "old" (a server from before the contract —
+// none of the version fields), "newer" (`oldest: 2` — it no longer accepts the app's level 1 → blocking screen) and "older"
+// (`level: 0` — older than the app → soft notice). The app reads /gw/info at LAUNCH (and again when Settings opens), so a
+// test sets the variant in the `preparation` of `launchApp` — or later, to meet a server updated while the app runs; `/fixture/reset-run` returns to "current". An optional `build` replaces the variant's build id —
+// the app remembers a dismissed older-server notice per server AND build, so a test that proves the memory gives each run a
+// build of its own (otherwise a dismissal from an earlier run would make the proof pass without the app remembering anything).
+// Beside it, the fixture remembers how the app named itself on its last request (`X-Cbase-Client`, `User-Agent`; requests to
+// /fixture/ — the test runner's — do not count): `GET /fixture/client`.
+const SERVER_API_BUILD = { build: "0.2.0+3.gabc1234", commit: "abc1234def5678901234567890abcdef12345678", release: "20261123-1795000000000" };
+const SERVER_API_VARIANTS = {
+  current: { version: "0.2.0", ...SERVER_API_BUILD, api: { level: 1, oldest: 1 }, gatewayVersion: "0.2.0" },
+  old: { version: "0.1.0" },
+  newer: { version: "0.9.0", ...SERVER_API_BUILD, build: "0.9.0", api: { level: 2, oldest: 2 }, gatewayVersion: "0.9.0" },
+  older: { version: "0.1.5", ...SERVER_API_BUILD, build: "0.1.5", api: { level: 0, oldest: 0 }, gatewayVersion: "0.1.5" },
+};
+let serverApiVariant = "current";
+let serverApiBuild = null;
+let lastClient = { client: null, userAgent: null, path: null, requests: 0 };
+export function resetServerApi() {
+  serverApiVariant = "current";
+  serverApiBuild = null;
+}
+function serverApiInfo() {
+  const info = { ...SERVER_API_VARIANTS[serverApiVariant] };
+  if (serverApiBuild && "build" in info) info.build = serverApiBuild;
+  return info;
+}
+/** Called by the entry (`../chat-gateway.mjs`) for EVERY request before the routers. */
+export function recordClient(req, path) {
+  if (path.startsWith("/fixture/")) return;
+  const header = req.headers["x-cbase-client"];
+  lastClient = {
+    client: typeof header === "string" ? header : null,
+    userAgent: typeof req.headers["user-agent"] === "string" ? req.headers["user-agent"] : null,
+    path,
+    requests: lastClient.requests + 1,
+  };
 }
 
 // Administration: users and resources per user container, shapes as in the contract server/gateway/administration-contract.js
@@ -156,12 +197,22 @@ export async function routesSettings(ctx) {
     if (path === "/gw/info" && method === "GET") {
       return json(res, 200, {
         gateway: true,
-        version: "fixture",
         setup: false,
         authenticated: true,
         user: { username: "mobile-fixture", role: "admin" },
+        ...serverApiInfo(),
       });
     }
+    if (path === "/fixture/server-api" && method === "POST") {
+      const b = (await body(req)) || {};
+      if (!Object.hasOwn(SERVER_API_VARIANTS, b.variant)) {
+        return json(res, 400, { error: `variant: one of ${Object.keys(SERVER_API_VARIANTS).join(", ")}` });
+      }
+      serverApiVariant = b.variant;
+      serverApiBuild = typeof b.build === "string" && b.build ? b.build : null;
+      return json(res, 200, { variant: serverApiVariant, info: serverApiInfo() });
+    }
+    if (path === "/fixture/client" && method === "GET") return json(res, 200, { ...lastClient });
     // Notifications. The line (`/gw/push`) belongs to the gateway, the rules (`/api/notify`) to the backend — the app asks
     // for both, so the fixture serves both.
     if (path === "/gw/push" && method === "GET") {

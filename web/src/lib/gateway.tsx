@@ -7,9 +7,12 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useT } from "@/lib/i18n";
 import { CbaseLens } from "@/components/CbaseLens";
+import { pickVersionInfo, type VersionInfo } from "@/lib/about";
 
 export interface GatewayUser { username: string; role: "admin" | "user" }
-interface GatewayCtx { user: GatewayUser; logout: () => void }
+// `info`: the version fields of `/gw/info` (version, build, commit, release, api, gatewayVersion — each optional, an older
+// gateway sends fewer). Shown under Settings → About (lib/about.ts); a missing field reads "unknown" there.
+interface GatewayCtx { user: GatewayUser; logout: () => void; info: VersionInfo }
 
 const Ctx = createContext<GatewayCtx | null>(null);
 // null = local (no gateway) — all chrome elements stay invisible.
@@ -21,6 +24,7 @@ export function GatewayGate({ children }: { children: React.ReactNode }) {
   const [phase, setPhase] = useState<Phase>("checking");
   const [setup, setSetup] = useState(false);
   const [user, setUser] = useState<GatewayUser | null>(null);
+  const [info, setInfo] = useState<VersionInfo>({});
 
   useEffect(() => {
     (async () => {
@@ -29,6 +33,7 @@ export function GatewayGate({ children }: { children: React.ReactNode }) {
         if (!r.ok) return setPhase("local");
         const j = await r.json();
         if (!j?.gateway) return setPhase("local");
+        setInfo(pickVersionInfo(j));
         setSetup(!!j.setup);
         if (!j.authenticated) return setPhase("login");
         setUser(j.user);
@@ -56,7 +61,7 @@ export function GatewayGate({ children }: { children: React.ReactNode }) {
   if (phase === "login") return <GatewayLogin setup={setup} onDone={handleLogin} />;
   if (phase === "starting") return <EnvStarting />;
   if (phase === "local") return <>{children}</>;
-  return <Ctx.Provider value={{ user: user!, logout }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ user: user!, logout, info }}>{children}</Ctx.Provider>;
 }
 
 function EnvStarting() {

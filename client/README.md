@@ -15,7 +15,7 @@ the Electron session; in gateway mode the UI shows the login gate, user chip and
   (e.g. OAuth URLs from provider login consoles) go to the default browser.
 - `connect.html` — connect page on first run (enter the server address, check, store).
 - `preload.cjs` — the two narrow IPC bridges: `cbaseClient.connect/getServer` on the local connect
-  page; `cbaseShell` (theme and window buttons) and `cbaseClient.ports` / `cbaseClient.browser` ONLY
+  page; `cbaseShell` (theme, window buttons, text size and `appVersion` — `app.getVersion()` for Settings → About) and `cbaseClient.ports` / `cbaseClient.browser` ONLY
   on the configured server origin.
 - `browser.js` — the **native browser**: one `WebContentsView` per tab in the main window, bound to
   the rectangle of the browser pane in the web UI. Sessions `persist:browser-<scope>` per

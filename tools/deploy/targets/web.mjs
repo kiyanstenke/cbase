@@ -9,6 +9,7 @@ import { REPO, config } from "../config.mjs";
 import { act, isDryRun, probe } from "../../check/lib/sh.mjs";
 import { rsyncUp, sshProbe } from "../lib/ssh.mjs";
 import { ensureRelease } from "../lib/release.mjs";
+import { BUILD_JSON } from "../lib/build-stamp.mjs";
 import * as log from "../../check/lib/log.mjs";
 
 const OUT = path.join(REPO, "web/out");
@@ -60,9 +61,20 @@ function countFiles(dir) {
   return n;
 }
 
-export async function deployWebOut({ release }) {
+export async function deployWebOut({ release, stamp = null }) {
   log.step("Web UI to the server (without interruption)");
   const remote = `${config.remote.root}/web-out`;
+  await syncWebOut({ release, remote });
+  // The build stamp (lib/build-stamp.mjs), only after a successful sync — also when the UI was already current: the files did not
+  // change, the build did. After the release snapshot (its rsync deletes what web/out does not carry).
+  if (stamp?.file) {
+    await rsyncUp(stamp.file, `${remote}/${BUILD_JSON}`);
+    await ensureRelease(release);
+    await rsyncUp(stamp.file, `${config.remote.root}/releases/${release}/web-out/${BUILD_JSON}`);
+  }
+}
+
+async function syncWebOut({ release, remote }) {
 
   const dry = await rsyncUp(`${OUT}/`, `${remote}/`, { dryRunOnly: true });
   const deltas = dry.stdout.split("\n").filter((l) => l.trim() && !l.startsWith("sending"));

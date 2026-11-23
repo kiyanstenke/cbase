@@ -12,6 +12,7 @@ import { fileURLToPath } from "node:url";
 import * as users from "./users.js";
 import { ensureSetupToken, removeSetupToken, setupTokenMatches } from "./setup-token.js";
 import { startupWarnings } from "./startup-warnings.js";
+import { buildStampReader, infoVersionFields } from "./build-info.js";
 import * as containers from "./containers.js";
 import { proxyRequest, activeStreams, trackStream, passThroughUpgradeResponse, closeStreams } from "./proxy.js";
 import { pushConfiguration, sendTestPush, unwatchBackend, watchBackend } from "./push.js";
@@ -39,6 +40,9 @@ const SECURE = process.env.GW_SECURE === "1";
 const COOKIE = "cbase_gw";
 // The product version (one for the whole tree, tools/version.mjs): read from the package.json shipped next to this file.
 const VERSION = JSON.parse(fs.readFileSync(path.join(__dirname, "package.json"), "utf8")).version;
+// What the server runs: the build stamp of the live release (build-info.js) — the gateway lives in <root>/gateway/, the release in
+// <root>/current/.
+const readBuildStamp = buildStampReader(process.env.GW_BUILD_FILE || path.resolve(__dirname, "..", "current", "build.json"));
 
 users.initUsers(DATA_DIR);
 // First-time setup needs a token only the operator can read (setup-token.js): null once the first user exists.
@@ -356,7 +360,7 @@ async function handle(req, res) {
     if (p === "/gw/info" && m === "GET") {
       const sess = sessionOf(req);
       return send(res, 200, {
-        gateway: true, version: VERSION,
+        gateway: true, ...infoVersionFields(readBuildStamp(), VERSION),
         setup: users.countUsers() === 0,
         setupToken: users.countUsers() === 0, // the setup form asks for the token (setup-token.js)
         authenticated: !!sess,

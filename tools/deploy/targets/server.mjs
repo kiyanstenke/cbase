@@ -33,13 +33,14 @@ import {
 import { prepareProjectbox, repointProjectbox } from "../lib/projectbox-distribution.mjs";
 import { CAPABILITIES_FILE, CAPABILITIES_SOURCE } from "../lib/capabilities.mjs"; // rollback block
 import { startStoppedB } from "../lib/stopped-b.mjs"; // step 0: start stopped B before the gate
+import { BUILD_JSON } from "../lib/build-stamp.mjs";
 import * as log from "../../check/lib/log.mjs";
 
 // The TREE under electron/server — server.js is only the facade. Recipe in asar.mjs, the same for JS (local) and shell (image, container).
 const SERVER_DIR = path.join(REPO, "server/backend/electron/server");
 const IMAGE_SERVER_DIR = "/app/electron/server";
 
-export async function deployServer({ release, force, wait, settleSeconds, settleBackground = false }) {
+export async function deployServer({ release, stamp = null, force, wait, settleSeconds, settleBackground = false }) {
   const root = config.remote.root;
   const rel = `${root}/releases/${release}`;
 
@@ -94,6 +95,11 @@ export async function deployServer({ release, force, wait, settleSeconds, settle
   // onto this release reads it over ssh like its Dockerfile. If it is missing there, the release knows nothing.
   await rsyncUp(path.join(REPO, CAPABILITIES_SOURCE), `${rel}/${CAPABILITIES_FILE}`);
   await rsyncUp(`${path.join(REPO, "server/gateway")}/`, `${rel}/gateway/`, { extraExcludes: ["data"] });
+  // The build stamp (lib/build-stamp.mjs): next to the release only (the gateway reads it through `current/`). NOT in the build
+  // context: a stamp in the image would change it on every deploy and swap every user container even with an unchanged backend.
+  // The release folder began as a copy of `current/` — without a stamp of this run the predecessor's is removed, never carried
+  // over as if it were this build.
+  await placeStamp(stamp, rel, release);
   // What lies in the release folder is the state from before — otherwise the project box would carry a source that is not its own.
   await checkReleaseSource({ rel, projectboxStatus });
 
@@ -107,6 +113,16 @@ export async function deployServer({ release, force, wait, settleSeconds, settle
     timeout: 1800000,
   });
   return rollOutAfterBackendBuild({ release, force, wait, settleSeconds, settleBackground, projectboxStatus });
+}
+
+// build.json into the release folder — or, without a stamp of this run, the predecessor's out of it.
+async function placeStamp(stamp, rel, release) {
+  if (!stamp?.file) {
+    await sshAct(`rm -f ${rel}/${BUILD_JSON}`);
+    return;
+  }
+  log.info(`build ${stamp.build} → ${BUILD_JSON} of release ${release}`);
+  await rsyncUp(stamp.file, `${rel}/${BUILD_JSON}`);
 }
 
 // Everything after the backend build, up to the swap: check the backend image → build and check the project box → PREPARE the

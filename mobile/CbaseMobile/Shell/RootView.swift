@@ -6,6 +6,8 @@ struct RootView: View {
     /// Boot splash as in the desktop client — runs once per cold start over everything,
     /// while `bootstrap()` sets up the connection in the background.
     @State private var showBootSplash = BootSplashView.isEnabled
+    /// The soft notice for an older server (Shell/ServerCompatibility.swift), decided on entering `.ready`.
+    @State private var showOlderServerNotice = false
 
     var body: some View {
         ZStack {
@@ -19,11 +21,27 @@ struct RootView: View {
                     LoginView(setup: setup)
                 case .connectionFailed(let message):
                     ConnectionView(error: message)
+                case .needsNewerApp:
+                    NeedsNewerAppView()
                 case .ready:
                     AppShell()
+                        .overlay(alignment: .top) {
+                            if showOlderServerNotice {
+                                OlderServerNotice {
+                                    session.dismissOlderServerNotice()
+                                    withAnimation(.easeInOut(duration: 0.2)) { showOlderServerNotice = false }
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.top, 52)
+                                .transition(.move(edge: .top).combined(with: .opacity))
+                            }
+                        }
                 }
             }
             .animation(.easeInOut(duration: 0.2), value: session.phase)
+            .task(id: session.phase) {
+                showOlderServerNotice = session.phase == .ready && session.olderServerNoticeDue()
+            }
 
             if showBootSplash {
                 BootSplashView { showBootSplash = false }

@@ -89,6 +89,7 @@
     "fileAccess.test.js",
     "db-lock.test.js",
     "dispatcher.test.js",
+    "version-route.test.js",
     "doctext.test.js",
     "dynworkflows-agents.test.js",
     "dynworkflows-agent-type.test.js",
@@ -428,7 +429,8 @@
     "administration-proofread.test.js",
     "administration.test.js",
     "setup-token.test.js",
-    "startup-warnings.test.js"
+    "startup-warnings.test.js",
+    "build-info.test.js"
   ],
   "Web": [
     "retrieval-airlock.test.mjs",
@@ -439,6 +441,7 @@
     "active-runs.test.mjs",
     "refresh-ios.test.mjs",
     "accent.test.mjs",
+    "about.test.mjs",
     "app-agents-catalog.test.mjs",
     "appearance.test.mjs",
     "apps-conflicts.test.mjs",
@@ -594,6 +597,7 @@
     "slash.test.mjs",
     "jumps.test.mjs",
     "sse-rows-ios.test.mjs",
+    "ios-api-contract.test.mjs",
     "statusBar.test.mjs",
     "style-has.test.mjs",
     "css-one-rule-per-class.test.mjs",
@@ -690,6 +694,8 @@
     "uitests.test.mjs",
     "unknown-names.test.mjs",
     "version.test.mjs",
+    "versioning-doc.test.mjs",
+    "release-workflow.test.mjs",
     "wrapper.test.mjs"
   ],
   "Deploy tool": [
@@ -708,6 +714,7 @@
     "limits.ops.test.mjs",
     "macho-signature.ops.test.mjs",
     "mobile-preflight.test.mjs",
+    "build-stamp.test.mjs",
     "network-separation.ops.test.mjs",
     "public-closure-deploy.test.mjs",
     "rollout-lock.test.mjs",
@@ -744,6 +751,7 @@
       "web/test/chat-instance-ios.test.mjs",
       "web/test/project-view-ios.test.mjs",
       "web/test/sse-rows-ios.test.mjs",
+      "web/test/ios-api-contract.test.mjs",
       "web/test/agenda-binding.test.mjs",
       "web/test/mcp-tools-binding.test.mjs",
       "web/test/git-bar-ios-binding.test.mjs",

@@ -8,12 +8,17 @@ final class SessionStore: ObservableObject {
         case startingEnvironment
         case ready
         case connectionFailed(String)
+        /// The server no longer accepts this app's API level (`GatewayInfo.compatibility == .needsNewerApp`): RootView blocks with
+        /// `NeedsNewerAppView` instead of signing in.
+        case needsNewerApp
     }
 
     @Published var phase: Phase = .connecting
     @Published var serverAddress: String
     @Published var user: GatewayUser?
     @Published private(set) var client: APIClient?
+    /// The last `GET /gw/info` of the connected server (version, build, API range); `nil` before the first answer.
+    @Published private(set) var gatewayInfo: GatewayInfo?
 
     private let defaults = UserDefaults.standard
     private var pendingPushToken: String?
@@ -42,6 +47,8 @@ final class SessionStore: ObservableObject {
             defaults.set(serverAddress, forKey: "cbase.mobile.server")
             client = nextClient
             user = info.user
+            // Before signing in: a server that no longer speaks this app's level would fail at every later route.
+            guard apply(info) else { return }
             if info.authenticated {
                 await ensureEnvironment()
             } else {
@@ -50,9 +57,45 @@ final class SessionStore: ObservableObject {
         } catch {
             client = nil
             user = nil
+            gatewayInfo = nil
             phase = .connectionFailed(error.localizedDescription)
         }
     }
+
+    /// Reads `GET /gw/info` again (Settings → About shows the server's build; the server may have been updated since connecting —
+    /// to one that needs a newer app, too). A failed read keeps the last answer.
+    func refreshGatewayInfo() async {
+        guard let client else { return }
+        if let info: GatewayInfo = try? await client.get("/gw/info") { apply(info) }
+    }
+
+    /// THE place a fresh `/gw/info` lands: it becomes `gatewayInfo`, and its API range is judged for this app. A server that no
+    /// longer speaks the app's level switches the phase to `.needsNewerApp` (RootView then blocks) and the answer is false — the
+    /// caller goes no further. Every read of `/gw/info` goes through here, so no path can keep working past an updated server.
+    @discardableResult
+    private func apply(_ info: GatewayInfo) -> Bool {
+        gatewayInfo = info
+        guard info.compatibility != .needsNewerApp else {
+            phase = .needsNewerApp
+            return false
+        }
+        return true
+    }
+
+    /// The soft notice for an OLDER server (`.olderServer`) appears once per server address and server build; this is its memory.
+    func olderServerNoticeDue() -> Bool {
+        guard let info = gatewayInfo, info.compatibility == .olderServer else { return false }
+        return defaults.string(forKey: olderServerNoticeKey) != olderServerNoticeValue(info)
+    }
+
+    func dismissOlderServerNotice() {
+        guard let info = gatewayInfo else { return }
+        defaults.set(olderServerNoticeValue(info), forKey: olderServerNoticeKey)
+    }
+
+    /// One key per server address; the value is the server's level and build, so an updated (still older) server asks once more.
+    private var olderServerNoticeKey: String { "cbase.mobile.olderServerNotice:\(serverAddress)" }
+    private func olderServerNoticeValue(_ info: GatewayInfo) -> String { "level=\(info.api?.level ?? 1) build=\(info.build ?? info.version ?? "")" }
 
     func login(username: String, password: String, setup: Bool, setupToken: String = "") async throws {
         guard let client else { throw APIError(status: 0, message: L("Not connected to a server yet.")) }
@@ -62,6 +105,8 @@ final class SessionStore: ObservableObject {
         let response: LoginResponse = try await client.post(setup ? "/gw/setup" : "/gw/login", body: Credentials(username: username, password: password, setupToken: token))
         user = response.user
         defaults.set(username, forKey: "cbase.mobile.username")
+        // The server may have been updated while the sign-in stood open: judge its range once more before the environment starts.
+        if let info: GatewayInfo = try? await client.get("/gw/info"), !apply(info) { return }
         await ensureEnvironment()
     }
 
@@ -112,6 +157,7 @@ final class SessionStore: ObservableObject {
         }
         let info: GatewayInfo? = try? await client.get("/gw/info")
         user = nil
+        if let info, !apply(info) { return }
         phase = .needsLogin(setup: info?.setup ?? false)
     }
 
@@ -127,6 +173,7 @@ final class SessionStore: ObservableObject {
         }
         client = nil
         user = nil
+        gatewayInfo = nil
         phase = .connectionFailed("")
     }
 

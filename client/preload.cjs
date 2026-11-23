@@ -36,6 +36,9 @@ if (location.protocol === "file:") {
       setTheme: (mode) => ipcRenderer.send("cbase:theme", mode),
       setTextSize: (stage) => ipcRenderer.send("cbase:textSize", stage),
       onTextSize: (cb) => listeners("cbase:text-size-command", cb),
+      // The desktop app's version for Settings → About (`app.getVersion()`). Its PRESENCE is the version switch: an older
+      // client lacks it, and the web shows "unknown" for the desktop app.
+      appVersion: () => ipcRenderer.invoke("cbase:app-version"),
     });
     contextBridge.exposeInMainWorld("cbaseClient", {
       // Per instance ("<projectId>/<instance>", none = null): `forward`/`stop` take it as the last argument — a UI that

@@ -26,5 +26,11 @@ only importer of the pages; `TopNav.tsx` opens it. `UsageKit.tsx` holds the buil
 | `EnvironmentSettings.tsx` | "Environment" (gateway mode only): the own container, plus the READ-ONLY group "Resources" (RAM limit with usage bar, CPU priority, CPU upper limit — the extra fields of `GET /gw/env`, `normOwnResources`); without `resources` the group is absent |
 | `AdministrationSettings.tsx` | "Administration" — own group at the end, only for a gateway admin (the filter in `SettingsModal` is the second named exception in `web/test/settings-form.test.mjs`); replaces the old page `/gw/admin` (which redirects to `ADMINISTRATION_JUMP`). Top: the server (RAM allocated against the host with reserve mark, threads, "overbooked" as a sentence), below ONE surface with all users; a row expands (`data-open`): draft of the limits (RAM −/+, priority and cap as kit `Segments`, save), role, password, lock, start/restart/stop container, delete with or without data. The sheets carry `z="z-[70]"` (the settings themselves sit on z-60), hence no `useConfirm`. Reloads every 15 s (not in a hidden tab) and after every action; only the latest response counts, a draft survives the reload. Routes and shapes in `lib/api/administration.ts`, bound to `server/gateway/administration-contract.js` in `web/test/administration-binding.test.mjs`; iOS counterpart `Settings/AdministrationSettings.swift` |
 
+`ThirdPartyHints.tsx` is not a page of a group but the row at the foot of the list ("Third-Party Notices", key `hints`). Its
+first group is **About**: the cbase build (build id; a bare version only with the remark "build unknown"), the API level, the
+gateway version (gateway mode only) and, in the desktop client, the app version (`cbaseShell.appVersion`). In gateway mode the
+values come from `/gw/info` (kept by `GatewayGate`, `useGateway().info`), on the local server from `GET /api/version`. Whatever
+is missing reads "unknown" — the computation is `lib/about.ts`, guard `web/test/about.test.mjs`.
+
 NOT here: `CbKit.tsx` (the UI kit of all pages, stays in `components/`), the backend routes (`electron/server/settings/`,
 `account/`).

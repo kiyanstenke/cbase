@@ -31,3 +31,6 @@ xcuserdata/
 # Deploy: machine-specific files (local config and the marker of a rollout checkout, see DEPLOY.md)
 /deploy.local.json
 /.cbase-rollout-checkout
+
+# The build id of a deploy (VERSIONING.md, "Build ids"): written next to the deployed code, never committed
+build.json

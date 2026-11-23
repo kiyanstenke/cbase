@@ -89,6 +89,7 @@ template applies. At every start and every change the gateway atomically writes 
 | `GW_HOST` | `127.0.0.1` | bind address; keep `127.0.0.1` when the TLS proxy runs on the same host, `0.0.0.0` only for a proxy elsewhere (list it in `GW_TRUSTED_PROXYS`) |
 | `GW_DATA` | `gateway/data` | gateway DB (users/sessions) |
 | `GW_WEB_DIR` | `../../web/out` | built web UI |
+| `GW_BUILD_FILE` | `../current/build.json` (next to the gateway folder) | the build stamp `/gw/info` reports (written by the deploy into every release); missing ⇒ build `unknown` |
 | `GW_IMAGE` | `cbase-backend` | backend image |
 | `GW_IDLE_STOP_MIN` | `0` (off) | stop a container after X min without activity/streams (the volume stays) |
 | `GW_CONTAINER_MEM` / `GW_CONTAINER_CPUS` | — | only the **template** for new users and for existing users without a container; what applies is stored per user in `gateway.db` (`CPUS` is a HARD limit) |

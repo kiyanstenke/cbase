@@ -5,12 +5,31 @@ struct GatewayUser: Codable, Hashable, Sendable {
     let role: String
 }
 
+/// The API range of a server (`api` in `GET /gw/info`, VERSIONING.md "API level"); the app's side is `ApiContract`.
+struct GatewayApiLevel: Codable, Hashable, Sendable {
+    let level: Int?
+    let oldest: Int?
+}
+
+/// `GET /gw/info`. Everything from `build` on is optional: a server from before the version contract sends none of it
+/// (the synthesized `Decodable` would otherwise require every key). `build` is "x.y.z+N.g<sha7>[.dirty]", or "unknown" when the
+/// server has no build record; `version` alone then is the gateway's package version.
 struct GatewayInfo: Codable, Sendable {
     let gateway: Bool
     let version: String?
     let setup: Bool
     let authenticated: Bool
     let user: GatewayUser?
+    let build: String?
+    let commit: String?
+    let release: String?
+    let api: GatewayApiLevel?
+    let gatewayVersion: String?
+
+    /// The outcome of the server's API range for this app (no `api` = an old server = level 1).
+    var compatibility: ApiContract.Compatibility {
+        ApiContract.compatibility(serverLevel: api?.level, serverOldest: api?.oldest)
+    }
 }
 
 struct LoginResponse: Codable, Sendable {

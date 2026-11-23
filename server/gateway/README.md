@@ -14,6 +14,7 @@ The gateway is the only process that listens on the network. It logs users in, s
 | `resources.js`, `cbase-share.js` | RAM and CPU per user container as a computation; the server share of all user containers |
 | `administration-contract.js` | the administration page's contract between gateway, web and iOS |
 | `push.js` | iPhone notifications over APNs (the APNs key stays in the gateway, never in a user container) |
+| `build-info.js` | what `/gw/info` reports about the running build (`<root>/current/build.json`), and the copy of the API level |
 | `gateway-harness.mjs`, `*.test.js` | the tests: the real gateway as a child process against a fake docker |
 
 Tests: `node --test server/gateway/*.test.js`, or the whole gate with `./check` from the repository root.

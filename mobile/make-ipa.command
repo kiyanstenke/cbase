@@ -11,9 +11,19 @@
 # And as RELEASE: a debug build puts all the code into `cbase.debug.dylib` (plus `__preview.dylib`) next to a 92 kB start binary.
 # When re-signing, the sideloader would have to take these dylibs along — an unnecessary risk. Release gives a single binary and a
 # much smaller bundle (measured 19 MB instead of 28.7 MB). Switchable with CBASE_IPA_CONFIG=Debug.
+#
+# The build number (VERSIONING.md): CBASE_BUILD_NUMBER (and CBASE_VERSION) from `./deploy mobile --ipa`, else `node tools/version.mjs ios-build`
+# (100 + commits on HEAD), passed to xcodebuild as CURRENT_PROJECT_VERSION. Only `./deploy` checks the store gate (clean tree
+# exactly at v<version>).
 set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+VERSION="${CBASE_VERSION:-$(node "$REPO_DIR/tools/version.mjs")}"
+BUILD_NUMBER="${CBASE_BUILD_NUMBER:-$(node "$REPO_DIR/tools/version.mjs" ios-build)}"
+case "$BUILD_NUMBER" in
+  ''|*[!0-9]*) echo "No usable build number: '$BUILD_NUMBER'" >&2; exit 1 ;;
+esac
 PROJECT_PATH="$SCRIPT_DIR/CbaseMobile.xcodeproj"
 XCODE_APP="${CBASE_XCODE_APP:-/Applications/Xcode.app}"
 DEVICE_UDID="${CBASE_DEVICE_UDID:?set CBASE_DEVICE_UDID to the UDID of your iPhone}"
@@ -67,6 +77,7 @@ xcodebuild -quiet \
   -configuration "$CONFIG" \
   -destination "$DESTINATION" \
   -derivedDataPath "$DERIVED_DATA" \
+  CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
   ${TEAM_SETTING} -allowProvisioningUpdates \
   -allowProvisioningDeviceRegistration \
   build
@@ -98,7 +109,7 @@ SIZE=$(du -h "$IPA_OUT" | cut -f1)
 BUILT=$(stat -f '%Sm' -t '%Y-%m-%d %H:%M' "$APP_PATH/cbase")
 cat <<EOF
 
-Done: $IPA_OUT  ($SIZE, $CONFIG, $ARCHS, built $BUILT)
+Done: $IPA_OUT  (cbase $VERSION ($BUILD_NUMBER), $SIZE, $CONFIG, $ARCHS, built $BUILT)
 
 How to get it onto the iPhone:
   1. Send it by AirDrop → "Save to Files" → On My iPhone.

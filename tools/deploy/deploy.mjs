@@ -39,6 +39,7 @@ import { mobileDefaults, applyMobileArg, finishMobileArgs, mobileOnlyNeedsTests 
 import { CRON_WINDOW_TOGGLE, checkCronWindow, cronWindowTargets } from "./lib/cronWindow.mjs";
 import { assertRolloutCheckout, isRolloutRun } from "./lib/rollout-checkout.mjs";
 import { init } from "./targets/init.mjs";
+import { buildStamp, describeBuild, dirtyWarning, writeStampFile } from "./lib/build-stamp.mjs";
 
 // The gate plan: the merged plan of the private part (public suites + the private ones, both
 // registers, the manifest step, the ops marker scope) where the tree carries it, else the public plan — the same one `./check` runs.
@@ -299,10 +300,22 @@ async function main() {
   // The branch rule applies BEFORE the first step: nothing is built from a wrong branch. With --commit it is not negotiable.
   const branch = await assertMainBranch({ force: o.force, strict: o.commit });
 
+  // The build stamp (lib/build-stamp.mjs): computed ONCE per run, the same build.json for web-out and the release (never the image).
+  let stamp = null;
+  if (o.targets.some((t) => t === "web" || t === "server")) {
+    const described = await describeBuild();
+    stamp = buildStamp(described.describe, { release });
+    stamp.file = writeStampFile(stamp);
+    if (described.warning) log.warn(described.warning);
+    const dirty = dirtyWarning(stamp);
+    if (dirty) log.warn(dirty);
+  }
+
   log.section(`cbase Deploy — Release ${release}`);
   log.table([
     ["Targets", o.targets.join(" → "), null],
     ["Branch", branch, branch === "main" ? "ok" : "warn"],
+    ...(stamp ? [["Build", stamp.build, /unknown$/.test(stamp.build) || stamp.dirty ? "warn" : "ok"]] : []),
     ["Mode", isDryRun() ? "DRY RUN (nothing is changed)" : o.yes ? "without questions" : "with questions", isDryRun() ? "warn" : null],
     ...(o.commit ? [["after the deploy", "commit everything and push", null]] : []),
     ...(o.force ? [["--force", "gates are bypassed", "warn"]] : []),
@@ -344,9 +357,9 @@ async function main() {
   const done = await runTargets(o.targets, async (t, { laterTargets, afterRun }) => {
     if (t === "web") {
       await buildWeb();
-      await deployWebOut({ release });
+      await deployWebOut({ release, stamp });
     } else if (t === "server") {
-      const r = await deployServer({ release, force: o.force, wait: o.wait, settleSeconds: o.settle, settleBackground: laterTargets.length > 0 });
+      const r = await deployServer({ release, stamp, force: o.force, wait: o.wait, settleSeconds: o.settle, settleBackground: laterTargets.length > 0 });
       if (r?.postObservation) afterRun(r.postObservation, "server post-observation");
       if (o.gateway) await deployGateway({ force: o.force });
     } else if (t === "client") {
@@ -363,6 +376,7 @@ async function main() {
   log.section(isDryRun() ? "Dry run finished" : "Done");
   log.table([
     ["Release", release, null],
+    ...(stamp ? [["Build", stamp.build, null]] : []),
     ["rolled out", done.join(", "), "ok"],
     ["Log", logPath, null],
   ]);

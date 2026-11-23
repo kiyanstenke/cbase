@@ -29,6 +29,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 Object.defineProperty(process, "platform", { value: "darwin" });
 
 const worlds = new Map(); // run -> world
+// What the fake `app.getVersion()` answers — no real version looks like this.
+export const FAKE_APP_VERSION = "9.8.7-fake";
 let lastRun = 0;
 
 const runOf = (url) => {
@@ -197,6 +199,8 @@ export function buildWorld({ fakes = {}, isPackaged = true } = {}) {
     isPackaged,
     dock: undefined,
     setName(n) { this.name = n; },
+    // `app.getVersion()`: a visibly fake version — a test that reads it back proves the value came from HERE.
+    getVersion: () => FAKE_APP_VERSION,
     getPath(n) {
       if (!(n in paths)) throw new Error(`app.getPath("${n}") is not set in the fake world`);
       return paths[n];

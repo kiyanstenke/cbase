@@ -15,9 +15,11 @@ import { inProject } from "../runtime/inProject.js";
 import { closeStdin, writeStdin } from "./kind-stdin.js";
 // An HTTP MCP server FOR an instance — localhost is its container (runtime/target.js); without an instance plain fetch.
 import { requestInProject } from "../runtime/target.js";
+import { PRODUCT_VERSION } from "../product-version.js";
 
 const PROTOCOL_VERSION = "2025-06-18";
-const CLIENT_INFO = { name: "cbase-engine", version: "1.0.0" };
+// clientInfo carries the product version (product-version.js), not a number of its own.
+const CLIENT_INFO = { name: "cbase-engine", version: PRODUCT_VERSION };
 const INIT_TIMEOUT = 20_000;
 const LIST_TIMEOUT = 20_000;
 const CALL_TIMEOUT = 120_000;

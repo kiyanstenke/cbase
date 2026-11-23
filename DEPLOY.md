@@ -141,6 +141,8 @@ silently doing nothing; the same holds for `--cron-window-ignore` outside `serve
 Options of `mobile --tests`: `--only <id>`, `--runs <n>`, `--wait <s>` (default 600 there) and `--force` (see below). They belong
 to `mobile` alone, and `--only`/`--runs` only together with `--tests`.
 
+A deploy release id names one rollout; it is not the product version (see [VERSIONING.md](VERSIONING.md)).
+
 Exit codes: `0` success, `1` error, `2` aborted by a gate or a question. Every run writes a complete log to
 `.deploy-logs/<release>-<targets>.log`; an abort writes its reason into the log before the process ends. Every step shows
 `[+m:ss]` since the start, and "Done" prints a table with the duration per step and the total.
@@ -257,6 +259,15 @@ An answer that is not a real answer (error body, timeout, 500, an object without
   into every user container before the swap. If anything fails, `:latest` and `current` stay untouched and everything keeps running.
 - Image builds run under `nice -n 10 ionice -c3`.
 
+**The build stamp.** `web` and `server` compute the build id once per run (`node tools/version.mjs describe --json`; rules in
+`VERSIONING.md`) and write `build.json` — `version`, `build`, `commit`, `dirty`, `release`, `builtAt` — into `releases/<id>/` (the
+gateway reports it on `/gw/info` through `current/`) and into `web-out/`. It does **not** go into the image: a stamp there would
+change the image on every deploy, so every user container would be swapped even with an unchanged backend. The backend therefore
+knows no build id (`GET /api/version` answers only the product version and the API level). The file is never committed
+(`.gitignore`). A checkout with uncommitted changes rolls out with a warning and a build id ending in `.dirty`; if the build id
+cannot be computed, the stamp says `<version>+unknown` with a warning — never a clean-looking build. The local copy stays in `.deploy-logs/build-<release>.json`, and the header and final table of the run
+name the build.
+
 **Stopped user containers.** The gateway puts idle user containers (B) to sleep. A stopped B would keep the old image and later be
 woken with old code, so `server` starts every stopped B after the image checks and swaps it like the others. A B that does not start
 stays stopped and unswapped (a warning; the rest goes on). A B in another state (restarting, paused, dead) is named and not touched.
@@ -348,6 +359,8 @@ remove it. `status` compares hashes, not timestamps:
 - The pinned Claude Code and Codex versions in the image (read from the Dockerfile) and, with the private part, whether the
   baseline for the Claude pin is up to date. The version inside the running containers is not shown; check it with
   `docker exec <container> claude --version` in every user container.
+- The build: of the working tree, in `current/` and in `web-out/` (their `build.json`). Which backend a user container runs is the row
+  "electron/server in container" (tree hash against the working tree) — the backend itself knows no build id.
 - Per user container: runs, background agents, dynamic workflows, project instances, setups, copies, project box state, network
   separation, inner containers; stopped user containers; whether the gateway code on the host deviates.
 - iOS: reachable devices with transport (cable or Wi-Fi) and the latest archive.
@@ -358,7 +371,8 @@ remove it. `status` compares hashes, not timestamps:
 /srv/cbase-server/
   current -> releases/<id>/    symlink to the live release
   activations                  one release per line that carried current, newest last (read by rollback server)
-  releases/<id>/backend/       complete docker build context
+  releases/<id>/build.json     the build stamp of the release (read by the gateway through current/)
+  releases/<id>/backend/       complete docker build context (without build.json)
   releases/<id>/gateway/       snapshot
   releases/<id>/web-out/       snapshot (for rollback)
   web-out/                     served by the gateway, read fresh from disk on every request
@@ -385,8 +399,14 @@ node tools/deploy/deploy.mjs mobile --ipa          # build an .ipa only
 The modes call `mobile/refresh-on-iphone.command`, `mobile/deploy-testflight.command` and `mobile/make-ipa.command`. The tool
 enforces the right user context: Xcode accounts, keychain certificates and provisioning data are per user, and `xcodebuild` as
 `root` reports "No Accounts" although everything looks right in Xcode. It runs as the desktop user from the configuration. Only
-`--testflight` needs an Apple account in Xcode; `--device` and `--ipa` sign with the local identity. Raise
-`CURRENT_PROJECT_VERSION` before an upload. Never put a server address or credentials into the app, the scheme or the repository.
+`--testflight` needs an Apple account in Xcode; `--device` and `--ipa` sign with the local identity. Never put a server address or
+credentials into the app, the scheme or the repository.
+
+**Store builds are releases.** `--testflight` and `--ipa` refuse unless the working tree is clean and `HEAD` is exactly at the tag
+`v<version>`; there is no `--force` for this check (`tools/deploy/lib/build-stamp.mjs`). `--device` is always allowed. The build
+number is computed, never committed: `node tools/version.mjs ios-build` (100 plus the commits on `HEAD`), passed to `xcodebuild` as
+`CURRENT_PROJECT_VERSION`; the export does not let App Store Connect renumber it, and the archive is named
+`cbase-<version>-<build>.xcarchive`. The desktop client gets the same number as electron-builder `buildVersion`.
 
 ### `mobile --tests`: the full XCUITest run
 

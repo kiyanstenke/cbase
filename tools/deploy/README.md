@@ -195,6 +195,12 @@ without the DOM library, which would make `name`, `status`, `open` "known".
   SIGKILL the inner dockerd, every project container and its stack. The backend runs its stop chain on TERM
   (`runs/server-end.js`, `projectbox/serverEnd.js`). The relation of the deadlines (gateway == deploy, chain < server-end cap, server
   end + closing + margin <= 60 s) is held by `deadlines.test.mjs`.
+- **`lib/build-stamp.mjs`**: the build stamp (`build.json` from `node tools/version.mjs describe --json`, written once per run by
+  `deploy.mjs` and placed by `targets/server.mjs placeStamp` and `targets/web.mjs`; without a stamp the predecessor's is removed from
+  the release, never carried over; never into the image — a stamp there would change the image on every deploy and swap every user
+  container), the status text of a stamp file (`current/` and `web-out/`), the store gate of `mobile --testflight|--ipa` (clean tree exactly at `v<version>`, no
+  force parameter) and the build number (`ios-build`) for the iOS scripts and the client's `buildVersion`. Guard
+  `build-stamp.test.mjs`.
 - **`lib/gateway-stand.mjs`**: row "gateway code (host)" in `./deploy status`: the same rsync dry run as `deployGateway`
   (`server/gateway/` to `<root>/gateway/`, without `data`); `gatewayDeviations` reads the itemization of GNU rsync (`<f`) and
   openrsync (`>f`). If it deviates, new gateway code takes effect only after `./deploy server --gateway` (restart, open streams

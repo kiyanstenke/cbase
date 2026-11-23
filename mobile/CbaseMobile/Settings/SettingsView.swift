@@ -115,20 +115,24 @@ struct SettingsView: View {
                     aboutRow(L("Source code"), "chevron.left.forwardslash.chevron.right", Self.sourceLabel, Self.sourceURL)
                     // The App Store asks for a reachable privacy policy inside the app; it opens in the browser like the rows above.
                     aboutRow(L("Privacy policy"), "hand.raised", Self.privacyLabel, Self.privacyURL)
-                    // The support page asks users to quote the version shown here; it is the only place the app states it.
+                    // The support page asks users to quote the versions shown here; it is the only place the app states them.
+                    // Both rows are ONE accessibility element each ("Version, App 0.2.0 (131)"), read as a whole by SettingsUITests.
                     CbSettingRow(title: L("Version"), symbol: "info.circle", withInfo: false) {
-                        Text(verbatim: Self.versionLabel)
-                            .font(.subheadline)
-                            .foregroundStyle(CbColor.textMuted)
-                            .lineLimit(1)
-                            .textSelection(.enabled)
-                            .layoutPriority(1)
+                        aboutValue(Self.versionLabel)
                     }
+                    .accessibilityElement(children: .combine)
                     .accessibilityIdentifier("settings-about-version")
+                    CbSettingRow(title: L("Server"), symbol: "server.rack", withInfo: false) {
+                        aboutValue(Self.serverLabel(session.gatewayInfo))
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("settings-about-server")
                 }
             }
             .navigationTitle(L("Settings"))
             .navigationBarTitleDisplayMode(.inline)
+            // The server may have been updated since connecting; the About row shows what it says NOW.
+            .task { await session.refreshGatewayInfo() }
             // The jump from outside (`AppState.settingsJump`, e.g. "usage:claude" from a ring in the header).
             .navigationDestination(item: $jump) { target in
                 jumpTarget(target)
@@ -213,10 +217,26 @@ struct SettingsView: View {
     static var privacyLabel: String { privacyURL.split(separator: "/").suffix(2).joined(separator: "/") }
     /// "0.1.0 (2)": marketing version and build number from the bundle, the pair App Store Connect and TestFlight show.
     static var versionLabel: String {
-        let info = Bundle.main.infoDictionary ?? [:]
-        let marketing = info["CFBundleShortVersionString"] as? String ?? "?"
-        let build = info["CFBundleVersion"] as? String ?? "?"
-        return "\(marketing) (\(build))"
+        "App \(ApiContract.appVersion) (\(ApiContract.appBuild))"
+    }
+
+    /// "0.2.0+3.gabc1234 · API 1": the server's build id, or its version when it has no build record ("unknown"), and its API
+    /// level. A server from before the version contract (no `api`) is "unknown" — its `version` field alone says nothing reliable.
+    static func serverLabel(_ info: GatewayInfo?) -> String {
+        guard let info, let api = info.api else { return L("unknown") }
+        let build = info.build.flatMap { $0.isEmpty || $0 == "unknown" ? nil : $0 }
+        let name = build ?? info.version ?? L("unknown")
+        return "\(name) · API \(api.level ?? 1)"
+    }
+
+    private func aboutValue(_ text: String) -> some View {
+        Text(verbatim: text)
+            .font(.subheadline)
+            .foregroundStyle(CbColor.textMuted)
+            .lineLimit(1)
+            .truncationMode(.middle)
+            .textSelection(.enabled)
+            .layoutPriority(1)
     }
 
     /// A row of the About section: it leads out of the app, so it is a `Link`, not a `NavigationLink` — and like the rows

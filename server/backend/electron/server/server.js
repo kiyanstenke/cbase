@@ -176,6 +176,7 @@ import {
 import { layoutProcedure } from "./projectbox/layout/procedure.js";
 import { setTerminalEndObserver } from "./terminal.js";
 import { projectCreationRoutes } from "./projectbox/setup/routes.js";
+import { versionRoute } from "./version.js";
 import { creationMode } from "./projectbox/setup/rules.js";
 import { storageSituation } from "./workflows/storage-gate.js";
 import { mcpAccessFor } from "./projectbox/token.js";
@@ -900,6 +901,7 @@ export function startServer({ port, dataRoot, webDir, pickDirectory, notify }) {
     portRoutes,
     projectboxOpsRoutes,
     projectCreationRoutes, // GET /api/projectCreation/rules (also without ops)
+    versionRoute, // GET /api/version (version.js, VERSIONING.md)
   ];
 
   // The outer skin. EVERYTHING inside the try — a throw here is an answer, never a process end:

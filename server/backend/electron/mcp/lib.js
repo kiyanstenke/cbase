@@ -5,6 +5,7 @@
 // that would be a TDZ in the import cycle. `let resolved` is only assigned in resolve().
 
 import { AsyncLocalStorage } from "node:async_hooks";
+import fs from "node:fs";
 import process from "node:process";
 
 const BASE_URL = process.env.CBASE_BASE_URL || "http://127.0.0.1:7718";
@@ -27,7 +28,12 @@ const FENCE_HINT = "filtered: only the project of this container and the workspa
 // process (or any call that checks a project) would carry the "filtered …" hint although its own data was complete. What the
 // call reads AS its answer (scopedProjects …) stays inside the marker.
 const auxQuery = (fn) => fenceMarker.exit(fn);
-const SERVER_INFO = { name: "cbase", version: "1.0.0" };
+// serverInfo carries the product version: server/backend/package.json (in the image /app/package.json), written only by
+// tools/version.mjs. Read here, not imported — this process does not import the server tree (import-direction.test.js).
+const SERVER_INFO = { name: "cbase", version: productVersion() };
+function productVersion() {
+  try { return String(JSON.parse(fs.readFileSync(new URL("../../package.json", import.meta.url), "utf8")).version || "unknown"); } catch { return "unknown"; }
+}
 // The own marker of a workflow agent: its agent id, set by writeMcpConfig. It cuts the toolset (cbase-mcp.js, visibility.js
 // lockedForWorkflowAgent) and rejects approval requests without a card (tools/app.js). "" = no workflow agent.
 const WORKFLOW_AGENT = String(process.env.CBASE_WORKFLOW_AGENT || "");
