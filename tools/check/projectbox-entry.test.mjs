@@ -211,8 +211,12 @@ const FAKES = {
   // The other half: a rest that RUNS OUT although a signal came. A correct script kills its rest in the trap, so after the
   // signal no slice ends on its own; a foreground `sleep 3600` (which holds the trap until it ends) lets it run out and starts
   // no new rest, so the count alone never sees it. Hence no `exec`: the pid the script kills is this fake, which has no trap
-  // and dies at once on TERM; a slice that ended with `signalled` present waits FAKE_REST_GRACE_S more (a script that is just
-  // ending kills it there; only a trap slower than that under load could read as red) and then pulls this ripcord. Only bash 3.2 may let a rest run out (FAKE_DEFERRED_TRAP_OK, see run()).
+  // and dies at once on TERM. A slice that ended with `signalled` present waits FAKE_REST_GRACE_S more (a script that is just
+  // ending kills it there; only a trap slower than that under load could read as red) and then pulls this ripcord — also for a
+  // rest begun after the signal: a script that keeps resting does not kill those either, so it may pull this ripcord before or
+  // beside the counted one (both are true of it; seen on the CI's bash 5). Telling the rests apart by when they began does not
+  // work: the signal may come before the first rest has begun. Only bash 3.2 may let a rest run out (FAKE_DEFERRED_TRAP_OK,
+  // see run()).
   sleep: [
     `if [ "$1" = 3600 ]; then`,
     `  if [ -e "$FAKE_BASE/signalled" ]; then`,
@@ -1005,16 +1009,23 @@ entryTest("counter-test: `exit 1` instead of resting ends before the signal with
 });
 
 entryTest("counter-test: without `exit` in the trap the script keeps resting after the signal — the ripcord turns it red instead of hanging", async () => {
-  const w = copyBuild();
-  try {
-    const copy = sabotage(w, "rests-continue.sh", ['    [ -z "$QUIET_PID" ] || kill "$QUIET_PID" 2>/dev/null || :\n    exit "$1"\n', '    [ -z "$QUIET_PID" ] || kill "$QUIET_PID" 2>/dev/null || :\n']);
-    const r = await run(w, { script: copy, env: { FAKE_MOUNT_ERROR: Z } });
-    // At least one line (if it keeps resting, it sleeps again — a second may already stand by the time the test reads it).
-    assert.ok(r.ripcord.length >= 1, JSON.stringify(r.ripcord));
-    assert.ok(r.ripcord.every((z) => z === "ripcord: the script keeps resting without dockerd although a signal came"), JSON.stringify(r.ripcord));
-    assert.equal(r.code, null, "the script was still alive when the test went on");
-    assert.throws(() => checkCopyError(r, w, /overlay: /), assert.AssertionError);
-  } finally { way(w); }
+  const RESTING_ON = ["ripcord: the script keeps resting without dockerd although a signal came", "ripcord: the script let its rest run out although a signal came"];
+  // Every shell, strict and lenient: the CI's bash 5 is held strict (defersTrap), macOS's bash 3.2 lenient — both must name
+  // only the resting on, never a run-out rest (the rests begun after the signal are not the one the signal met).
+  for (const shell of SHELLS) for (const deferredTrapOk of [false, true]) {
+    const w = copyBuild();
+    try {
+      const copy = sabotage(w, "rests-continue.sh", ['    [ -z "$QUIET_PID" ] || kill "$QUIET_PID" 2>/dev/null || :\n    exit "$1"\n', '    [ -z "$QUIET_PID" ] || kill "$QUIET_PID" 2>/dev/null || :\n']);
+      const r = await run(w, { shell, script: copy, env: { FAKE_MOUNT_ERROR: Z }, deferredTrapOk });
+      const where = `${shell}, deferredTrapOk ${deferredTrapOk}: ${JSON.stringify(r.ripcord)}`;
+      // At least one line (if it keeps resting, it sleeps again — a second may already stand by the time the test reads it).
+      assert.ok(r.ripcord.length >= 1, where);
+      // Either ripcord is true of a script that keeps resting (FAKES.sleep): it starts new rests AND lets them run out.
+      assert.ok(r.ripcord.every((z) => RESTING_ON.includes(z)), where);
+      assert.equal(r.code, null, `the script was still alive when the test went on (${where})`);
+      assert.throws(() => checkCopyError(r, w, /overlay: /), assert.AssertionError);
+    } finally { way(w); }
+  }
 });
 
 // What macOS's bash 3.2 does now and then, written out so that it happens on every shell and every run: the trap takes effect
