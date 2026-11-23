@@ -219,6 +219,7 @@ const FAKES = {
   // see run()).
   sleep: [
     `if [ "$1" = 3600 ]; then`,
+    `  : > "$FAKE_BASE/resting"`,
     `  if [ -e "$FAKE_BASE/signalled" ]; then`,
     `    printf '\\n' >> "$FAKE_BASE/rests-after-signal"`,
     `    n=$(wc -l < "$FAKE_BASE/rests-after-signal")`,
@@ -1055,7 +1056,9 @@ entryTest("counter-test: a foreground rest lets the trap wait until it ends — 
     try {
       const copy = sabotage(w, "foreground-rest.sh",
         ['    sleep 3600 &\n    QUIET_PID=$!\n    wait "$QUIET_PID" || :\n', '    sleep 3600\n']);
-      const r = await run(w, { shell, script: copy, env: { FAKE_MOUNT_ERROR: Z }, deferredTrapOk: false });
+      // The signal must MEET the rest: sent before the first rest has begun, even this script ends at once (its trap runs
+      // outside a foreground command) and there is nothing to find — seen on the CI. `resting` is the fake's mark of a begun rest.
+      const r = await run(w, { shell, script: copy, env: { FAKE_MOUNT_ERROR: Z }, deferredTrapOk: false, beforeSignal: (x) => fs.existsSync(path.join(x.base, "resting")) });
       assert.deepEqual(r.ripcord, ["ripcord: the script let its rest run out although a signal came"], `${shell}: ${JSON.stringify(r.ripcord)}`);
       assert.throws(() => checkCopyError(r, w, /overlay: /), assert.AssertionError);
     } finally { way(w); }
