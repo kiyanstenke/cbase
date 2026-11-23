@@ -35,6 +35,12 @@ function run(args, root) {
 
 const PLACES = run(["places"]).out.split("\n");
 const VERSION = run([]).out;
+// The versions the cases release are derived from the repo's current one, so the test holds after every real release: NEXT and
+// AFTER lie above it (next two minors), BETWEEN above the current but below NEXT (for "not higher than the last release").
+const [MAJOR, MINOR, PATCH] = VERSION.split(".").map(Number);
+const NEXT = `${MAJOR}.${MINOR + 1}.0`;
+const AFTER = `${MAJOR}.${MINOR + 2}.0`;
+const BETWEEN = `${MAJOR}.${MINOR}.${PATCH + 1}`;
 
 // A temp copy of exactly the files the tool touches.
 function copy() {
@@ -116,14 +122,14 @@ test("(3) set writes every place and nothing else", () => {
   const dir = copy();
   try {
     const before = Object.fromEntries(PLACES.map((f) => [f, read(dir, f)]));
-    const r = run(["set", "0.2.0"], dir);
+    const r = run(["set", NEXT], dir);
     assert.equal(r.code, 0, r.err);
-    assert.equal(run([], dir).out, "0.2.0");
+    assert.equal(run([], dir).out, NEXT);
     const expected = { "package.json": 1, "package-lock.json": 2, "project.pbxproj": 4, "Info.plist": 0, "CHANGELOG.md": 0 };
     for (const f of PLACES) {
       assert.equal(changedLines(before[f], read(dir, f)), expected[path.basename(f)], `${f}: unexpected number of changed lines`);
     }
-    assert.equal(run(["set", "0.2.0"], dir).code, 0, "setting the same version again is allowed (no-op)");
+    assert.equal(run(["set", NEXT], dir).code, 0, "setting the same version again is allowed (no-op)");
   } finally { clean(dir); }
 });
 
@@ -139,24 +145,24 @@ test("(4) release turns Unreleased into the release section — byte-exact on th
       .replace(/^## \[Unreleased\]\n\n/m, `## [Unreleased]\n\n${ENTRY}`);
     write(dir, "CHANGELOG.md", real);
     assert.match(real, /^## \[Unreleased\]\n\n### Fixed$/m, "the real CHANGELOG no longer has an empty line after '## [Unreleased]'");
-    let r = run(["release", "0.2.0", "--date", "2026-12-01"], dir);
+    let r = run(["release", NEXT, "--date", "2026-12-01"], dir);
     assert.equal(r.code, 0, r.err);
-    assert.equal(read(dir, "CHANGELOG.md"), real.replace(/^## \[Unreleased\]$/m, "## [Unreleased]\n\n## [0.2.0] - 2026-12-01"));
-    assert.equal(run([], dir).out, "0.2.0");
+    assert.equal(read(dir, "CHANGELOG.md"), real.replace(/^## \[Unreleased\]$/m, `## [Unreleased]\n\n## [${NEXT}] - 2026-12-01`));
+    assert.equal(run([], dir).out, NEXT);
 
     const linked = [
-      "# Changelog", "", "## [Unreleased]", "", ENTRY, "## [0.2.0] - 2026-12-01", "", "### Added", "- First.", "",
-      "[Unreleased]: https://example.org/r/compare/v0.2.0...HEAD", "[0.2.0]: https://example.org/r/releases/tag/v0.2.0", "",
+      "# Changelog", "", "## [Unreleased]", "", ENTRY, `## [${NEXT}] - 2026-12-01`, "", "### Added", "- First.", "",
+      `[Unreleased]: https://example.org/r/compare/v${NEXT}...HEAD`, `[${NEXT}]: https://example.org/r/releases/tag/v${NEXT}`, "",
     ].join("\n");
     write(dir, "CHANGELOG.md", linked);
-    r = run(["release", "0.3.0", "--date", "2027-01-15"], dir);
+    r = run(["release", AFTER, "--date", "2027-01-15"], dir);
     assert.equal(r.code, 0, r.err);
     assert.equal(read(dir, "CHANGELOG.md"), [
-      "# Changelog", "", "## [Unreleased]", "", "## [0.3.0] - 2027-01-15", "", ENTRY, "## [0.2.0] - 2026-12-01", "", "### Added", "- First.", "",
-      "[Unreleased]: https://example.org/r/compare/v0.3.0...HEAD", "[0.3.0]: https://example.org/r/compare/v0.2.0...v0.3.0",
-      "[0.2.0]: https://example.org/r/releases/tag/v0.2.0", "",
+      "# Changelog", "", "## [Unreleased]", "", `## [${AFTER}] - 2027-01-15`, "", ENTRY, `## [${NEXT}] - 2026-12-01`, "", "### Added", "- First.", "",
+      `[Unreleased]: https://example.org/r/compare/v${AFTER}...HEAD`, `[${AFTER}]: https://example.org/r/compare/v${NEXT}...v${AFTER}`,
+      `[${NEXT}]: https://example.org/r/releases/tag/v${NEXT}`, "",
     ].join("\n"));
-    assert.equal(run([], dir).out, "0.3.0");
+    assert.equal(run([], dir).out, AFTER);
   } finally { clean(dir); }
 });
 
@@ -177,11 +183,11 @@ test("(5) malformed, lower, already released, empty Unreleased and bad dates are
     for (const v of ["1.0", "v0.2.0", "0.2", "0.2.0-beta.1", "01.2.0", "0.2.0.1", ""]) refused(["set", v], /MAJOR\.MINOR\.PATCH|usage/);
     refused(["set", "0.0.9"], /lower than the current version/);
     refused(["release", "0.0.9", "--date", "2026-12-01"], /lower than the current version/);
-    refused(["release", "0.2.0", "--date", "2026-13-45"], /YYYY-MM-DD/);
-    refused(["release", "0.2.0", "--date", "1.12.2026"], /YYYY-MM-DD/);
-    refused(["set", "0.2.0", "--date", "2026-12-01"], /usage/);
+    refused(["release", NEXT, "--date", "2026-13-45"], /YYYY-MM-DD/);
+    refused(["release", NEXT, "--date", "1.12.2026"], /YYYY-MM-DD/);
+    refused(["set", NEXT, "--date", "2026-12-01"], /usage/);
 
-    write(dir, "CHANGELOG.md", `# Changelog\n\n## [Unreleased]\n\n## [0.2.0] - 2026-12-01\n\n${ENTRY}`);
+    write(dir, "CHANGELOG.md", `# Changelog\n\n## [Unreleased]\n\n## [${NEXT}] - 2026-12-01\n\n${ENTRY}`);
     const withRelease = snapshot();
     const refusedHere = (args, why) => {
       const r = run(args, dir);
@@ -189,10 +195,10 @@ test("(5) malformed, lower, already released, empty Unreleased and bad dates are
       assert.match(r.err, why, r.err);
       assert.equal(snapshot(), withRelease, `${args.join(" ")} wrote something although it was refused`);
     };
-    refusedHere(["release", "0.3.0"], /empty/);
-    write(dir, "CHANGELOG.md", `# Changelog\n\n## [Unreleased]\n\n${ENTRY}\n## [0.2.0] - 2026-12-01\n\n${ENTRY}`);
+    refusedHere(["release", AFTER], /empty/);
+    write(dir, "CHANGELOG.md", `# Changelog\n\n## [Unreleased]\n\n${ENTRY}\n## [${NEXT}] - 2026-12-01\n\n${ENTRY}`);
     const again = snapshot();
-    for (const [v, why] of [["0.2.0", /already has a section/], ["0.1.5", /not higher than the last release/]]) {
+    for (const [v, why] of [[NEXT, /already has a section/], [BETWEEN, /not higher than the last release/]]) {
       const r = run(["release", v], dir);
       assert.equal(r.code, 1, `release ${v} was accepted`);
       assert.match(r.err, why, r.err);

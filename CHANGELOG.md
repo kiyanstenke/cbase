@@ -5,18 +5,27 @@ versions follow [Semantic Versioning](https://semver.org/); before 1.0, a minor 
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-23
+
 ### Added
 - Delete your own account from the iOS app (Settings → Account or Profile → Account) and the web client (Environment settings):
   `POST /gw/account/delete` re-checks the password, refuses the last admin while other users exist, and erases the account with
   both volumes in the background, retried after a restart. Settings on iOS also gets Sign out and a Version row.
 - Privacy policy and support page of the iOS app as a GitHub Pages site under `docs/`; the cleanliness guard lets the
   `https://<owner>.github.io/cbase` address through, like the GitHub repository address.
+- Download from a chat's Outputs: every file and folder row gets a download link on hover, the Outputs row downloads the whole
+  place, and a folder comes as a ZIP (`GET /api/chats/:id/outputs/folder`; links inside are skipped and listed in
+  `_CBASE-SKIPPED.txt`). iOS offers the same ZIP in the toolbar of each folder level.
 
 ### Changed
 - iOS app prepared for App Store review: privacy manifest (`PrivacyInfo.xcprivacy`, no tracking, no collected data, reasons for
   every required-reason API the app uses), export-compliance and usage-description keys in `Info.plist`, iPhone-only for the
   first release, plain http only for servers on the local network, and a "Privacy policy" row in Settings → About; a gate test
   keeps the manifest and these keys in step with the sources.
+- The git bar shows its Repositories section with a single repository too (web and iOS), so the repository is always named.
+- New logo: a "C" with a blue square. The app icon (iOS, desktop client, home screen, browser tab) is the dark tile; inside the
+  apps the mark comes in two variants, a dark letter on light grounds and a light one on dark grounds, picked by the theme on web,
+  iOS and the desktop client's connect page. `tools/icon/build-icons.mjs` writes all of them from two source images.
 
 ## [0.1.0] - 2026-11-22
 
@@ -34,5 +43,6 @@ versions follow [Semantic Versioning](https://semver.org/); before 1.0, a minor 
 - VS Code Remote Tunnels start only after the user accepted the VS Code Server licence in the UI; cbase never accepts the licence
   on the user's behalf.
 
-[Unreleased]: https://github.com/kiyanstenke/cbase/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/kiyanstenke/cbase/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/kiyanstenke/cbase/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/kiyanstenke/cbase/releases/tag/v0.1.0
