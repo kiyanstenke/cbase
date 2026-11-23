@@ -16,10 +16,10 @@ import * as containers from "./containers.js";
 import { proxyRequest, activeStreams, trackStream, passThroughUpgradeResponse, closeStreams } from "./proxy.js";
 import { pushConfiguration, sendTestPush, unwatchBackend, watchBackend } from "./push.js";
 import {
-  deviating, lastAdmin, userView, checkCreate, checkPassword, checkPatch, checkResources, ramUnderConsumption, resourcesFields,
+  deviating, lastAdmin, userView, checkAccountDelete, checkCreate, checkPassword, checkPatch, checkResources, ramUnderConsumption, resourcesFields,
   writeDesiredFile, lowersRam, serverView, templateFromEnvironment, valuesFromInspect,
 } from "./resources.js";
-import { CONTAINER_ACTIONS, ADMINISTRATION_JUMP } from "./administration-contract.js";
+import { ACCOUNT_DELETE_PATH, CONTAINER_ACTIONS, ADMINISTRATION_JUMP } from "./administration-contract.js";
 import {
   requestUrl, clientAddress, installErrorPolicy, loginBrake, parseCookies as cookiesFrom, checkSlots,
 } from "./outerShell.js";
@@ -101,6 +101,68 @@ async function ensureBackend(userId) {
   return ready;
 }
 
+// The setup token, printed like at startup — at start and when the last user is gone (self-deletion of the sole user).
+function announceSetupToken() {
+  if (!setupToken) return;
+  // A token the operator set in the environment is already known to them; it is not written to the log.
+  console.log(setupToken.source === "GW_SETUP_TOKEN"
+    ? "[gateway] First-time setup: no user yet — the setup form asks for the token from GW_SETUP_TOKEN"
+    : `[gateway] First-time setup: no user yet — the setup form asks for this token: ${setupToken.token} (from ${setupToken.source})`);
+}
+
+// ── Deleting a user: ONE teardown path ─────────────────────────────
+// For the admin's DELETE and for the self-deletion (POST /gw/account/delete). Lock FIRST (sessions drop, login and ensureBackend
+// refuse), then tear down — otherwise destroy would run with valid sessions, and a request in that window would create a new B
+// (orphaned, with the old home if purge=0) while the answer said `purged:true`. The row is deleted only when the container is REALLY
+// gone (and with purge the volumes); otherwise it stays locked, and the same delete can be repeated. Everything up to the first await
+// runs synchronously in the caller's turn — when the call returns its promise, sessions and streams are already gone.
+// Returns `{ ok: true }` or `{ error: "container" | "volumes" }`.
+async function eraseUser(userId, { purge }) {
+  users.lockUser(userId);
+  unwatchBackend(userId);
+  closeStreams(userId); // open tunnels and event streams drop with the sessions
+  const report = await containers.destroy(userId, { purge });
+  unwatchBackend(userId); // a start that was already running before the lock may have registered it again
+  if (!report.containerAway) return { error: "container" };
+  if (purge && !report.volumesGone) return { error: "volumes" };
+  users.deleteUser(userId);
+  writeDesired();
+  // The last user is gone: the gateway is back in its first-time state — the setup needs the token again (setup-token.js).
+  if (users.countUsers() === 0 && !setupToken) { setupToken = ensureSetupToken(DATA_DIR); announceSetupToken(); }
+  return { ok: true };
+}
+
+// The self-deletion runs in the background (the purge may outlast the tunnel's ~100 s limit); its row is marked
+// (users.requestErase), so a failed or interrupted erasure is retried at every start and in the periodic tick below. One run per
+// user at a time.
+const erasing = new Set();
+// A teardown that keeps failing is retried every tick; its warning is written once per row and hour, not once a minute.
+const INCOMPLETE_WARNING_GAP_MS = 60 * 60_000;
+const incompleteWarnedAt = new Map(); // userId → when the "incomplete" warning was last written
+function eraseInBackground(userId) {
+  if (erasing.has(userId)) return;
+  erasing.add(userId);
+  eraseUser(userId, { purge: true })
+    .then((r) => {
+      if (r.ok) {
+        incompleteWarnedAt.delete(userId);
+        console.log(`[gateway] Account ${userId} deleted by its owner (container and both volumes removed)`);
+        return;
+      }
+      const now = Date.now();
+      if (now - (incompleteWarnedAt.get(userId) ?? -Infinity) < INCOMPLETE_WARNING_GAP_MS) return;
+      incompleteWarnedAt.set(userId, now);
+      console.warn(`[gateway] Account deletion of ${userId} incomplete (${r.error === "container" ? "container" : "data volumes"} not removed) — stays locked, retried every tick (this warning at most once an hour)`);
+    })
+    .catch((e) => console.error(`[gateway] Account deletion of ${userId}:`, e?.message || e))
+    .finally(() => erasing.delete(userId));
+}
+// `atStart`: the start names what it found (the line is the tests' proof that the START retried, not the tick).
+function retryErasures({ atStart = false } = {}) {
+  const ids = users.listEraseRequested();
+  if (atStart && ids.length) console.log(`[gateway] Retrying ${ids.length} pending account deletion(s) at start`);
+  for (const id of ids) eraseInBackground(id);
+}
 
 // ── Administration: resources per user container ──────────────────
 // The computations are in resources.js (pure, guard resources.test.js), docker in containers.js; only the wiring is here.
@@ -356,6 +418,37 @@ async function handle(req, res) {
 
       if (p === "/gw/me" && m === "GET") return send(res, 200, { user: { username: sess.user.username, role: sess.user.role } });
 
+      // Delete the OWN account (App Store guideline 5.1.1(v)): re-authenticated with the current password through the same brake
+      // and check slots as the login; wrong ⇒ 403 and nothing is locked. The last active admin cannot leave other users without an
+      // admin (409); the sole user may — the gateway is then back in setup state. The answer comes once the row is marked and locked;
+      // the teardown (always with both volumes) runs in the background.
+      if (p === ACCOUNT_DELETE_PATH && m === "POST") {
+        const address = clientAddress(req);
+        const body = await readBody(req);
+        const pr = checkAccountDelete(body);
+        if (pr.error) return send(res, 400, { error: pr.error });
+        const name = sess.user.username;
+        if (brake.locked(address, name)) return send(res, 429, { error: "too many attempts — wait a moment" });
+        if (!checks.proofs()) return send(res, 429, { error: "too many checks at once right now — wait a moment" });
+        let u;
+        try { u = await users.verifyLogin(name, pr.values.password); } finally { checks.gib(); }
+        if (!u || u.id !== uid) {
+          brake.failure(address, name);
+          return send(res, 403, { error: "Wrong password", code: "PASSWORD" });
+        }
+        brake.success(address, name); // a correct password proves this address for the name, as a login does
+        // After the await: the session must still be this user's (locked, deleted or a new password meanwhile ⇒ 401). No await from
+        // here until the row is marked — two admins deleting themselves at once cannot both get through the check below.
+        if (sessionOf(req)?.user.id !== uid) return send(res, 401, { error: "not signed in (the session ended during the request)", gateway: true });
+        if (users.countRemainingOthers(uid) > 0 && lastAdmin(users.listUsers(), uid)) {
+          return send(res, 409, { error: "You are the last active admin — make someone else an admin first, then delete your account.", code: "LAST_ADMIN" });
+        }
+        users.requestErase(uid);
+        eraseInBackground(uid); // locks, unwatches and closes the streams before it first waits
+        clearSessionCookie(res);
+        return send(res, 202, { ok: true });
+      }
+
       if (p === "/gw/push" && m === "GET") {
         const list = users.listPushDevices(uid);
         return send(res, 200, {
@@ -465,24 +558,15 @@ async function handle(req, res) {
           if (!users.getUser(target)) return send(res, 404, { error: "Unknown user" });
           if (sub === "" && m === "DELETE") {
             if (target === sess.user.id) return send(res, 400, { error: "own account cannot be deleted" });
-            const purge = url.searchParams.get("purge") === "1";
-            // Lock FIRST (sessions drop, login and ensureBackend refuse), then tear down — otherwise destroy would run with valid
-            // sessions, and a request in that window would create a new B (orphaned, with the old home if purge=0) while the answer
-            // said `purged:true`. The user is deleted only when the container is REALLY gone (and with purge the volumes); otherwise
-            // it stays locked, and the same delete can be repeated.
-            users.lockUser(target);
-            unwatchBackend(target);
-            closeStreams(target); // open tunnels and event streams drop with the sessions
-            const report = await containers.destroy(target, { purge });
-            unwatchBackend(target); // a start that was already running before the lock may have registered it again
-            if (!report.containerAway) {
+            // A row its owner deleted is always purged — otherwise this delete would drop the mark and leave the volumes behind.
+            const purge = url.searchParams.get("purge") === "1" || users.eraseRequested(target);
+            const result = await eraseUser(target, { purge }); // the one teardown path (see eraseUser)
+            if (result.error === "container") {
               return send(res, 500, { error: "The container could not be removed — the user stays locked; repeat the delete.", purged: false });
             }
-            if (purge && !report.volumesGone) {
+            if (result.error === "volumes") {
               return send(res, 500, { error: "The data volumes could not be removed — the user stays locked; repeat the delete.", purged: false });
             }
-            users.deleteUser(target);
-            writeDesired();
             return send(res, 200, { ok: true, purged: purge });
           }
           if (sub === "" && m === "PATCH") {
@@ -504,7 +588,8 @@ async function handle(req, res) {
               closeStreams(target); // and whatever a session had already opened (tunnel, DevTools, SSE) drops now
             } else {
               if (containers.teardownRunning(target)) return send(res, 409, { error: "This user's environment is currently being removed" });
-              users.unlockUser(target);
+              // The owner deleted this account: it only goes forward (the erasure is retried), never back to an active user.
+              if (!users.unlockUser(target)) return send(res, 409, { error: "This user deleted their account — the deletion is pending and cannot be undone." });
             }
             return respondWithUser(res, 200, target, sess.user.id);
           }
@@ -690,7 +775,15 @@ const REAPER_GRACE_PERIOD_MS = 10 * 60_000;
 // sequence and with an idle deadline a trickling backend never triggers, a single tenant would hold the wakeup of all others. And
 // a tick that is still running is not started a second time.
 let wakeupRunning = false;
+// Knob GW_TICK_MS (ms, integer > 0, at most the timer limit 2^31 − 1), read once here: the period of this tick, default 60 s. Only
+// the tests set it — short to see the tick retry an erasure, very long to see the start do it alone.
+const TICK_MS = (() => {
+  const raw = process.env.GW_TICK_MS;
+  const n = raw === undefined || raw === "" ? NaN : Number(raw);
+  return Number.isInteger(n) && n > 0 && n <= 2 ** 31 - 1 ? n : 60_000;
+})();
 setInterval(async () => {
+  retryErasures(); // self-deletions whose teardown failed (each runs on its own; one at a time per user)
   if (wakeupRunning) return;
   wakeupRunning = true;
   try {
@@ -709,7 +802,7 @@ setInterval(async () => {
     }
   } catch (e) { console.error("[gateway] Schedule wakeup:", e?.message || e); }
   finally { wakeupRunning = false; }
-}, 60_000).unref();
+}, TICK_MS).unref();
 
 // ── Idle reaper: put containers without open streams and without activity to sleep ──
 // Wrapped in try — a rejection (docker, DB) in the tick would end the gateway; and guarded against a second tick while the first
@@ -744,12 +837,8 @@ server.listen(PORT, HOST, () => {
   console.log(`[gateway] cbase gateway v${VERSION} on http://${HOST}:${PORT}`);
   for (const line of startupWarnings(process.env)) console.warn(line);
   console.log(`[gateway] Web UI: ${WEB_DIR}${fs.existsSync(path.join(WEB_DIR, "index.html")) ? "" : "  (WARNING: no index.html — build web/ first!)"}`);
-  if (setupToken) {
-    // A token the operator set in the environment is already known to them; it is not written to the log.
-    console.log(setupToken.source === "GW_SETUP_TOKEN"
-      ? "[gateway] First-time setup: no user yet — the setup form asks for the token from GW_SETUP_TOKEN"
-      : `[gateway] First-time setup: no user yet — the setup form asks for this token: ${setupToken.token} (from ${setupToken.source})`);
-  }
+  announceSetupToken();
+  retryErasures({ atStart: true }); // self-deletions a restart interrupted or whose teardown failed
   console.log(`[gateway] Data: ${DATA_DIR} · Image: ${process.env.GW_IMAGE || "cbase-backend"} · Idle stop: ${IDLE_STOP_MIN > 0 ? IDLE_STOP_MIN + " min" : "off"}`);
   const push = pushConfiguration();
   console.log(`[gateway] APNs: sandbox ${push.sandbox ? "ready" : "off"} · production ${push.production ? "ready" : "off"} · topic ${push.topic}`);

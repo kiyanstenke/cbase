@@ -93,6 +93,10 @@ export function initUsers(dataDir) {
   // session, no login, no ensureBackend; the row stays until the container is really gone (otherwise a failed delete could not
   // be repeated).
   try { db.exec("ALTER TABLE users ADD COLUMN locked_at INTEGER NOT NULL DEFAULT 0"); } catch { /* column already exists */ }
+  // A user who deleted their own account (POST /gw/account/delete): the row is marked BEFORE the teardown, which runs in the
+  // background (a purge can outlast the tunnel's ~100 s). A marked row stays locked, cannot be unlocked and is erased again at every
+  // gateway start and in the periodic tick until the container and both volumes are really gone.
+  try { db.exec("ALTER TABLE users ADD COLUMN erase_requested_at INTEGER NOT NULL DEFAULT 0"); } catch { /* column already exists */ }
   // From which connection (outerShell.js addressKey: IPv4 address or IPv6 /64) a name last logged in successfully — the exception
   // from the login brake's name limit. Kept in the DB so it survives every gateway restart (otherwise a guesser could lock the
   // name for every address after each restart). `name` is the normalised login name (like verifyLogin); the brake sweeps rows
@@ -224,9 +228,30 @@ export function lockUser(userId) {
 }
 
 // Lift the lock. Sessions do not come back — they dropped when locking; the user logs in again. After a failed delete ("delete
-// incomplete") this is also the way back.
+// incomplete") this is also the way back — but never for a row whose owner deleted their account (eraseRequested): that one only
+// goes forward. true = unlocked.
 export function unlockUser(userId) {
-  db.prepare("UPDATE users SET locked_at = 0 WHERE id = ?").run(userId);
+  return db.prepare("UPDATE users SET locked_at = 0 WHERE id = ? AND erase_requested_at = 0").run(userId).changes > 0;
+}
+
+// The user deleted their own account: mark the row and lock it (sessions drop at once) in one step, before anything is torn down.
+export function requestErase(userId) {
+  db.prepare("UPDATE users SET erase_requested_at = ? WHERE id = ? AND erase_requested_at = 0").run(Date.now(), userId);
+  lockUser(userId);
+}
+
+export function eraseRequested(userId) {
+  return Number(db.prepare("SELECT erase_requested_at AS at FROM users WHERE id = ?").get(userId)?.at) > 0;
+}
+
+/** The marked rows whose erasure is still outstanding (gateway start, periodic tick). */
+export function listEraseRequested() {
+  return db.prepare("SELECT id FROM users WHERE erase_requested_at > 0 ORDER BY erase_requested_at").all().map((r) => r.id);
+}
+
+/** How many users besides this one stay — a row already marked for erasure does not count. */
+export function countRemainingOthers(userId) {
+  return db.prepare("SELECT COUNT(*) AS n FROM users WHERE id <> ? AND erase_requested_at = 0").get(userId).n;
 }
 
 // Change the role. Who the last active admin is, the route decides (resources.js lastAdmin) — only the row is written here.

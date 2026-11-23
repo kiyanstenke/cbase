@@ -1,7 +1,7 @@
 // Fixture routes: /fixture/state, seed switches, /api/workspaces, second workspace, code tab (files), one-shot switches, ask, artifacts getter, /fixture/reset-run, download getter.
 import { S, json, body, framePng, dynWorkflowsDefault, dynLibrarySeed, channelSeed, channelId, APPROVAL_REQUEST_ID, APPROVAL_INPUT, workspace, workspace2, workspaceId2, workspaceId, projectId, fileTree, fileByPath, fixturePng, chatId, chatEvent, clearRun, defaultPagesSkills, extraChats, NOTIFY_KINDS, resetSettings, archiveEmpty, globalEvent, globalStreams, chatStreams, servicesProject2, NEXT } from "./state.mjs";
 import { dynTreeSeed, mainHistory } from "./seeds.mjs";
-import { resetChatAutoArchive } from "./routes-settings.mjs";
+import { resetAccountDelete, resetChatAutoArchive } from "./routes-settings.mjs";
 import { resetAttachmentUploads, resetAgendaTree } from "./routes-chat.mjs";
 import { resetMcpAirlock } from "./routes-workspace.mjs";
 import { resetScheduled } from "./routes-scheduled.mjs";
@@ -632,6 +632,7 @@ export async function routesFixture(ctx) {
       // predecessor. `/fixture/settings` remains the explicit way for tests that do without `launchApp`.
       resetSettings();
       resetChatAutoArchive();
+      resetAccountDelete();
       resetAttachmentUploads();
       resetAgendaTree();
       resetMcpAirlock();

@@ -107,6 +107,7 @@ async function preflight({ user, needSudo, mode, force }) {
   // although the file is fine — the check would then ALWAYS fail.
   const files = [
     "CbaseMobile/Info.plist",
+    "CbaseMobile/PrivacyInfo.xcprivacy",
     "CbaseMobile/Assets.xcassets/AppIcon.appiconset/Contents.json",
   ].map((p) => path.join(MOBILE, p));
   const bad = [];

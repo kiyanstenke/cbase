@@ -37,6 +37,11 @@ export const RESOURCES_FIELDS = ["ramGiB", "cpuPrio", "cpuMax"] as const;
 export const PATCH_FIELDS = ["role", "locked"] as const;
 export const CREATE_FIELDS = ["username", "password", "role"] as const;
 export const PASSWORD_FIELDS = ["password"] as const;
+/** Deleting the OWN account: the path and its body (exactly the current password). */
+export const ACCOUNT_DELETE_PATH = "/gw/account/delete";
+export const ACCOUNT_DELETE_FIELDS = ["password"] as const;
+/** The `code` of its refusals (403 wrong password, 409 last active admin) — `accountDeleteErrorText` has a sentence for each. */
+export const ACCOUNT_DELETE_CODES = ["PASSWORD", "LAST_ADMIN"] as const;
 /** The fields of the responses — `norm*` delivers exactly these, in this order. */
 export const ADMINISTRATION_FIELDS = ["server", "user"] as const;
 export const SERVER_FIELDS = ["threads", "ramTotalBytes", "ramAllocatedBytes", "reserveBytes", "overcommitted"] as const;
@@ -100,6 +105,7 @@ export type RoleBody = { role: Role };
 export type LockBody = { locked: boolean };
 export type CreateBody = { username: string; password: string; role: Role };
 export type PasswordBody = { password: string };
+export type AccountDeleteBody = { password: string };
 
 /** `true` if the type `A` carries exactly the keys of the list `L` — otherwise `false`, and the assignment below is a type error. */
 type SameKeys<A, L extends readonly string[]> = [Exclude<keyof A, L[number]>, Exclude<L[number], keyof A>] extends [never, never] ? true : false;
@@ -117,7 +123,8 @@ export const ADMINISTRATION_TYPES_BOUND: [
   SameKeys<RoleBody & LockBody, typeof PATCH_FIELDS>,
   SameKeys<CreateBody, typeof CREATE_FIELDS>,
   SameKeys<PasswordBody, typeof PASSWORD_FIELDS>,
-] = [true, true, true, true, true, true, true, true, true, true, true];
+  SameKeys<AccountDeleteBody, typeof ACCOUNT_DELETE_FIELDS>,
+] = [true, true, true, true, true, true, true, true, true, true, true, true];
 
 const obj = (x: unknown): Record<string, unknown> | null => (x && typeof x === "object" && !Array.isArray(x) ? (x as Record<string, unknown>) : null);
 const str = (x: unknown): string => (typeof x === "string" ? x : "");
@@ -253,4 +260,26 @@ export async function setPassword(id: string, password: string): Promise<void> {
  */
 export async function deleteUser(id: string, withData: boolean): Promise<void> {
   await api<unknown>(`${userPath(id)}?purge=${withData ? "1" : "0"}`, { method: "DELETE" });
+}
+
+/**
+ * POST /gw/account/delete — the caller deletes their OWN account (workspaces, chats, projects and provider logins on this server,
+ * both volumes). Wrong password: 403; the last active admin while other users exist: 409 (the gateway's sentence is the message).
+ * On 202 the session is already gone and the server erases in the background; the caller reloads into the login.
+ */
+export async function deleteOwnAccount(password: string): Promise<void> {
+  const body: AccountDeleteBody = { password };
+  await api<unknown>(ACCOUNT_DELETE_PATH, { method: "POST", body: JSON.stringify(body) });
+}
+
+/**
+ * The refusal of `deleteOwnAccount` in the reader's language: per `code` of ACCOUNT_DELETE_CODES its own sentence (the gateway's
+ * `error` is English); an unknown code or none — the server's sentence, then the error itself.
+ */
+export function accountDeleteErrorText(e: unknown, t: (s: string) => string): string {
+  const f = (e && typeof e === "object" ? e : {}) as { code?: unknown; message?: unknown };
+  const code = f.code as (typeof ACCOUNT_DELETE_CODES)[number] | undefined;
+  if (code === "PASSWORD") return t("Wrong password.");
+  if (code === "LAST_ADMIN") return t("You are the last active admin. Make someone else an admin first, then delete your account.");
+  return str(f.message) || String(e);
 }

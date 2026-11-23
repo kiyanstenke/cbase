@@ -93,6 +93,28 @@ final class SessionStore: ObservableObject {
         phase = .needsLogin(setup: false)
     }
 
+    /// Deletes the OWN account (POST /gw/account/delete, App Store guideline 5.1.1(v)). Like `logout`, the push device goes first —
+    /// afterwards there is no session to remove it with; if the deletion is refused (403 wrong password, 409 last admin), the device
+    /// is registered again and the error goes to the sheet unchanged (it words it by its code). On 202 the app returns to the login — or to the setup if the
+    /// gateway already reports no user.
+    func deleteAccount(password: String) async throws {
+        guard let client else { throw APIError(status: 0, message: L("Not connected to a server yet.")) }
+        _ = try? await client.send(
+            "/gw/push/devices/current",
+            method: .delete,
+            body: PushDeviceRemoval(installationId: PushNotifications.installationID)
+        )
+        do {
+            try await client.deleteOwnAccount(password: password)
+        } catch {
+            if let pendingPushToken { await registerPushToken(pendingPushToken) }
+            throw error
+        }
+        let info: GatewayInfo? = try? await client.get("/gw/info")
+        user = nil
+        phase = .needsLogin(setup: info?.setup ?? false)
+    }
+
     func prepareServerChange() {
         if let client {
             Task {

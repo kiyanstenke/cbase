@@ -5,6 +5,19 @@ versions follow [Semantic Versioning](https://semver.org/); before 1.0, a minor 
 
 ## [Unreleased]
 
+### Added
+- Delete your own account from the iOS app (Settings → Account or Profile → Account) and the web client (Environment settings):
+  `POST /gw/account/delete` re-checks the password, refuses the last admin while other users exist, and erases the account with
+  both volumes in the background, retried after a restart. Settings on iOS also gets Sign out and a Version row.
+- Privacy policy and support page of the iOS app as a GitHub Pages site under `docs/`; the cleanliness guard lets the
+  `https://<owner>.github.io/cbase` address through, like the GitHub repository address.
+
+### Changed
+- iOS app prepared for App Store review: privacy manifest (`PrivacyInfo.xcprivacy`, no tracking, no collected data, reasons for
+  every required-reason API the app uses), export-compliance and usage-description keys in `Info.plist`, iPhone-only for the
+  first release, plain http only for servers on the local network, and a "Privacy policy" row in Settings → About; a gate test
+  keeps the manifest and these keys in step with the sources.
+
 ## [0.1.0] - 2026-11-22
 
 ### Added

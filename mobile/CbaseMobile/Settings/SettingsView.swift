@@ -20,6 +20,8 @@ struct SettingsView: View {
     @EnvironmentObject private var session: SessionStore
     @EnvironmentObject private var state: AppState
     @EnvironmentObject private var theme: ThemeStore
+    @State private var showLogout = false
+    @State private var showDeleteAccount = false
     /// The page a jump from outside leads to (`takeJump`); `nil` = the list.
     @State private var jump: SettingsJump?
 
@@ -81,6 +83,28 @@ struct SettingsView: View {
                         }
                     }
                 }
+                // Account — like About below NOT a group of the list above (those are bound one-to-one to the web's
+                // `SETTINGS_GROUPS`). People, and App Review, look for "sign out" and "delete account" in the settings; the two rows
+                // open the SAME confirmation and the SAME sheet as Profile → Account, so there is still one way to do each.
+                Section(L("Account")) {
+                    CbSettingRow(title: L("Signed in as"), symbol: "person.crop.circle", withInfo: false) {
+                        Text(verbatim: session.user?.username ?? "–")
+                            .font(.subheadline)
+                            .foregroundStyle(CbColor.textMuted)
+                            .lineLimit(1)
+                            .layoutPriority(1)
+                    }
+                    Button { showLogout = true } label: {
+                        CbSettingRow(title: L("Sign out"), symbol: "rectangle.portrait.and.arrow.right", withInfo: false)
+                    }
+                    .foregroundStyle(CbColor.text)
+                    .accessibilityIdentifier("settings-account-logout")
+                    Button(role: .destructive) { showDeleteAccount = true } label: {
+                        CbSettingRow(title: L("Delete account…"), symbol: "trash", withInfo: false)
+                    }
+                    .foregroundStyle(.red)
+                    .accessibilityIdentifier("settings-account-delete")
+                }
                 // About — NOT a group of the list above: those are bound one-to-one to `SETTINGS_GROUPS` on the web
                 // (web/test/settings-form.test.mjs), and on the web the same two facts stand outside the groups too, in the
                 // "Third-Party Notices" row at the foot of the modal (SettingsModal.tsx `HINTS`). Hence a footer section
@@ -89,6 +113,18 @@ struct SettingsView: View {
                 Section {
                     aboutRow(L("License"), "doc.text", Self.licenseName, Self.licenseURL)
                     aboutRow(L("Source code"), "chevron.left.forwardslash.chevron.right", Self.sourceLabel, Self.sourceURL)
+                    // The App Store asks for a reachable privacy policy inside the app; it opens in the browser like the rows above.
+                    aboutRow(L("Privacy policy"), "hand.raised", Self.privacyLabel, Self.privacyURL)
+                    // The support page asks users to quote the version shown here; it is the only place the app states it.
+                    CbSettingRow(title: L("Version"), symbol: "info.circle", withInfo: false) {
+                        Text(verbatim: Self.versionLabel)
+                            .font(.subheadline)
+                            .foregroundStyle(CbColor.textMuted)
+                            .lineLimit(1)
+                            .textSelection(.enabled)
+                            .layoutPriority(1)
+                    }
+                    .accessibilityIdentifier("settings-about-version")
                 }
             }
             .navigationTitle(L("Settings"))
@@ -101,6 +137,19 @@ struct SettingsView: View {
                     .environmentObject(theme)
             }
             .toolbar { SheetClose(label: L("Done")) { dismiss() } }
+            .sheet(isPresented: $showDeleteAccount) {
+                DeleteAccountSheet()
+                    .environmentObject(session)
+                    .environmentObject(state)
+                    .cbSheet(.whole)
+            }
+            .confirmationDialog(L("Sign out of cbase?"), isPresented: $showLogout, titleVisibility: .visible) {
+                Button(L("Sign out"), role: .destructive) {
+                    state.detach()
+                    Task { await session.logout() }
+                }
+                Button(L("Cancel"), role: .cancel) {}
+            }
         }
         .environmentObject(session)
         .environmentObject(state)
@@ -158,11 +207,22 @@ struct SettingsView: View {
     /// The address shortened to owner and name, for the row. Derived, not written out a second time: the address belongs in
     /// exactly one place here, and the cleanliness guard counts a bare “owner/name” outside a repository URL as private.
     static var sourceLabel: String { sourceURL.split(separator: "/").suffix(2).joined(separator: "/") }
+    /// The privacy policy of the app (published with the project's pages). Its label is the path, derived like `sourceLabel`,
+    /// so the host with the owner's name is written out in this one constant only.
+    static let privacyURL = "https://kiyanstenke.github.io/cbase/privacy/"
+    static var privacyLabel: String { privacyURL.split(separator: "/").suffix(2).joined(separator: "/") }
+    /// "0.1.0 (2)": marketing version and build number from the bundle, the pair App Store Connect and TestFlight show.
+    static var versionLabel: String {
+        let info = Bundle.main.infoDictionary ?? [:]
+        let marketing = info["CFBundleShortVersionString"] as? String ?? "?"
+        let build = info["CFBundleVersion"] as? String ?? "?"
+        return "\(marketing) (\(build))"
+    }
 
     /// A row of the About section: it leads out of the app, so it is a `Link`, not a `NavigationLink` — and like the rows
     /// above it carries no (i) (`withInfo: false`): in the label of a link the whole cell is the button.
     ///
-    /// `.foregroundStyle(CbColor.text)` on the link: a `Link` paints its whole label in the accent, which would make these two
+    /// `.foregroundStyle(CbColor.text)` on the link: a `Link` paints its whole label in the accent, which would make these
     /// titles the only colored ones in the list. The symbol keeps the accent of the rows above it — it reads `.tint` inside
     /// `CbSettingRow` and that is untouched. `layoutPriority` goes to the value: without it the title takes the width first and
     /// the address ends up as "github....e/cbase", which is exactly the thing the row is here to say.

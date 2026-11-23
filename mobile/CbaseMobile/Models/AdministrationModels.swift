@@ -24,6 +24,11 @@ enum AdministrationContract {
     static let containerActions = ["start", "restart", "stop"]
     /// The key of the page in the settings (web `SECTIONS`, here `SettingsView`).
     static let page = "administration"
+    /// Deleting the OWN account (`ACCOUNT_DELETE_PATH`); the body is `AccountDeleteBody` (`ACCOUNT_DELETE_FIELDS`).
+    static let accountDeletePath = "/gw/account/delete"
+    /// The `code` of its refusals (`ACCOUNT_DELETE_CODES`): 403 wrong password, 409 the last active admin — `accountDeleteErrorText`
+    /// has a sentence for each.
+    static let accountDeleteCodes = ["PASSWORD", "LAST_ADMIN"]
 }
 
 let administrationGiB: Double = 1024 * 1024 * 1024
@@ -293,6 +298,27 @@ struct AdministrationPasswordBody: Encodable, Sendable {
     }
 }
 
+/// The refusal of the account deletion in the reader's language: per code of `AdministrationContract.accountDeleteCodes` its own
+/// sentence (the gateway's `error` is English); an unknown code or none — the server's sentence.
+func accountDeleteErrorText(_ error: Error) -> String {
+    guard let e = error as? APIError, let code = e.code else { return error.localizedDescription }
+    switch code {
+    case "PASSWORD": return L("Wrong password.")
+    case "LAST_ADMIN": return L("You are the last active admin. Make someone else an admin first, then delete your account.")
+    default: return e.message
+    }
+}
+
+/// POST /gw/account/delete — exactly the current password (re-authentication; a missing or extra key is 400).
+struct AccountDeleteBody: Encodable, Sendable {
+    let password: String
+    enum CodingKeys: String, CodingKey { case password }
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(password, forKey: .password)
+    }
+}
+
 // ── An action without a response ───────────────────────────────────────────────────────────────────────────────────────────────
 // Restart, start, stop, limits and delete take longer than the session's 45 s (`APIClient`): the restart waits until the backend
 // is healthy, the delete tears down containers and volumes. Treating 45 s as "failed" would drop the busy marker and a second tap
@@ -365,6 +391,12 @@ extension APIClient {
 
     func setPassword(_ id: String, _ password: String) async throws {
         try await send("/gw/admin/users/\(id)/password", body: AdministrationPasswordBody(password: password))
+    }
+
+    /// Deletes the caller's OWN account. 202: the session is gone and the gateway erases in the background; 403 wrong password,
+    /// 409 the last active admin while other users exist (`APIError.code`, in words: `accountDeleteErrorText`).
+    func deleteOwnAccount(password: String) async throws {
+        try await send(AdministrationContract.accountDeletePath, body: AccountDeleteBody(password: password))
     }
 
     /// `withData` also deletes the volumes (`purge=1`). If the teardown fails, the user stays locked (500 with a sentence).

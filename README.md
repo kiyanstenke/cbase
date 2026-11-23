@@ -131,6 +131,7 @@ VS Code tunnel asks each user to accept them once). Such images are for your own
 | [DESIGN.md](DESIGN.md) | the interface: colour roles, building blocks, the iOS kit |
 | [AGENTS.md](AGENTS.md) | for coding agents (and their people): how the system is built, the rules and the traps |
 | [tools/check/README.md](tools/check/README.md) | the gate and every guard in it |
+| [docs/](docs/) | the project's GitHub Pages site: [privacy policy](https://kiyanstenke.github.io/cbase/privacy/) and [support](https://kiyanstenke.github.io/cbase/support/) of the iOS app |
 
 ## Contributing
 

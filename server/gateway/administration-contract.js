@@ -32,6 +32,12 @@ export const PATCH_FIELDS = Object.freeze(["role", "locked"]);
 export const CREATE_FIELDS = Object.freeze(["username", "password", "role"]);
 /** POST /gw/admin/users/:id/password */
 export const PASSWORD_FIELDS = Object.freeze(["password"]);
+/** POST /gw/account/delete — the caller deletes their OWN account; the body is exactly the current password (re-authentication). */
+export const ACCOUNT_DELETE_PATH = "/gw/account/delete";
+export const ACCOUNT_DELETE_FIELDS = Object.freeze(["password"]);
+/** The `code` of its refusals: 403 wrong password, 409 the last active admin while other users exist. The clients show their own
+ *  (translated) sentence per code and the server's `error` only for a code they do not know. */
+export const ACCOUNT_DELETE_CODES = Object.freeze(["PASSWORD", "LAST_ADMIN"]);
 /** POST /gw/admin/users/:id/<action> */
 export const CONTAINER_ACTIONS = Object.freeze(["start", "restart", "stop"]);
 

@@ -61,11 +61,20 @@ Routes (all behind the admin check, otherwise 403; fields and required keys in `
 |---|---|
 | `GET /gw/admin/administration` | `{ server, user }`: threads, RAM, reserve, sum of RAM limits; per user role, lock, resources, `actual` (from `docker inspect` and `cpu.weight`), `consumption` (cgroups), container state. Docker silent ⇒ 502 (never "missing"). |
 | `POST /gw/admin/users` | create (`username`, `password`, `role` — all required); resources = the unit's template |
-| `PATCH /gw/admin/users/:id` | EXACTLY one of `role` / `locked`; demoting or locking the last active admin, or locking yourself ⇒ 400 |
+| `PATCH /gw/admin/users/:id` | EXACTLY one of `role` / `locked`; demoting or locking the last active admin, or locking yourself ⇒ 400; unlocking an account its owner deleted ⇒ 409 |
 | `POST /gw/admin/users/:id/password` | set the password |
 | `PUT /gw/admin/users/:id/resources` | `ramGiB`, `cpuPrio`, `cpuMax` (all required, `null` = no hard limit): stored first, then applied with `docker update <id>` (swap = 2 × RAM; "no limit" = `--cpus <threads>`). RAM below consumption + 512 MiB of a running container ⇒ 409 with `consumptionBytes`; 409 during teardown; stored but not applied ⇒ 502. |
 | `POST /gw/admin/users/:id/start` · `restart` · `stop` | container actions; locked or being torn down ⇒ 409 |
-| `DELETE /gw/admin/users/:id[?purge=1]` | lock, tear down, then delete |
+| `DELETE /gw/admin/users/:id[?purge=1]` | lock, tear down, then delete; your own account ⇒ 400 (that is the route below) |
+
+Every signed-in user can delete their OWN account (Settings → Environment in the web, Profile → Account in iOS; App Store guideline
+5.1.1(v)): `POST /gw/account/delete` with exactly `{ password }` (the current password, through the same brake as the login; wrong ⇒ 403,
+nothing locked, `code: "PASSWORD"`). The last active admin while other users exist ⇒ 409 (`code: "LAST_ADMIN"`); the clients show
+their own translated sentence per code (`ACCOUNT_DELETE_CODES`), the server's English `error` only for a code they do not know.
+Otherwise the row is marked (`erase_requested_at`) and locked, the session ends, the answer is 202 — and the teardown (container and
+both volumes, the same path as the admin's delete) runs in the background. A marked row cannot be unlocked; if its teardown fails,
+the gateway retries it at every start and every tick (`GW_TICK_MS`, one minute), warning at most once an hour per account. When the
+last user is gone, the gateway is back in setup state with a new setup token in its log.
 
 The values live in `gateway.db` (table `container_resources`). If a user has no row (existing state), the gateway reads the limits
 of their container from `docker inspect` at start and adopts them — the container itself does not change; without a container the
@@ -89,6 +98,7 @@ template applies. At every start and every change the gateway atomically writes 
 | `GW_TRUSTED_PROXYS` | — (loopback only) | comma list of further addresses whose `CF-Connecting-IP` counts as the real client address (login brake); only needed if cloudflared does not connect over loopback |
 | `GW_USER_QUOTA_GB` | `0` (none) | optional storage quota shown for the own environment |
 | `GW_CGROUP_ROOT` | — | cgroup root override for the consumption meter (tests) |
+| `GW_TICK_MS` | `60000` | period of the gateway's minute tick (retry of pending account deletions, schedule wakeup); tests set it short or very long |
 | `GW_PROJECT_STOP_CAP_MS` | derived | cap for the exec that stops project containers before a backend is removed (tests set it small) |
 | `GW_PUSH_SILENCE_MS` / `GW_PUSH_GAP_MS` / `GW_PUSH_SHORT_MS` | 90 s / 2 s / 1 s | idle deadline, reason gap and "too short stream" threshold of the event stream |
 | `GW_APNS_TEAM_ID` | — | Apple team ID for native iPhone notifications |

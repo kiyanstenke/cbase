@@ -1,4 +1,4 @@
-// Settings routes of the fixture gateway: gw/info, push, adjust, autocompact, TTS, web search, permission rules, auto-continue, credit gate, hooks, GitLab accounts, notify, env, logout, health.
+// Settings routes of the fixture gateway: gw/info, account self-deletion, push, adjust, autocompact, TTS, web search, permission rules, auto-continue, credit gate, hooks, GitLab accounts, notify, env, logout, health.
 import { S, json, body, defaultLevelOf, AGENT_MODEL_KEYS, agentEffective, autocompactDoc, AUTOCOMPACT_STAGES, AUTOCOMPACT_MAX_STAGES, TTS_VOICES, WEB_SEARCH_PROVIDERS, autoContinueList, limitEvent, CREDIT_GATE_THRESHOLD, HOOK_EVENTS, gitlabCheck, NOTIFY_KINDS, NOTIFY_CHAT_KINDS, NOTIFY_SCHEDULE_KINDS, SERVICES_HOST_GATEWAY, NEXT } from "./state.mjs";
 
 // The stages of the size guideline, as the real server delivers them (dynworkflows/size.js SIZES).
@@ -10,6 +10,17 @@ const CHAT_AUTO_ARCHIVE_DEFAULT = { enabled: false, days: 30 };
 let chatAutoArchive = { ...CHAT_AUTO_ARCHIVE_DEFAULT };
 export function resetChatAutoArchive() {
   chatAutoArchive = { ...CHAT_AUTO_ARCHIVE_DEFAULT };
+}
+
+// Account self-deletion, as server/gateway/index.js answers POST /gw/account/delete: the body is EXACTLY the contract's key list
+// (ACCOUNT_DELETE_FIELDS in server/gateway/administration-contract.js — web/test/administration-binding.test.mjs pins this literal
+// to it), otherwise 400. `POST /fixture/account-delete { mode }` picks the answer: "202" deleted (the default), "403" wrong password,
+// "409" last admin with other users; `GET` reads the mode and every body received. `/fixture/reset-run` resets it.
+const ACCOUNT_DELETE_KEYS = ["password"];
+const ACCOUNT_DELETE_MODES = ["202", "403", "409"];
+let accountDelete = { mode: "202", bodies: [] };
+export function resetAccountDelete() {
+  accountDelete = { mode: "202", bodies: [] };
 }
 
 // Administration: users and resources per user container, shapes as in the contract server/gateway/administration-contract.js
@@ -594,6 +605,28 @@ export async function routesSettings(ctx) {
     }
     if (path === "/gw/env/ensure" && method === "POST") return json(res, 200, { ready: true });
     if (path === "/gw/logout" && method === "POST") return json(res, 200, { ok: true });
+    if (path === "/fixture/account-delete" && method === "POST") {
+      const b = (await body(req)) || {};
+      if (!ACCOUNT_DELETE_MODES.includes(b.mode)) return json(res, 400, { error: `mode: one of ${ACCOUNT_DELETE_MODES.join(", ")}` });
+      accountDelete.mode = b.mode;
+      return json(res, 200, { ok: true, mode: accountDelete.mode });
+    }
+    if (path === "/fixture/account-delete" && method === "GET") {
+      return json(res, 200, { mode: accountDelete.mode, bodies: accountDelete.bodies.map((b) => b) });
+    }
+    if (path === "/gw/account/delete" && method === "POST") {
+      const b = await body(req);
+      accountDelete.bodies.push(b);
+      const keys = b && typeof b === "object" && !Array.isArray(b) ? Object.keys(b) : [];
+      if (keys.join(",") !== ACCOUNT_DELETE_KEYS.join(",") || typeof b.password !== "string" || !b.password) {
+        return json(res, 400, { error: `the body is exactly ${ACCOUNT_DELETE_KEYS.join(", ")}` });
+      }
+      if (accountDelete.mode === "403") return json(res, 403, { error: "Wrong password", code: "PASSWORD" });
+      if (accountDelete.mode === "409") {
+        return json(res, 409, { error: "You are the last active admin — make someone else an admin first, then delete your account.", code: "LAST_ADMIN" });
+      }
+      return json(res, 202, { ok: true });
+    }
     if (path === "/api/health" && method === "GET") return json(res, 200, { ok: true });
     return NEXT;
 }

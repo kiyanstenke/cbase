@@ -1,4 +1,4 @@
-// UI tests for Settings: all areas, usage, notifications, auto-compact, GitLab accounts, hooks, auto-continue and credit gate, OpenRouter, appearance, model settings.
+// UI tests for Settings: all areas, deleting the own account (Profile → Account), usage, notifications, auto-compact, GitLab accounts, hooks, auto-continue and credit gate, OpenRouter, appearance, model settings.
 import XCTest
 
 final class SettingsUITests: CbaseUITestBase {
@@ -1408,5 +1408,107 @@ final class SettingsUITests: CbaseUITestBase {
             "The chosen level does not arrive at the server"
         )
         attach(app, "Workflows: size guideline of the dynamic workflows")
+    }
+
+    // ── Profile → Account: deleting the own account (App Store guideline 5.1.1(v)) ─────────────
+    // The fixture answers POST /gw/account/delete with the mode set by `/fixture/account-delete` (202 · 403 · 409) and records every
+    // body. Counter-tests: without `phase = .needsLogin` in SessionStore.deleteAccount the happy path stays in the shell (red); without
+    // the inline error the 403/409 tests find no `account-delete-error` (red). The error is the app's own sentence per `code` (the
+    // tests run in English, so the exact English source string), never the gateway's `error`: `error.localizedDescription` instead of
+    // `accountDeleteErrorText(error)` in DeleteAccountSheet turns both red (the fixture's sentence is the gateway's, worded differently).
+
+    /// Opens Profile → Account → "Delete account…", types the password and confirms. Returns the app for the follow-up checks.
+    private func deleteOwnAccount(_ server: String, mode: String, password: String = "account-password") -> XCUIApplication {
+        let app = launchApp(server: server, preparation: {
+            XCTAssertNotNil(self.fixturePost(server + "/fixture/account-delete", body: ["mode": mode]), "The fixture switch did not answer")
+        })
+        XCTAssertTrue(app.otherElements["top-bar"].waitForExistence(timeout: 25))
+        selectLocation(app, "profile")
+        let row = app.buttons["account-delete"]
+        XCTAssertTrue(row.waitForExistence(timeout: 15), "The row \"Delete account…\" is missing on the account page")
+        XCTAssertTrue(scrollUntilHittable(app, row), "The row \"Delete account…\" cannot be reached")
+        row.tap()
+        let field = app.secureTextFields["account-delete-password"]
+        XCTAssertTrue(field.waitForExistence(timeout: 10), "The delete sheet with the password field did not open")
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "cannot be undone")).firstMatch.exists,
+                      "The sheet does not say that the deletion cannot be undone")
+        let confirm = app.buttons["account-delete-confirm"]
+        XCTAssertFalse(confirm.isEnabled, "Delete is possible without a password")
+        field.tap()
+        field.typeText(password)
+        XCTAssertTrue(waitUntil(timeout: 5) { confirm.isEnabled }, "Delete stays disabled with a password")
+        attach(app, "Delete account: sheet filled (\(mode))")
+        confirm.tap()
+        return app
+    }
+
+    /// Settings → Account: the same sheet as Profile → Account (DeleteAccountSheet), reached where people and App Review look for it.
+    /// Counter-test: without the two rows in SettingsView (or with a second, private sheet that does not post) this turns red.
+    func testSettingsAccountDeletesThroughTheSameSheet() throws {
+        let server = try requireFixture()
+        let app = launchApp(server: server, preparation: {
+            XCTAssertNotNil(self.fixturePost(server + "/fixture/account-delete", body: ["mode": "202"]), "The fixture switch did not answer")
+        })
+        XCTAssertTrue(app.otherElements["top-bar"].waitForExistence(timeout: 25))
+        swipeLeftAcrossScreen(app)
+        XCTAssertTrue(app.buttons["drawer-settings"].waitForExistence(timeout: 8), "The settings entry is missing in the right drawer")
+        app.buttons["drawer-settings"].tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 12), "The settings sheet did not open")
+        let logout = app.buttons["settings-account-logout"]
+        XCTAssertTrue(scrollUntilHittable(app, logout), "Settings has no \"Sign out\" row")
+        let row = app.buttons["settings-account-delete"]
+        XCTAssertTrue(scrollUntilHittable(app, row), "Settings has no \"Delete account…\" row")
+        attach(app, "Settings: account section")
+        row.tap()
+        let field = app.secureTextFields["account-delete-password"]
+        XCTAssertTrue(field.waitForExistence(timeout: 10), "The delete sheet did not open from Settings")
+        field.tap()
+        field.typeText("account-password")
+        let confirm = app.buttons["account-delete-confirm"]
+        XCTAssertTrue(waitUntil(timeout: 5) { confirm.isEnabled }, "Delete stays disabled with a password")
+        confirm.tap()
+        XCTAssertTrue(app.textFields["login-username"].waitForExistence(timeout: 15), "After the deletion from Settings the app is not on the login screen")
+        XCTAssertEqual(accountDeleteBodies(server).count, 1, "The deletion from Settings did not reach the server exactly once")
+    }
+
+    private func accountDeleteBodies(_ server: String) -> [[String: Any]] {
+        (fixtureJSON(server + "/fixture/account-delete")?["bodies"] as? [[String: Any]]) ?? []
+    }
+
+    func testDeleteAccountEndsOnTheLoginScreen() throws {
+        let server = try requireFixture()
+        let app = deleteOwnAccount(server, mode: "202")
+        XCTAssertTrue(app.textFields["login-username"].waitForExistence(timeout: 15), "After the deletion the app is not on the login screen")
+        XCTAssertFalse(app.otherElements["top-bar"].exists, "The shell is still there after the deletion")
+        let bodies = accountDeleteBodies(server)
+        XCTAssertEqual(bodies.count, 1, "The deletion did not reach the server exactly once: \(bodies)")
+        XCTAssertEqual(bodies.first?.keys.sorted(), ["password"], "The body is not exactly {password}")
+        XCTAssertEqual(bodies.first?["password"] as? String, "account-password")
+        attach(app, "Delete account: login screen")
+    }
+
+    func testDeleteAccountAsLastAdminShowsTheMessage() throws {
+        let server = try requireFixture()
+        let app = deleteOwnAccount(server, mode: "409")
+        let error = app.descendants(matching: .any)["account-delete-error"]
+        XCTAssertTrue(error.waitForExistence(timeout: 10), "The 409 shows no error in the sheet")
+        XCTAssertEqual(error.label, "You are the last active admin. Make someone else an admin first, then delete your account.",
+                       "Not the app's own sentence for LAST_ADMIN")
+        XCTAssertTrue(app.secureTextFields["account-delete-password"].exists, "The sheet closed on 409")
+        XCTAssertFalse(app.textFields["login-username"].exists, "The app left the shell on 409")
+        attach(app, "Delete account: last admin")
+    }
+
+    func testDeleteAccountWithAWrongPasswordKeepsTheSheetOpen() throws {
+        let server = try requireFixture()
+        let app = deleteOwnAccount(server, mode: "403", password: "wrong-password")
+        let error = app.descendants(matching: .any)["account-delete-error"]
+        XCTAssertTrue(error.waitForExistence(timeout: 10), "The 403 shows no error in the sheet")
+        XCTAssertEqual(error.label, "Wrong password.", "Not the app's own sentence for PASSWORD")
+        XCTAssertTrue(app.buttons["account-delete-confirm"].exists, "The sheet closed on 403")
+        XCTAssertTrue(app.buttons["account-delete-confirm"].isEnabled, "After a 403 a second attempt is not possible")
+        XCTAssertFalse(app.textFields["login-username"].exists, "The app left the shell on 403")
+        XCTAssertEqual(accountDeleteBodies(server).count, 1)
+        attach(app, "Delete account: wrong password")
     }
 }

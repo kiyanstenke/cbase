@@ -989,6 +989,8 @@ let LocDEMobile: [String: String] = [
     // Settings → About (wording identical to the web)
     "License": "Lizenz",
     "Source code": "Quellcode",
+    "Privacy policy": "Datenschutzerklärung",
+    "Version": "Version",
     // Models page groups (a duplicate key crashes at start)
     "Chat side tasks": "Chat-Nebenaufgaben",
     "Projects & context": "Projekte & Kontext",
@@ -1033,4 +1035,13 @@ let LocDEMobile: [String: String] = [
     "Outputs##files": "Ausgaben",
     "As in the chat": "Wie im Chat", // permissions choice of a workflow (PermissionsOptions), as web/src/lib/i18n-de.ts
     "Plan (read-only)": "Plan (nur lesen)",
+    // Profile → Account: deleting the own account (App Store guideline 5.1.1(v)), the same words as web/src/lib/i18n-de.ts
+    "Delete account…": "Konto löschen…",
+    "Signed in as": "Angemeldet als", // Settings → Account
+    "Delete account": "Konto löschen",
+    "All your workspaces, chats, projects and provider logins stored on this server are deleted. This cannot be undone.": "Alle deine Workspaces, Chats, Projekte und Anbieter-Anmeldungen auf diesem Server werden gelöscht. Das lässt sich nicht rückgängig machen.",
+    "Enter your password to confirm.": "Gib zur Bestätigung dein Passwort ein.",
+    "Deleting…": "Löscht…",
+    "Wrong password.": "Falsches Passwort.",
+    "You are the last active admin. Make someone else an admin first, then delete your account.": "Du bist der letzte aktive Admin. Mach zuerst jemand anderen zum Admin und lösche dann dein Konto.",
 ]

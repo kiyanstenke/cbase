@@ -16,7 +16,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import {
-  CREATE_FIELDS, CPU_PRIO, CPU_PRIO_SHARES, HOST_RESERVE_GIB, PASSWORD_FIELDS, PATCH_FIELDS, RAM_MIN_GIB, RAM_BUFFER_BYTES,
+  ACCOUNT_DELETE_FIELDS, CREATE_FIELDS, CPU_PRIO, CPU_PRIO_SHARES, HOST_RESERVE_GIB, PASSWORD_FIELDS, PATCH_FIELDS, RAM_MIN_GIB, RAM_BUFFER_BYTES,
   RESOURCES_FIELDS, ROLES,
 } from "./administration-contract.js";
 
@@ -203,6 +203,14 @@ export function checkPassword(body) {
   const f = exactlyTheKey(body, PASSWORD_FIELDS);
   if (f) return { error: f };
   if (typeof body.password !== "string") return { error: "password: text" };
+  return { values: { password: body.password } };
+}
+
+/** POST /gw/account/delete — exactly the current password. */
+export function checkAccountDelete(body) {
+  const f = exactlyTheKey(body, ACCOUNT_DELETE_FIELDS);
+  if (f) return { error: f };
+  if (typeof body.password !== "string" || !body.password) return { error: "password: text" };
   return { values: { password: body.password } };
 }
 

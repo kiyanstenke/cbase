@@ -25,15 +25,25 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<!-- Export compliance: the app uses only the encryption built into iOS (HTTPS/TLS through URLSession), which is exempt. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
+		<!-- Plain http is allowed for local network addresses only (an IP address on the LAN, a .local or unqualified host
+		     name): a self-hosted cbase server there often has no certificate. Every other address must use https, which
+		     the app puts in front of an address typed without a scheme. NSAllowsArbitraryLoads is deliberately absent:
+		     next to NSAllowsLocalNetworking iOS ignores it anyway (iOS 10+), so it would only claim an exception the app
+		     does not have. tools/check/ios-store-readiness.test.mjs keeps it out. -->
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>cbase connects to the cbase server you enter, which may be on your local network.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Save images and videos you share from cbase to your photo library.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -47,13 +57,6 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>

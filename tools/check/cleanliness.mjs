@@ -59,10 +59,16 @@ export const ALLOW_FILE = path.join(HERE, "cleanliness-allow.json");
 export const PRIVATE_LIST = privatePart("umbau/private-terms.txt");
 /** A term this short is only matched as a whole run — as a substring it would hit random text. */
 const WHOLE_ONLY_BELOW = 5;
-/** The repository owner is public with the repository itself: the address of this repository may carry the name, nothing else may. */
+/**
+ * The repository owner is public with the repository itself: the address of this repository may carry the name, nothing else may.
+ * The same holds for the project's GitHub Pages site (privacy policy and support pages of the app), exactly https://<owner>.github.io/cbase
+ * followed by "/" or the end of the address; any other Pages site of the owner is a foreign host like any other. The scheme is part of
+ * the exemption: http:// and a scheme-less <owner>.github.io/cbase are not exempt. Like the github.com exemption, it accepts ANY owner's
+ * github.io/cbase, not only this project's (the same rule for both addresses; a fork's site passes as a fork's repository does).
+ */
 // The copyright line of LICENSE/NOTICE names the owner; the words are assembled so this file does not carry them whole.
 const COPYRIGHT_LINE = "Copyright 2026 " + ["Ki", "yan"].join("") + " " + ["Sten", "ke"].join("");
-const PUBLIC_CONTEXT = new RegExp(String.raw`github\.com[/:][\w-]+\/cbase(?![\w-])|^[ \t]*${COPYRIGHT_LINE}[ \t]*$`, "gim");
+const PUBLIC_CONTEXT = new RegExp(String.raw`github\.com[/:][\w-]+\/cbase(?![\w-])|https:\/\/[\w-]+\.github\.io\/cbase(?![\w.-])|^[ \t]*${COPYRIGHT_LINE}[ \t]*$`, "gim");
 
 const sha = (salt, s) => crypto.createHash("sha256").update(salt + s).digest("hex").slice(0, 32);
 const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "");

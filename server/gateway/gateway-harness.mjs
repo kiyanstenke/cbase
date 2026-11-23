@@ -251,9 +251,13 @@ export async function prepareSetup({ env = {} } = {}) {
         const emergencyBrake = setTimeout(() => reject(new Error(
           `Gateway without a "[gateway] Resources…" line after ${RIPCORD_MS} ms (emergency brake) — does index.js still write it?\n${log}`)), RIPCORD_MS);
         emergencyBrake.unref();
+        // Only what THIS start wrote counts: a second `start()` after `drain()` (a gateway restart on the same data) would otherwise
+        // find the first run's lines and return before the new gateway listens.
+        const from = log.length;
         const on = (d) => {
           log += d;
-          if (/cbase gateway v\S+ on /.test(log) && /\[gateway\] Resources(: | initial fill:)/.test(log)) { clearTimeout(emergencyBrake); resolve(); }
+          const own = log.slice(from);
+          if (/cbase gateway v\S+ on /.test(own) && /\[gateway\] Resources(: | initial fill:)/.test(own)) { clearTimeout(emergencyBrake); resolve(); }
         };
         subprocess.stdout.on("data", on);
         subprocess.stderr.on("data", on);

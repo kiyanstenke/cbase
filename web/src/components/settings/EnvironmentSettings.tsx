@@ -7,11 +7,14 @@
 //
 // Deliberately NO larger storage picture: the bar stays a bar. It comes only from `SettingsKit` instead of its own classes — the
 // same number thus carries the same thresholds as the header's usage ring.
+//
+// At the end the own account can be deleted (App Store guideline 5.1.1(v), the same route as iOS): re-authenticated with the
+// password, everything on this server goes, and after the gateway's 202 the page reloads into the login.
 import { useCallback, useEffect, useState } from "react";
-import { ghostSm } from "@/components/CbKit";
+import { Hint, Modal, ModalTitle, field, ghost, ghostSm, quietDangerSm } from "@/components/CbKit";
 import { ProgressBar, Group, Row } from "@/components/settings/SettingsKit";
 import { useT, dateLocale } from "@/lib/i18n";
-import { normOwnResources, type CpuPrio, type OwnResources } from "@/lib/api";
+import { accountDeleteErrorText, deleteOwnAccount, normOwnResources, type CpuPrio, type OwnResources } from "@/lib/api";
 
 interface EnvInfo { state: string; startedAt?: string | null }
 interface StorageInfo { usedBytes: number; quotaBytes: number | null; hostFreeBytes: number | null }
@@ -39,6 +42,7 @@ export function EnvironmentSettings() {
   const [own, setOwn] = useState<OwnResources | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true); setErr("");
@@ -122,6 +126,62 @@ export function EnvironmentSettings() {
           </Row>
         </Group>
       )}
+
+      <Group title={t("Account")}>
+        <Row title={t("Delete account")}>
+          <button type="button" className={quietDangerSm} onClick={() => setDeleting(true)} data-account-action="delete">
+            {t("Delete account…")}
+          </button>
+        </Row>
+      </Group>
+      {deleting && <DeleteAccountSheet onClose={() => setDeleting(false)} />}
     </div>
+  );
+}
+
+function DeleteAccountSheet({ onClose }: { onClose: () => void }) {
+  const t = useT();
+  const [password, setPassword] = useState("");
+  const [running, setRunning] = useState(false);
+  const [error, setError] = useState("");
+  async function run() {
+    if (running || !password) return;
+    setRunning(true); setError("");
+    // 202: the session is gone — the reload lands in the login (or the setup, if this was the only account).
+    try { await deleteOwnAccount(password); window.location.reload(); }
+    catch (e) { setError(accountDeleteErrorText(e, t)); setRunning(false); }
+  }
+  return (
+    <Modal onClose={onClose} width={460} label={t("Delete account")} z="z-[70]">
+      <ModalTitle hint={t("All your workspaces, chats, projects and provider logins stored on this server are deleted. This cannot be undone.")}>
+        {t("Delete your account?")}
+      </ModalTitle>
+      <label className="block text-[12px] text-dim">
+        {t("Password")}
+        <input
+          className={`${field} mt-1 w-full`}
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") run(); }}
+          autoComplete="current-password"
+          autoFocus
+          data-account-action="delete-password"
+        />
+      </label>
+      {error && <div className="mt-3"><Hint tone="danger">{error}</Hint></div>}
+      <div className="mt-4 flex justify-end gap-2">
+        <button type="button" className={ghost} onClick={onClose}>{t("Cancel")}</button>
+        <button
+          type="button"
+          className="rounded-full bg-danger px-3 py-1.5 text-[12px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+          onClick={run}
+          disabled={running || !password}
+          data-account-action="delete-confirm"
+        >
+          {running ? t("Deleting…") : t("Delete account")}
+        </button>
+      </div>
+    </Modal>
   );
 }

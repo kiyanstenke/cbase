@@ -22,7 +22,11 @@
 //       Encodable would drop `nil` and the server answers 400); `AdministrationContract` equals the constants; the
 //       word functions have a `case` per state, role and level; the literals compared in the views are a subset of
 //       the contract, and every container action has a button.
-//   (c) Per binding a built-in sabotage on an in-memory copy; each yields a deviation.
+//   (c) The fixture gateway of the iOS tests (mobile/test-fixtures/chat-gateway/routes-settings.mjs): its key list for
+//       POST /gw/account/delete equals ACCOUNT_DELETE_FIELDS, it answers ACCOUNT_DELETE_PATH and every ACCOUNT_DELETE_CODES.
+//   The refusal codes of that route: web `accountDeleteErrorText` and iOS `accountDeleteErrorText` have a sentence of their own per
+//   code (the server's English `error` only for an unknown one), and both delete sheets show it.
+//   Per binding a built-in sabotage on an in-memory copy; each yields a deviation.
 //
 // Counter-tests: in lib/api/administration.ts `cpuMax: bodyText.cpuMax` in the PUT body changed to
 // `cpuMax: bodyText.cpuMax ?? undefined` turns (a) red ("body PUT …/resources"); in AdministrationModels.swift
@@ -61,6 +65,7 @@ const MIRROR = {
   ADMINISTRATION_FIELDS: "ADMINISTRATION_FIELDS", SERVER_FIELDS: "SERVER_FIELDS", USER_FIELDS: "USER_FIELDS",
   CONTAINER_FIELDS: "CONTAINER_FIELDS", ACTUAL_FIELDS: "ACTUAL_FIELDS", CONSUMPTION_FIELDS: "CONSUMPTION_FIELDS",
   ENV_ADDITION_FIELDS: "ENV_ADDITION_FIELDS", ADMINISTRATION_JUMP: "ADMINISTRATION_JUMP", PAGE: "ADMINISTRATION_PAGE",
+  ACCOUNT_DELETE_PATH: "ACCOUNT_DELETE_PATH", ACCOUNT_DELETE_FIELDS: "ACCOUNT_DELETE_FIELDS", ACCOUNT_DELETE_CODES: "ACCOUNT_DELETE_CODES",
 };
 const ONLY_GATEWAY = {
   CPU_PRIO_SHARES: "the value for `docker update --cpu-shares`; the clients only see the weight (`actual.cpuWeight`)",
@@ -182,6 +187,7 @@ async function webDeviations(m, contract = V) {
     await m.setPassword("u-7", "pw");
     for (const action of contract.CONTAINER_ACTIONS) await m.containerAction("u-7", action);
     await m.deleteUser("u-7", true);
+    await m.deleteOwnAccount("pw");
   } catch (e) {
     deviations.push(`a path threw: ${e?.message || e}`);
   } finally { globalThis.fetch = old; }
@@ -197,7 +203,14 @@ async function webDeviations(m, contract = V) {
   equal(Object.keys(create?.body ?? {}), [...contract.CREATE_FIELDS], "body POST /gw/admin/users");
   equal(Object.keys(password?.body ?? {}), [...contract.PASSWORD_FIELDS], "body POST …/password");
   equal(sent.slice(5, 5 + contract.CONTAINER_ACTIONS.length).map((z) => `${z.method} ${z.url}`), contract.CONTAINER_ACTIONS.map((a) => `POST /gw/admin/users/u-7/${a}`), "paths of the container actions");
-  equal(sent.at(-1) && `${sent.at(-1).method} ${sent.at(-1).url}`, "DELETE /gw/admin/users/u-7?purge=1", "path DELETE (with data)");
+  equal(sent.at(-2) && `${sent.at(-2).method} ${sent.at(-2).url}`, "DELETE /gw/admin/users/u-7?purge=1", "path DELETE (with data)");
+  const ownDelete = sent.at(-1);
+  equal(ownDelete && `${ownDelete.method} ${ownDelete.url}`, `POST ${contract.ACCOUNT_DELETE_PATH}`, "path POST (own account)");
+  equal(Object.keys(ownDelete?.body ?? {}), [...contract.ACCOUNT_DELETE_FIELDS], "body POST (own account)");
+  // Its refusals in the reader's words: a sentence of its own per code (never the gateway's English `error`), the server's for any other.
+  const said = (code) => m.accountDeleteErrorText(Object.assign(new Error("SERVER SENTENCE"), { code }), (s) => `t:${s}`);
+  for (const code of contract.ACCOUNT_DELETE_CODES) if (!said(code).startsWith("t:")) deviations.push(`accountDeleteErrorText has no sentence of its own for the code "${code}" (shows "${said(code)}")`);
+  equal(said("SOMETHING_NEW"), "SERVER SENTENCE", "accountDeleteErrorText for an unknown code");
 
   // The jump: the address from ADMINISTRATION_JUMP opens the PAGE and loses the parameter.
   const jump = m.settingsFromAddress(`https://cbase.example${contract.ADMINISTRATION_JUMP}`);
@@ -221,6 +234,11 @@ test("web: SettingsModal leads to the PAGE in a group, the header opens it inste
   assert.match(header, /settingsFromAddress\(window\.location\.href\)/, "the header reads the jump from the address");
 });
 
+test("web: the account-deletion sheet words a refusal with accountDeleteErrorText, not with the server's message", () => {
+  const sheet = read(src("components", "settings", "EnvironmentSettings.tsx"));
+  assert.match(sheet, /catch \(e\) \{ setError\(accountDeleteErrorText\(e, t\)\);/, "DeleteAccountSheet shows something other than accountDeleteErrorText");
+});
+
 test("web, counter-test: a renamed field, a body without cpuMax and a contract with a new level and a new export are noticed", async () => {
   const field = "    deviating: r.deviating === true,";
   const a = await webDeviations(await loadWebSabotaged((q) => {
@@ -240,6 +258,13 @@ test("web, counter-test: a renamed field, a body without cpuMax and a contract w
   const c = await webDeviations(await loadWeb(), foreign);
   assert.ok(c.some((z) => z.startsWith("CPU_PRIO (web")) && c.some((z) => z.startsWith("level \"turbo\"")), c.join("\n"));
   assert.ok(c.some((z) => z.includes("\"NEW_FIELDS\", neither mirrored in the web")), c.join("\n"));
+
+  const sentence = '  if (code === "LAST_ADMIN") return t(';
+  const d = await webDeviations(await loadWebSabotaged((q) => {
+    assert.ok(q.includes(sentence), "the LAST_ADMIN line is no longer in accountDeleteErrorText; adjust");
+    return q.replace(sentence, '  if (code === "LAST_ADMIN_X") return t(');
+  }));
+  assert.ok(d.some((z) => z.includes("no sentence of its own for the code \"LAST_ADMIN\"")), d.join("\n"));
 });
 
 // ── (b) iOS ─────────────────────────────────────────────────────────────────────────────────────
@@ -297,6 +322,7 @@ function iosDeviations(texts, contract = V) {
     ["struct AdministrationResources:", contract.RESOURCES_FIELDS, "PUT …/resources"],
     ["struct AdministrationCreateBody:", contract.CREATE_FIELDS, "POST /gw/admin/users"],
     ["struct AdministrationPasswordBody:", contract.PASSWORD_FIELDS, "POST …/password"],
+    ["struct AccountDeleteBody:", contract.ACCOUNT_DELETE_FIELDS, "POST (own account)"],
     ["struct AdministrationRoleBody:", null, "PATCH"],
     ["struct AdministrationLockBody:", null, "PATCH"],
   ]) {
@@ -342,10 +368,14 @@ function iosDeviations(texts, contract = V) {
   equal(swiftList(constant(k, "containerStates")), [...contract.CONTAINER_STATES], "AdministrationContract.containerStates");
   equal(swiftList(constant(k, "containerActions")), [...contract.CONTAINER_ACTIONS], "AdministrationContract.containerActions");
   equal(swiftList(constant(k, "page"))?.[0], contract.PAGE, "AdministrationContract.page");
+  equal(swiftList(constant(k, "accountDeletePath"))?.[0], contract.ACCOUNT_DELETE_PATH, "AdministrationContract.accountDeletePath");
+  equal(swiftList(constant(k, "accountDeleteCodes")), [...contract.ACCOUNT_DELETE_CODES], "AdministrationContract.accountDeleteCodes");
+  if (!texts.views.some((v) => v.includes("self.error = accountDeleteErrorText(error)"))) deviations.push("DeleteAccountSheet does not word its error with accountDeleteErrorText");
+  if (!/send\(AdministrationContract\.accountDeletePath, body: AccountDeleteBody\(/.test(texts.models)) deviations.push("deleteOwnAccount does not send AccountDeleteBody to AdministrationContract.accountDeletePath");
 
   // The words: per state, role and level of the contract a `case` in the word function.
   const word = (fn) => /func \w+\([^)]*\)[^{]*\{[\s\S]*?\n\}/.exec(texts.models.slice(texts.models.indexOf(`func ${fn}(`)))?.[0] ?? "";
-  for (const [fn, list, what] of [["administrationStateWord", contract.CONTAINER_STATES, "state"], ["administrationRoleWord", contract.ROLES, "role"], ["administrationPrioWord", contract.CPU_PRIO, "level"]]) {
+  for (const [fn, list, what] of [["administrationStateWord", contract.CONTAINER_STATES, "state"], ["administrationRoleWord", contract.ROLES, "role"], ["administrationPrioWord", contract.CPU_PRIO, "level"], ["accountDeleteErrorText", contract.ACCOUNT_DELETE_CODES, "refusal code"]]) {
     const cases = [...word(fn).matchAll(/case "([^"]+)"/g)].map((m) => m[1]);
     if (!cases.length) { deviations.push(`${fn} is missing or has no cases; this test reads the literals there`); continue; }
     for (const x of list) if (!cases.includes(x)) deviations.push(`${fn} has no word for the ${what} "${x}"`);
@@ -393,4 +423,33 @@ test("iOS, counter-test: a removed encodeNil, a renamed decoder key, a foreign l
 
   const e = iosDeviations({ ...t, views: t.views.map((x) => x.replace('actionButton(n, "stop"', 'actionButton(n, "halt"')) });
   assert.ok(e.some((z) => z.startsWith("buttons of the container actions")), e.join("\n"));
+
+  const f = iosDeviations(t, { ...V, ACCOUNT_DELETE_CODES: [...V.ACCOUNT_DELETE_CODES, "QUOTA"] });
+  assert.ok(f.some((z) => z.includes("no word for the refusal code \"QUOTA\"")) && f.some((z) => z.startsWith("AdministrationContract.accountDeleteCodes")), f.join("\n"));
+  const g = iosDeviations({ ...t, views: t.views.map((x) => x.replace("self.error = accountDeleteErrorText(error)", "self.error = error.localizedDescription")) });
+  assert.ok(g.some((z) => z.startsWith("DeleteAccountSheet does not word")), g.join("\n"));
+});
+
+// ── (c) The fixture gateway of the iOS tests ─────────────────────────────────────────────────────
+
+const FIXTURE = path.join(repo, "mobile", "test-fixtures", "chat-gateway", "routes-settings.mjs");
+/** The fixture's own key list for POST /gw/account/delete and the route it answers (empty = bound). */
+function fixtureDeviations(text, contract = V) {
+  const deviations = [];
+  const keys = /const ACCOUNT_DELETE_KEYS = \[([^\]]*)\]/.exec(text);
+  if (!keys) deviations.push("ACCOUNT_DELETE_KEYS missing from routes-settings.mjs");
+  else {
+    const list = [...keys[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+    if (JSON.stringify(list) !== JSON.stringify([...contract.ACCOUNT_DELETE_FIELDS])) deviations.push(`fixture ACCOUNT_DELETE_KEYS ${JSON.stringify(list)}, contract ${JSON.stringify(contract.ACCOUNT_DELETE_FIELDS)}`);
+  }
+  if (!text.includes(`path === "${contract.ACCOUNT_DELETE_PATH}" && method === "POST"`)) deviations.push(`the fixture does not answer POST ${contract.ACCOUNT_DELETE_PATH}`);
+  for (const code of contract.ACCOUNT_DELETE_CODES) if (!text.includes(`code: "${code}"`)) deviations.push(`the fixture never answers the refusal code "${code}"`);
+  return deviations;
+}
+
+test("fixture: the iOS tests' gateway checks the account-deletion body against ACCOUNT_DELETE_FIELDS and answers ACCOUNT_DELETE_PATH; a drifted list is noticed", () => {
+  const text = read(FIXTURE);
+  assert.deepEqual(fixtureDeviations(text), [], fixtureDeviations(text).join("\n"));
+  const drifted = fixtureDeviations(text, { ...V, ACCOUNT_DELETE_FIELDS: ["password", "confirm"] });
+  assert.ok(drifted.some((z) => z.startsWith("fixture ACCOUNT_DELETE_KEYS")), drifted.join("\n"));
 });

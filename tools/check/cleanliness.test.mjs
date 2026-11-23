@@ -99,3 +99,28 @@ test("the copyright line of LICENSE passes, the same name anywhere else does not
     assert.ok(scan({ ...args, files: ["notes.md"] }).some((f) => f.kind === "term"), "the name elsewhere must be found");
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });
+
+test("the project's GitHub Pages site passes; another Pages site of the owner, a bare owner host, a look-alike path, http or no scheme does not", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "cbase-clean-"));
+  try {
+    const owner = (["Ki", "yan"].join("") + ["Sten", "ke"].join("")).toLowerCase();
+    const pages = `https://${owner}.github.io`;
+    const plant = {
+      "ok.md": `Privacy: ${pages}/cbase/privacy/\nSupport: [support](${pages}/cbase/support/)\nHome: ${pages}/cbase\n`,
+      "other.md": `See ${pages}/other/\n`,
+      "bare.md": `Hosted at ${owner}.github.io for now.\n`,
+      "evil.md": `See ${pages}/cbase-evil/\n`,
+      "http.md": `Privacy: http://${owner}.github.io/cbase/privacy/\n`,
+      "noscheme.md": `Privacy: ${owner}.github.io/cbase/privacy/\n` };
+    for (const [n, c] of Object.entries(plant)) fs.writeFileSync(path.join(root, n), c);
+    // A list that knows the owner name (the public file holds only the canary; the private list is not in every tree).
+    const args = { root, terms: (({ salt, substring, whole, lengths }) => ({ salt, substring: new Set(substring), whole: new Set(whole), lengths }))(hashTerms([owner])), allow: loadAllow() };
+    const kinds = (file) => [...new Set(scan({ ...args, files: [file] }).map((f) => f.kind))].sort();
+    assert.deepEqual(kinds("ok.md"), [], "the Pages URLs of this repository must pass");
+    assert.ok(kinds("other.md").includes("host"), "another Pages site of the owner is a foreign host");
+    assert.ok(kinds("bare.md").includes("term"), "the owner name outside the repository's addresses must be found");
+    assert.ok(kinds("evil.md").includes("host"), "a path that only starts with cbase is not the repository's site");
+    assert.ok(kinds("http.md").includes("term"), "the exemption is https only: the same site over http:// must be found");
+    assert.ok(kinds("noscheme.md").includes("term"), "the exemption needs the scheme: a scheme-less address must be found");
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});

@@ -660,6 +660,7 @@
     "helper-selectors.test.mjs",
     "identifiers.test.mjs",
     "ios-font.test.mjs",
+    "ios-store-readiness.test.mjs",
     "language.test.mjs",
     "lfs-helper.test.mjs",
     "loc-gate.test.mjs",

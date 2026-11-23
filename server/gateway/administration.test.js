@@ -23,6 +23,21 @@
 //  - The old list GET /gw/admin/users is gone, /gw/admin redirects into the settings.
 //      Sabotage: put `if (p === "/gw/admin/users" && m === "GET") return send(res, 200, users.listUsers());` before the create
 //      route => "list" red; drop the line with the 302 to ADMINISTRATION_JUMP => "list" red (404).
+//  - Account self-deletion (POST /gw/account/delete) re-authenticates: a wrong password is 403 and locks nothing.
+//      Sabotage: in index.js the account route `if (!u || u.id !== uid)` -> `if (false)` => "account deletion" red (202 instead of 403).
+//  - It always purges: both volumes go, the row goes only afterwards.
+//      Sabotage: in index.js eraseInBackground `eraseUser(userId, { purge: true })` -> `{ purge: false }` => "account deletion" red
+//      (no `vol-gone-*`).
+//  - A correct password proves the address for the name, as a login does (brake.success).
+//      Sabotage: drop `brake.success(address, name)` in the account route => "account deletion" red (no login_proven row).
+//  - A failed erasure stays marked and is retried at the next START on its own (the tick is set to ~24 days there); a marked row
+//    cannot be unlocked.
+//      Sabotage: drop `retryErasures({ atStart: true })` in the listen callback => "failed erasure" red at once (no "Retrying … at
+//      start" line in the restart's log); `users.unlockUser` without `AND erase_requested_at = 0` => "failed erasure" red (unlock 200).
+//  - The tick retries a failed erasure on its own (no restart; GW_TICK_MS short), and the "incomplete" warning is written once,
+//    not every tick.
+//      Sabotage: drop `retryErasures();` at the top of the tick => "tick retries" red (no further `volume rm`, ripcord); drop the
+//      `return` of the hourly gap in eraseInBackground => "tick retries" red (more than one warning).
 //
 // No clock: waits on the gateway's start lines (listening AND initial fill, see the harness), on gates of the fake docker and on
 // responses.
@@ -34,6 +49,8 @@ import path from "node:path";
 import test from "node:test";
 
 import { prepareSetup } from "./gateway-harness.mjs";
+import { addressKey } from "./outerShell.js";
+import { RIPCORD_MS } from "../../server/backend/test/ripcord.mjs";
 import { hostSpecs } from "./containers.js";
 import * as V from "./administration-contract.js";
 
@@ -433,5 +450,133 @@ test("create with all required fields (the row from the template), password, del
     assert.equal(blindPatch.status, 502, blindPatch.text);
     assert.match(blindPatch.json.error, /^Done, but the container cannot be measured right now/);
     assert.equal(gw.users.getUser(user.id).role, "admin");
+  } finally { await gw.end(); }
+});
+
+// ── Account self-deletion (POST /gw/account/delete, App Store guideline 5.1.1(v)) ─────────────────────────────────────────────
+
+const volumeGone = (gw, id, kind) => fs.existsSync(path.join(gw.state, `vol-gone-${cname(id)}-${kind}`));
+const login = (gw, username, password = "correct-123") => fetch(`${gw.base}/gw/login`, {
+  method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ username, password }),
+}).then((r) => r.status);
+// Waits until `check()` holds — or after RIPCORD_MS false, as a red line instead of a hang (an event that never comes). The
+// ripcord is the backstop, not the wait: every caller returns on the state.
+async function untilOrRipcord(gw, check) {
+  let clock;
+  const r = await Promise.race([gw.waitUntil(check), new Promise((res) => { clock = setTimeout(() => res(false), RIPCORD_MS); })]);
+  clearTimeout(clock);
+  return r;
+}
+const rowGone = (gw, id) => untilOrRipcord(gw, () => !gw.users.getUser(id));
+const volumeRemovals = (gw, id) => gw.calls().filter((c) => c.startsWith(`volume rm ${cname(id)}-`)).length;
+// The longest period a Node timer takes (~24.8 days): in a test the tick never comes.
+const TICK_NEVER = String(2 ** 31 - 1);
+
+test("account deletion: exactly {password}, re-authenticated (wrong => 403, nothing locked); the last admin with others => 409; a user is gone at once and purged; the sole user leaves the gateway in setup state with a fresh token", async () => {
+  const gw = await prepareSetup();
+  try {
+    const A = fresh(gw, "anna", "admin");
+    const U = fresh(gw, "ute");
+    const sessU = gw.users.createSession(U.id);
+    const a = asUser(gw, gw.users.createSession(A.id));
+    const u = asUser(gw, sessU);
+    await gw.start();
+    assert.deepEqual([...V.ACCOUNT_DELETE_FIELDS], ["password"]);
+    const erase = (call, body) => call("POST", V.ACCOUNT_DELETE_PATH, body);
+
+    assert.match((await erase(u, {})).json.error, /Required field missing: password/);
+    assert.match((await erase(u, { password: "correct-123", reason: "x" })).json.error, /unknown field/);
+    const wrong = await erase(u, { password: "wrong-password" });
+    assert.equal(wrong.status, 403, wrong.text);
+    assert.equal((await u("GET", "/gw/me")).status, 200, "a wrong password locks nothing");
+    assert.deepEqual([gw.users.getUser(U.id).locked, gw.users.eraseRequested(U.id)], [false, false]);
+
+    const last = await erase(a, { password: "correct-123" });
+    assert.equal(last.status, 409, last.text);
+    assert.match(last.json.error, /last active admin/);
+    // The clients word a refusal by its code (ACCOUNT_DELETE_CODES), never by the English `error`.
+    assert.deepEqual([wrong.json.code, last.json.code], [...V.ACCOUNT_DELETE_CODES]);
+    assert.ok(gw.users.loginProbation.read("anna", addressKey("127.0.0.1")) > 0, "a correct password proves the address like a login (brake.success)");
+    assert.equal((await a("GET", "/gw/me")).status, 200);
+    assert.match((await a("DELETE", `/gw/admin/users/${A.id}`)).json.error, /own account/, "the admin route still refuses the own account");
+
+    assert.ok(desired(gw)[U.id], "the desired entry exists before");
+    const r = await fetch(gw.base + V.ACCOUNT_DELETE_PATH, {
+      method: "POST", headers: { cookie: `cbase_gw=${sessU}`, "content-type": "application/json" }, body: JSON.stringify({ password: "correct-123" }),
+    });
+    assert.deepEqual([r.status, await r.json()], [202, { ok: true }]);
+    assert.match(r.headers.get("set-cookie") || "", /cbase_gw=;.*Max-Age=0/, "the session cookie is cleared");
+    assert.equal((await u("GET", "/gw/me")).status, 401, "the session is dead at once");
+    assert.equal(await login(gw, "ute"), 401, "no login after the deletion");
+    assert.ok(await rowGone(gw, U.id), `the row stays:\n${gw.log()}`);
+    assert.ok(volumeGone(gw, U.id, "home") && volumeGone(gw, U.id, "docker"), `both volumes removed:\n${gw.calls().join("\n")}`);
+    assert.equal(desired(gw)[U.id], undefined);
+    assert.equal(gw.users.getResources(U.id), null);
+    assert.equal(fs.existsSync(path.join(gw.data, "setup-token")), false, "no setup token while a user exists");
+
+    const sole = await erase(a, { password: "correct-123" });
+    assert.equal(sole.status, 202, sole.text);
+    assert.ok(await rowGone(gw, A.id), `the sole user's row stays:\n${gw.log()}`);
+    const info = await fetch(`${gw.base}/gw/info`).then((x) => x.json());
+    assert.equal(info.setup, true, "back in setup state");
+    const token = fs.readFileSync(path.join(gw.data, "setup-token"), "utf8").trim();
+    assert.ok(await gw.waitForLog(new RegExp(`asks for this token: ${token}`)), "the token is printed to the log like at startup");
+    const setup = await fetch(`${gw.base}/gw/setup`, {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ username: "new-admin", password: "correct-123", setupToken: token }),
+    });
+    assert.equal(setup.status, 201, await setup.text());
+  } finally { await gw.end(); }
+});
+
+test("failed erasure: the row stays locked and marked, an admin cannot unlock it, a login fails; after a gateway restart the START alone retries it with both volumes", async () => {
+  const gw = await prepareSetup({ env: { GW_TICK_MS: TICK_NEVER } });
+  try {
+    const A = fresh(gw, "anna", "admin");
+    const U = fresh(gw, "ute");
+    const a = asUser(gw, gw.users.createSession(A.id));
+    const u = asUser(gw, gw.users.createSession(U.id));
+    await gw.start();
+    gw.marker("volume-rm-fails");
+    assert.equal((await u("POST", V.ACCOUNT_DELETE_PATH, { password: "correct-123" })).status, 202);
+    assert.ok(await gw.waitForLog(new RegExp(`Account deletion of ${U.id} incomplete`)), gw.log());
+    assert.deepEqual([gw.users.getUser(U.id)?.locked, gw.users.eraseRequested(U.id)], [true, true], "the row stays, locked and marked");
+    const unlock = await a("PATCH", `/gw/admin/users/${U.id}`, { locked: false });
+    assert.equal(unlock.status, 409, unlock.text);
+    assert.match(unlock.json.error, /deleted their account/);
+    assert.equal(gw.users.getUser(U.id).locked, true);
+    assert.equal(await login(gw, "ute"), 401);
+
+    await gw.drain();
+    fs.rmSync(path.join(gw.state, "volume-rm-fails"));
+    const before = gw.log().length;
+    await gw.start();
+    // The start's lines are written in one step before the "Resources" line the harness waits for — no line, no start retry.
+    assert.match(gw.log().slice(before), /Retrying 1 pending account deletion\(s\) at start/, `the start did not retry the marked row:\n${gw.log()}`);
+    assert.ok(await rowGone(gw, U.id), `the marked row was not retried after the restart:\n${gw.log()}`);
+    assert.ok(volumeGone(gw, U.id, "home") && volumeGone(gw, U.id, "docker"), gw.calls().join("\n"));
+    assert.ok(gw.users.getUser(A.id), "the admin stays");
+  } finally { await gw.end(); }
+});
+
+test("tick retries: a self-deletion whose teardown fails while the gateway runs is retried by the tick until it succeeds; the warning comes once, not every tick", async () => {
+  const gw = await prepareSetup({ env: { GW_TICK_MS: "50" } });
+  try {
+    fresh(gw, "anna", "admin");
+    const U = fresh(gw, "ute");
+    const u = asUser(gw, gw.users.createSession(U.id));
+    await gw.start();
+    assert.doesNotMatch(gw.log(), /Retrying \d+ pending account deletion/, "nothing marked at start — only the tick can retry here");
+    gw.marker("volume-rm-fails");
+    assert.equal((await u("POST", V.ACCOUNT_DELETE_PATH, { password: "correct-123" })).status, 202);
+    assert.ok(await gw.waitForLog(new RegExp(`Account deletion of ${U.id} incomplete`)), gw.log());
+    const first = volumeRemovals(gw, U.id);
+    // Three more failed attempts — only the tick makes them (no restart, no second request).
+    assert.ok(await untilOrRipcord(gw, () => volumeRemovals(gw, U.id) >= first + 3), `the tick did not retry:\n${gw.calls().join("\n")}`);
+    assert.equal(gw.log().match(new RegExp(`Account deletion of ${U.id} incomplete`, "g")).length, 1, `the warning repeats every tick:\n${gw.log()}`);
+    assert.deepEqual([gw.users.getUser(U.id)?.locked, gw.users.eraseRequested(U.id)], [true, true]);
+    fs.rmSync(path.join(gw.state, "volume-rm-fails"));
+    assert.ok(await rowGone(gw, U.id), `the tick did not finish the erasure:\n${gw.log()}`);
+    assert.ok(volumeGone(gw, U.id, "home") && volumeGone(gw, U.id, "docker"), gw.calls().join("\n"));
+    assert.ok(await gw.waitForLog(new RegExp(`Account ${U.id} deleted by its owner`)), gw.log());
   } finally { await gw.end(); }
 });
