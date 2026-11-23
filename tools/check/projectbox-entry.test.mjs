@@ -8,8 +8,9 @@
 //
 // Course of every run, without a deadline: start (own process group) → wait for the first milestone (a `docker info`, a status
 // file "ready/error", a dockerd that is the script itself, or the end) → only THEN the test opens the gate behind which
-// `docker info` answers → wait for "ready/error" → TERM (or INT) to the script → wait for its end. The fake dockerd ends on
-// TERM with code 7 — if 7 arrives at the script, it waited and passed it on. In the finally the whole group is killed hard.
+// `docker info` answers → wait for "ready/error" (and for the event the test is about, e.g. a begun rest — see run()) → TERM
+// (or INT) to the script → wait for its end. The fake dockerd ends on TERM with code 7 — if 7 arrives at the script, it waited
+// and passed it on. In the finally the whole group is killed hard.
 //
 // NO HANG. A run used to wait without exit for the end of the script: a regression where it never ends did not turn the test red,
 // it hung until the suite deadline. An event alone cannot report "never ends" — "dockerd is gone, the script still lives" is
@@ -131,7 +132,13 @@ const FAKES = {
     `if [ -e ${W}/var/run/docker.pid ]; then printf '%s\\n' "dockerd pid file found" >> "$FAKE_LOG"; echo "failed to start daemon: pid file found, ensure docker is not running or delete /var/run/docker.pid" >&2; watchdog; exit 1; fi`,
     `[ -f ${W}/etc/docker/daemon.json ] && printf '%s\\n' "dockerd daemon.json" >> "$FAKE_LOG"`,
     `printf '%s\\n' "dockerd cgroup=$(cat ${W}/sys/fs/cgroup/cgroup.subtree_control 2>/dev/null)" >> "$FAKE_LOG"`,
-    `sleep "$FAKE_RIPCORD_S" & sp=$!`,
+    // FAKE_RIPCORD_FROM_SIGNAL: the short ripcord of the counter-test "if TERM does not reach dockerd" counts from the signal,
+    // not from dockerd's start — counted from the start it could run out before a slow harness sent the signal at all, and a
+    // CORRECT script read as "dockerd got no TERM" (proved with a 1.5-s delay before DNAT). Until the signal it waits at most the
+    // watchdog's ticks, so nothing hangs.
+    `if [ -n "\${FAKE_RIPCORD_FROM_SIGNAL:-}" ]; then`,
+    `  ( i=0; while [ ! -e "$FAKE_BASE/signalled" ] && [ "$i" -lt "$FAKE_RIPCORD_TICKS" ]; do i=$((i + 1)); sleep 0.05; done; exec sleep "$FAKE_RIPCORD_S" ) & sp=$!`,
+    `else sleep "$FAKE_RIPCORD_S" & sp=$!; fi`,
     `trap 'printf "%s\\n" "dockerd TERM" >> "$FAKE_LOG"; kill "$sp" 2>/dev/null; rm -f ${W}/var/run/docker.pid; watchdog; exit "\${FAKE_DOCKERD_RC:-0}"' TERM`,
     `mkdir -p ${W}/var/run && echo $$ > ${W}/var/run/docker.pid`,
     `wait "$sp"`,
@@ -334,6 +341,8 @@ const phase = (w) => (read(w.status).match(/^phase=(.*)$/m) || [])[1] || "";
 const ended = (k) => k.exitCode !== null || k.signalCode !== null;
 const isNat = (z) => /^(iptables |sysctl -w )/.test(z);
 const ripcords = (w) => rows(w).filter((z) => z.startsWith("ripcord:"));
+// FAKES.sleep marks a begun rest (`sleep 3600`) — the event a signal that must MEET the rest waits for (run, beforeSignal).
+const resting = (w) => fs.existsSync(path.join(w.base, "resting"));
 
 // Waits without a deadline until `check()` returns something — or the child ends or the stub pulls its ripcord (then `null`).
 async function waitForTruthy(check, kind, w) {
@@ -346,7 +355,10 @@ async function waitForTruthy(check, kind, w) {
 }
 
 // One run from start to end. `gate: false` never opens the gate (cap); `signal: null` sends none (the script ends by itself);
-// `beforeSignal(w)` is an event that is additionally waited for before the signal.
+// `beforeSignal(w, stderr)` is an event that is additionally waited for before the signal. The status file alone is no such
+// event: the script writes it and goes on, so a signal sent at once may meet the script anywhere between that write and the
+// state the test means (a begun rest, the status after DNAT) — on the CI's loaded runners it did. `resting` is the event of a
+// begun rest.
 // `during(w)` runs at every tick of the first wait — there the test opens the gate `.prepared`.
 async function run(w, { shell = "/bin/bash", script = ENTRY, env = {}, signal = "SIGTERM", gate = true, beforeSignal = null, during = null, deferredTrapOk = defersTrap(shell) } = {}) {
   const subprocess = spawn(shell, [script], {
@@ -376,7 +388,7 @@ async function run(w, { shell = "/bin/bash", script = ENTRY, env = {}, signal = 
   let err = "";
   subprocess.stderr.on("data", (b) => (err += b));
   const end = new Promise((r) => subprocess.once("exit", (code, sig) => r({ code, sig })));
-  const b = { kind: subprocess, milestone: null, natBeforeInfo: [], statusBeforeSignal: "", wasAliveAtSignal: false };
+  const b = { kind: subprocess, milestone: null, natBeforeInfo: [], statusBeforeSignal: "", wasAliveAtSignal: false, restingAtSignal: false };
   const past = () => ended(subprocess) || ripcords(w).length > 0;
   try {
     const finite = () => /^(ready|error)$/.test(phase(w)) && "status";
@@ -394,8 +406,16 @@ async function run(w, { shell = "/bin/bash", script = ENTRY, env = {}, signal = 
       if (gate) fs.writeFileSync(w.gate, "");
       await waitForTruthy(finite, subprocess, w);
     }
-    if (beforeSignal) await waitForTruthy(() => beforeSignal(w), subprocess, w);
+    // The wait for `beforeSignal` has a ripcord of its own: an event that never comes (the script rests some other way than
+    // `sleep 3600` — `sleep infinity`, `tail -f` — so `resting` never appears, and in the error state no dockerd pulls a ripcord)
+    // would otherwise hang the test. After RIPCORD_MS the signal goes out anyway, and the caller's checks (`restingAtSignal`)
+    // turn red. Only a broken run waits it out.
+    if (beforeSignal) {
+      const until = Date.now() + RIPCORD_MS;
+      await waitForTruthy(() => beforeSignal(w, err) || (Date.now() > until && "ripcord"), subprocess, w);
+    }
     b.statusBeforeSignal = read(w.status);
+    b.restingAtSignal = resting(w);
     b.wasAliveAtSignal = !past();
     if (b.wasAliveAtSignal && signal) {
       try { process.kill(subprocess.pid, signal); } catch { /* just ended */ }
@@ -588,8 +608,10 @@ for (const shell of SHELLS) {
   entryTest(`${shell}: if it fails five times, phase=error (cgroup) stands until the end, also after "info answers" and DNAT; dockerd runs, TERM reaches it`, async () => {
     const w = build((w) => fs.writeFileSync(w.gate, "")); // `docker info` answers as soon as dockerd stands
     try {
-      const lastRule = RULES.limit[RULES.limit.length - 1];
-      const r = await run(w, { shell, env: { FAKE_SED_ERROR: "99" }, beforeSignal: (w) => rows(w).includes(lastRule) });
+      // The status this test is about is the one written AFTER DNAT, and the last rule in the log comes before it: read there,
+      // the status file still held the one from before dockerd (same text), and a script that wrote "ready" after DNAT passed —
+      // on bash even without help, on both shells with a 0.4-s delay before it. The script logs "ready:" right after that write.
+      const r = await run(w, { shell, env: { FAKE_SED_ERROR: "99" }, beforeSignal: (w, err) => /^\[projectbox\] ready: /m.test(err) });
       checkCgroupError(r);
       assertEnd(r, "SIGTERM");
     } finally { way(w); }
@@ -692,7 +714,10 @@ entryTest("counter-test: if TERM does not reach dockerd, the run turns red inste
   const w = build();
   try {
     const copy = sabotage(w, "without-pass-on.sh", ['    kill -TERM "$DOCKERD_PID" 2>/dev/null || :\n', "    :\n"]);
-    const r = await run(w, { script: copy, env: { FAKE_RIPCORD_S: "1" } });
+    // The short ripcord counts from the signal (FAKES.dockerd): counted from dockerd's start, a slow run never sent the signal,
+    // and the line below stood for a CORRECT script too (proved with a 1.5-s delay before DNAT).
+    const r = await run(w, { script: copy, env: { FAKE_RIPCORD_S: "1", FAKE_RIPCORD_FROM_SIGNAL: "1" } });
+    assert.equal(r.wasAliveAtSignal, true, "no signal was sent — the ripcord says nothing about passing it on");
     assert.ok(r.ripcord.includes("ripcord: dockerd got no TERM"), JSON.stringify(r.ripcord));
     assert.throws(() => assertEnd(r, "SIGTERM"), assert.AssertionError);
   } finally { way(w); }
@@ -785,12 +810,15 @@ function checkCopy(r, w, { without = [], waited = null, foreign = FOREIGN } = {}
 }
 
 // A failed copy run: phase=error with the notice, NO daemon.json, NO dockerd, the script lived at the signal and ended at it
-// (143 or 130) — not before, not with a code of its own.
+// (143 or 130) — not before, not with a code of its own. The signal must MEET the rest (callers: `beforeSignal: resting`): sent
+// as soon as the status file says error, it could beat the step after it, and a script that runs `exit 1` there (or sleeps a
+// while and exits) ended with 143 and passed — the CI's red run of the counter-test "`exit 1` instead of resting" was exactly that.
 function checkCopyError(r, w, notice, { signal = "SIGTERM" } = {}) {
   const text = `\n${r.log.join("\n")}\n--- stderr\n${r.err}`;
   assert.deepEqual(r.ripcord, [], `the stub pulled its ripcord — the script kept resting after the signal${text}`);
   assert.equal(r.milestone, "status", `no status "error" before the signal${text}`);
   assert.equal(r.wasAliveAtSignal, true, `the script ended before the signal (exit instead of resting)${text}`);
+  assert.equal(r.restingAtSignal, true, `the signal did not meet a rest — nothing shows the script would have rested${text}`);
   assert.match(r.statusBeforeSignal, new RegExp(`^phase=error\\nnotice=${notice.source}`), `status file: ${r.statusBeforeSignal}`);
   assert.equal(r.log.some((z) => z.startsWith("dockerd") || z.startsWith("docker ")), false, `dockerd despite the error${text}`);
   assert.equal(fs.existsSync(path.join(w.root, "etc/docker/daemon.json")), false, "daemon.json despite the error");
@@ -877,7 +905,7 @@ for (const shell of SHELLS) {
     for (const [what, foreign, notice] of cases) {
       const w = copyBuild({ mounted: [Z], foreign });
       try {
-        const r = await run(w, { shell });
+        const r = await run(w, { shell, beforeSignal: resting });
         checkCopyError(r, w, new RegExp(`overlay: ${re(Z)} — ${notice.source}`));
         // Outer before inner: /home/agent/.local comes before Z and is mounted; after Z nothing more, no umount.
         assert.deepEqual(r.log.filter((z) => z.startsWith("mount ")), [mountRow(w, rowFor("/home/agent/.local"))], what);
@@ -889,7 +917,7 @@ for (const shell of SHELLS) {
   entryTest(`${shell}: if a mount fails: phase=error (overlay: <target>), no dockerd, no exit, the script lives until TERM`, async () => {
     const w = copyBuild();
     try {
-      const r = await run(w, { shell, env: { FAKE_MOUNT_ERROR: `${Z}/repo` } });
+      const r = await run(w, { shell, env: { FAKE_MOUNT_ERROR: `${Z}/repo` }, beforeSignal: resting });
       checkCopyError(r, w, new RegExp(`overlay: ${re(Z)}/repo — mount: .*wrong fs type`));
       assert.equal(r.log.filter((z) => z.startsWith("mount ")).length, 4, "mounted on after the error or stopped before");
       assert.equal(r.log.some((z) => z.startsWith("umount ")), false, "unmounted after a failed overlay");
@@ -913,7 +941,7 @@ for (const shell of SHELLS) {
     for (const [file, notice] of cases) {
       const w = copyBuild({ file });
       try {
-        const r = await run(w, { shell });
+        const r = await run(w, { shell, beforeSignal: resting });
         checkCopyError(r, w, notice);
         assert.equal(r.log.some((z) => /^(mount|umount|mountpoint) /.test(z)), false, `mounted after all with ${JSON.stringify(file.slice(-30))}`);
       } finally { way(w); }
@@ -923,7 +951,7 @@ for (const shell of SHELLS) {
       const t = path.join(w.root, "cbase-copy/overlays.tsv");
       if (kind === "folder") fs.mkdirSync(t); else fs.symlinkSync(path.join(w.base, "exists-not"), t);
       try {
-        checkCopyError(await run(w, { shell }), w, /overlay: \/cbase-copy\/overlays\.tsv is not a readable file/);
+        checkCopyError(await run(w, { shell, beforeSignal: resting }), w, /overlay: \/cbase-copy\/overlays\.tsv is not a readable file/);
       } finally { way(w); }
     }
   });
@@ -938,7 +966,7 @@ for (const shell of SHELLS) {
     for (const [on, env, notice, umounts] of cases) {
       const w = copyBuild(on);
       try {
-        const r = await run(w, { shell, env });
+        const r = await run(w, { shell, env, beforeSignal: resting });
         checkCopyError(r, w, notice);
         assert.equal(r.log.filter((z) => z.startsWith("mount ")).length, 4, "not all overlays before the error");
         assert.equal(r.log.filter((z) => z.startsWith("umount ")).length, umounts, JSON.stringify(env));
@@ -950,7 +978,7 @@ for (const shell of SHELLS) {
 entryTest("INT in the error state ends the script with 130", async () => {
   const w = copyBuild();
   try {
-    checkCopyError(await run(w, { signal: "SIGINT", env: { FAKE_MOUNT_ERROR: Z } }), w, /overlay: /, { signal: "SIGINT" });
+    checkCopyError(await run(w, { signal: "SIGINT", env: { FAKE_MOUNT_ERROR: Z }, beforeSignal: resting }), w, /overlay: /, { signal: "SIGINT" });
   } finally { way(w); }
 });
 
@@ -1003,7 +1031,11 @@ entryTest("counter-test: `exit 1` instead of resting ends before the signal with
   const w = copyBuild();
   try {
     const copy = sabotage(w, "exit-1.sh", ["    without_dockerd_rest\n", "    exit 1\n"]);
-    const r = await run(w, { script: copy, env: { FAKE_MOUNT_ERROR: Z } });
+    // The signal waits for a rest, as with every error run: this script never begins one, so it ends by itself and no signal
+    // comes. Sent at the status file instead, the signal could beat `exit 1` and the trap ended the script with 143 — red on the
+    // CI (proved with a 0.4-s delay before `exit 1`). Were the sabotage ever to rest after all, the signal still comes: no hang.
+    const r = await run(w, { script: copy, env: { FAKE_MOUNT_ERROR: Z }, beforeSignal: resting });
+    assert.equal(r.wasAliveAtSignal, false, "the script was still alive when a rest began — the sabotage does not bite");
     assert.equal(r.code, 1);
     assert.throws(() => checkCopyError(r, w, /overlay: /), assert.AssertionError);
   } finally { way(w); }
@@ -1041,8 +1073,13 @@ entryTest("a trap that takes effect only when the current rest ends (bash 3.2's 
       // takes effect when the rest has ended. No window where a rest could start after the signal.
       const copy = sabotage(w, "deferred-trap.sh",
         ['    [ -z "$QUIET_PID" ] || kill "$QUIET_PID" 2>/dev/null || :\n    exit "$1"\n', '    [ -n "${IN_WAIT:-}" ] || exit "$1"\n'],
-        ['    wait "$QUIET_PID" || :\n', '    IN_WAIT=1\n    while kill -0 "$QUIET_PID" 2>/dev/null; do wait "$QUIET_PID" || :; done\n    IN_WAIT=\n    [ -z "$END" ] || exit 143\n']);
-      const r = await run(w, { shell, script: copy, env: { FAKE_MOUNT_ERROR: Z }, deferredTrapOk: true });
+        ['    wait "$QUIET_PID" || :\n', '    IN_WAIT=1\n    : > "$FAKE_BASE/in-wait"\n    while kill -0 "$QUIET_PID" 2>/dev/null; do wait "$QUIET_PID" || :; done\n    IN_WAIT=\n    [ -z "$END" ] || exit 143\n']);
+      // The signal must meet the rest, or this proves nothing: sent before the rest, it ends the script at once, and even a
+      // deferral that kept resting passed (proved with a 0.4-s delay before the rest and `exit 143` taken out of the wait). Not
+      // `resting` but the copy's own `in-wait` mark: the fake marks its rest before the copy sets IN_WAIT, and a signal between
+      // the two ends the script at once as well (review: green with a delay before `QUIET_PID=$!`). Both marks: the copy may set
+      // its mark before the just-forked fake has written its own (seen on macOS).
+      const r = await run(w, { shell, script: copy, env: { FAKE_MOUNT_ERROR: Z }, deferredTrapOk: true, beforeSignal: (x) => resting(x) && fs.existsSync(path.join(x.base, "in-wait")) });
       checkCopyError(r, w, /overlay: /);
     } finally { way(w); }
   }
@@ -1058,7 +1095,7 @@ entryTest("counter-test: a foreground rest lets the trap wait until it ends — 
         ['    sleep 3600 &\n    QUIET_PID=$!\n    wait "$QUIET_PID" || :\n', '    sleep 3600\n']);
       // The signal must MEET the rest: sent before the first rest has begun, even this script ends at once (its trap runs
       // outside a foreground command) and there is nothing to find — seen on the CI. `resting` is the fake's mark of a begun rest.
-      const r = await run(w, { shell, script: copy, env: { FAKE_MOUNT_ERROR: Z }, deferredTrapOk: false, beforeSignal: (x) => fs.existsSync(path.join(x.base, "resting")) });
+      const r = await run(w, { shell, script: copy, env: { FAKE_MOUNT_ERROR: Z }, deferredTrapOk: false, beforeSignal: resting });
       assert.deepEqual(r.ripcord, ["ripcord: the script let its rest run out although a signal came"], `${shell}: ${JSON.stringify(r.ripcord)}`);
       assert.throws(() => checkCopyError(r, w, /overlay: /), assert.AssertionError);
     } finally { way(w); }
