@@ -3,7 +3,8 @@
 // folder by its most recent file), `agents/` and `workflows/` at the very bottom under "Internal"
 // (the `internal` field comes from the server). Image and Markdown as preview, other text up to
 // 1 MiB as source, everything else download + share. Routes as on the web: `GET /api/chats/:id/outputs`,
-// `GET /api/chats/:id/outputs/file?path=…[&inline=1]` (server chats/outputs-routes.js).
+// `GET /api/chats/:id/outputs/file?path=…[&inline=1]` and a folder as ZIP `GET /api/chats/:id/outputs/folder?path=…`
+// (server chats/outputs-routes.js).
 // Open: paths in chat text clickable (the own Markdown rendering Kit/Markdown.swift has no link hook for code/text).
 import SwiftUI
 import UIKit
@@ -57,6 +58,15 @@ extension ChatViewModel {
             "/api/chats/\(chat.id)/outputs/file",
             query: [URLQueryItem(name: "path", value: entry.path)],
             fallbackName: entry.name
+        )
+    }
+
+    /// A folder as ZIP into a temporary file (for ShareLink); `path` "" = the whole output location.
+    func loadOutputFolderZip(_ path: String) async throws -> URL {
+        try await client.downloadToTemporaryFile(
+            "/api/chats/\(chat.id)/outputs/folder",
+            query: [URLQueryItem(name: "path", value: path)],
+            fallbackName: "\(path.isEmpty ? "outputs" : (path.split(separator: "/").last.map(String.init) ?? "outputs")).zip"
         )
     }
 }
@@ -138,7 +148,7 @@ private struct OutputsRoot: View {
     var body: some View {
         Group {
             if let list {
-                OutputsLevelView(model: model, title: outputsName, entries: list.entries, front: "", withInternal: true,
+                OutputsLevelView(model: model, title: outputsName, entries: list.entries, front: "", withInternal: true, zipPath: "",
                                   hint: list.clipped ? L("Newest {n} of {total} files — older ones are not listed.", ["n": list.entries.count, "total": list.total]) : nil)
                     .cbRefreshable { await load() }
             } else if !error.isEmpty {
@@ -176,7 +186,12 @@ private struct OutputsLevelView: View {
     let entries: [OutputEntry]
     let front: String
     let withInternal: Bool
+    /// The folder this level shows, for the ZIP download ("" = the whole location); `nil` for the virtual "Internal" level.
+    var zipPath: String?
     var hint: String?
+    @State private var zip: URL?
+    @State private var zipLoading = false
+    @State private var zipError = ""
 
     var body: some View {
         let node = outputsLevel(entries, front: front, withInternal: withInternal)
@@ -188,7 +203,8 @@ private struct OutputsLevelView: View {
                 switch k {
                 case .folder(let name, let path, let es):
                     NavigationLink {
-                        OutputsLevelView(model: model, title: name, entries: es, front: path, withInternal: false)
+                        OutputsLevelView(model: model, title: name, entries: es, front: path, withInternal: false,
+                                         zipPath: String(path.dropLast()))
                     } label: { folderRow(name: name, count: es.count, isInternal: false) }
                     .accessibilityIdentifier("outputs-folder-\(name)")
                 case .internalFiles(let es):
@@ -221,10 +237,36 @@ private struct OutputsLevelView: View {
             if let hint {
                 Text(hint).font(.caption).foregroundStyle(.secondary)
             }
+            if !zipError.isEmpty {
+                Text(zipError).font(.caption).foregroundStyle(.red)
+            }
         }
         .listStyle(.plain)
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
+        // The list is live: a ZIP fetched before new files arrived would share an old state.
+        .onChange(of: entries) { zip = nil }
+        .toolbar {
+            if let zipPath, !entries.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
+                    if let zip {
+                        ShareLink(item: zip) { Label(L("Split"), systemImage: "square.and.arrow.up") }
+                            .accessibilityIdentifier("outputs-zip-share")
+                    } else if zipLoading {
+                        ProgressView()
+                    } else {
+                        Button {
+                            Task {
+                                zipLoading = true
+                                defer { zipLoading = false }
+                                do { zip = try await model.loadOutputFolderZip(zipPath); zipError = "" } catch { zipError = error.localizedDescription }
+                            }
+                        } label: { Label(L("Download as ZIP"), systemImage: "arrow.down.circle") }
+                        .accessibilityIdentifier("outputs-zip-download")
+                    }
+                }
+            }
+        }
     }
 
     private func folderRow(name: String, count: Int, isInternal: Bool) -> some View {

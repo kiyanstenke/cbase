@@ -10,6 +10,8 @@
 //       `data-output-reference` with `href="#"`, without context the HTML is as before; LINK_TARGET stays unchanged.
 //   (d) the wiring (web and iOS): the right bar shows the folder in the artifact section BEFORE the artifact tree (always, also without
 //       artifacts) and always hangs the window in; the bubble gives assistant text the context; the client's routes are the server's.
+//   (e) download: every file row links its file, every real folder row (not "Internal") and the "Outputs" row their folder as ZIP
+//       (`outputFolderUrl`, the server's GET /outputs/folder); the link shows on hover; the labels have a German translation.
 //
 // Counter-probes (each shown red):
 //   lib/outputs.ts `outputsTree` without the separation `!e.internal` (everything on top)          => (a) red;
@@ -17,7 +19,9 @@
 //   lib/outputs.ts the branch for relative paths without `k.relative &&`                         => (b) red;
 //   lib/outputs.ts the lookahead `(?![^\s/…])` after the root struck (prefix of a longer name becomes clickable) => (b) red;
 //   Markdown.tsx `freeText(part, references)` -> `part`                                          => (c) red;
-//   ChatRightSidebar.tsx the line `<OutputsFolder chatId={activeId} />` struck                    => (d) red.
+//   ChatRightSidebar.tsx the line `<OutputsFolder chatId={activeId} />` struck                    => (d) red;
+//   OutputsFolder.tsx the folder row's `<DownloadLink … outputFolderUrl(chatId, k.key…)` struck     => (e) red;
+//   OutputsFolder.tsx `k.key !== INTERNAL_KEY &&` struck (the virtual node would link a folder "internal:") => (e) red.
 //
 // Run:  ./check  (single file: node --test web/test/outputs.test.mjs)
 import { test, after } from "node:test";
@@ -158,4 +162,33 @@ test("(d) wiring: bar (folder before the artifact tree, window always), bubble (
   assert.match(swift, /"\/api\/chats\/\\\(chat\.id\)\/outputs\/file"/);
   assert.match(swift, /URLQueryItem\(name: "path"/);
   assert.equal((ios("Chat", "ChatArtifactSheets.swift").match(/OutputsEntryPoint\(model: model\)/g) || []).length, 2);
+});
+
+test("(e) download: file rows, real folder rows and the Outputs row link a download that shows on hover", () => {
+  const view = withoutComments(read("components", "chat", "OutputsFolder.tsx"));
+  const link = view.slice(view.indexOf("const DownloadLink"), view.indexOf("const ROW"));
+  assert.match(link, /<a href=\{href\} download=""/, "an anchor: the browser streams to disk");
+  assert.match(link, /opacity-0/);
+  assert.match(link, /group-hover:opacity-100/, "shows on hover of the row");
+  assert.match(link, /pointer-coarse:opacity-100/, "always visible without hover");
+  assert.match(view, /const ROW = "group /, "the row is the hover group");
+  // Folder rows: the real path (key without the trailing slash), never the virtual "Internal" node.
+  const folderRow = view.slice(view.indexOf('if (k.kind === "folder")'), view.indexOf("const selected"));
+  assert.match(folderRow, /\{k\.key !== INTERNAL_KEY && \(\s*<DownloadLink href=\{outputFolderUrl\(chatId, k\.key\.replace\(\/\\\/\$\/, ""\)\)\} label=\{t\("Download as ZIP"\)\} \/>/);
+  const fileRow = view.slice(view.indexOf("const selected"), view.indexOf("const list = state.list"));
+  assert.match(fileRow, /<DownloadLink href=\{outputUrl\(chatId, k\.entry\.path\)\} label=\{t\("Download"\)\} \/>/);
+  assert.match(view, /<DownloadLink href=\{outputFolderUrl\(chatId, ""\)\} label=\{t\("Download all as ZIP"\)\} \/>/, "the whole location");
+  assert.equal(A.INTERNAL_KEY.endsWith("/"), false, "the virtual node's key is no folder path");
+  // The client's route is the server's.
+  const api = read("lib", "api", "outputs.ts");
+  assert.match(api, /\/api\/chats\/\$\{chatId\}\/outputs\/folder\?path=\$\{encodeURIComponent\(path\)\}/);
+  const server = fs.readFileSync(path.join(repo, "server", "backend", "electron", "server", "chats", "outputs-routes.js"), "utf8");
+  assert.match(server, /sub === "\/outputs\/folder"/);
+  // iOS: the folder level carries the ZIP download over the same route (not on the virtual "Internal" level).
+  const swift = fs.readFileSync(path.join(repo, "mobile", "CbaseMobile", "Chat", "ChatOutputs.swift"), "utf8");
+  assert.match(swift, /"\/api\/chats\/\\\(chat\.id\)\/outputs\/folder"/);
+  assert.match(swift, /front: path, withInternal: false,\s*zipPath: String\(path\.dropLast\(\)\)\)/);
+  assert.match(swift, /title: L\("Internal"\), entries: es, front: "", withInternal: false\)/, "the Internal level has no zipPath");
+  const de = read("lib", "i18n-de.ts");
+  for (const key of ["Download", "Download as ZIP", "Download all as ZIP"]) assert.match(de, new RegExp(`^  "${key}": "`, "m"), `German for ${key}`);
 });

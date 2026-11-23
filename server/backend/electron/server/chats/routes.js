@@ -373,7 +373,7 @@ export async function chatRoutes(ctx) {
           skillWriteChatRoutes, // write skills (tool cbase_skill_write, only the main agent of a coding chat)
           airlockChatRoutes, // coding MCP airlock (the wrapper mcp/airlock.js)
           userBrowserChatRoutes, // the chat's browser: POST /browser/ensure (right chat rail, code tabs)
-          outputsChatRoutes, // GET /outputs, GET /outputs/file — the output folder, read-only (chats/outputs-routes.js)
+          outputsChatRoutes, // GET /outputs, GET /outputs/file, GET /outputs/folder (ZIP) — the output folder, read-only (chats/outputs-routes.js)
         ]) {
           const r = await s(fctx);
           if (r !== NEXT) return r;

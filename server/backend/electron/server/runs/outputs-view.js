@@ -17,12 +17,12 @@
 // current one.
 //
 // A leaf: imports only node:*, runs/runtime-location.js, runs/runtime-write.js and runtime/real-path.js.
-// Consumer: chats/outputs-routes.js. Guard: server/backend/test/outputs-view.test.js.
+// Consumer: chats/outputs-routes.js. Guards: server/backend/test/outputs-view.test.js, outputs-folder-zip.test.js (folder ZIP).
 import fs from "node:fs";
 import path from "node:path";
 import { allLocations, outputLocationIn, locationForChat } from "./runtime-location.js";
 import { runtimeFolderOf } from "./runtime-write.js";
-import { traverseWithoutReferences, realRoots, openFileWithoutReference } from "../runtime/real-path.js";
+import { traverseWithoutReferences, realRoots, openFileWithoutReference, openInArea } from "../runtime/real-path.js";
 
 /** At most this many entries go to the client — the newest. A cap, and the response says when it took effect. */
 export const OUTPUTS_LIST_MAX = 2000;
@@ -126,6 +126,37 @@ export function openOutput(chat, rel) {
       if (e?.code === "ENOENT" || e?.code === "ENOTDIR" || e?.code === "ENOFILE") continue;
       throw Object.assign(new Error(String(e?.message || e)), { status: 500 });
     }
+  }
+  if (hinaus) throw Object.assign(new Error(`The path leads out of the output location: ${rel}`), { status: 403 });
+  throw Object.assign(new Error(`Not in the output location: ${rel}`), { status: 404 });
+}
+
+/** The name of the whole output location as a download (`<name>.zip`). */
+export const OUTPUTS_ZIP_NAME = "outputs";
+
+/**
+ * Find a FOLDER of the output location for a ZIP download → `{ abs, name, area }` (no descriptor stays open; zip.js packs
+ * inside `area` again — every folder O_NOFOLLOW from its checked parent, links go into `_CBASE-SKIPPED.txt`, never followed).
+ * `rel` empty = the whole location. The folder itself must not be a link (O_NOFOLLOW on the last part, like a file) and must lie
+ * in the area. With several locations (fallback) the FIRST one holding the folder is packed — the current one first.
+ * Errors carry `status` like openOutput: 400 invalid path, 404 nowhere (or not a folder), 403 the path leads out.
+ */
+export function openOutputFolder(chat, rel) {
+  const parts = rel === "" ? [] : relativeOutputPath(rel);
+  if (!parts) throw Object.assign(new Error("invalid path"), { status: 400 });
+  let hinaus = null;
+  for (const w of rootsOfTheChats(chat)) {
+    if (!w.area) { hinaus ??= w.path; continue; }
+    const abs = path.join(w.path, ...parts);
+    let fd = null;
+    try {
+      fd = openInArea(abs, w.area, fs.constants.O_RDONLY | fs.constants.O_DIRECTORY | fs.constants.O_NOFOLLOW);
+      return { abs, name: parts.length ? parts[parts.length - 1] : OUTPUTS_ZIP_NAME, area: w.area };
+    } catch (e) {
+      if (e?.code === "EOUTSIDE" || e?.code === "ELOOP") { hinaus ??= abs; continue; }
+      if (e?.code === "ENOENT" || e?.code === "ENOTDIR") continue;
+      throw Object.assign(new Error(String(e?.message || e)), { status: 500 });
+    } finally { if (fd !== null) fs.closeSync(fd); }
   }
   if (hinaus) throw Object.assign(new Error(`The path leads out of the output location: ${rel}`), { status: 403 });
   throw Object.assign(new Error(`Not in the output location: ${rel}`), { status: 404 });

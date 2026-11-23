@@ -1413,6 +1413,7 @@ export const DE: Record<string, string> = {
   "Download": "Herunterladen",
   "Download…": "Herunterladen…",
   "Download as ZIP": "Als ZIP herunterladen",
+  "Download all as ZIP": "Alles als ZIP herunterladen",
   "Could not load image.": "Bild konnte nicht geladen werden.",
 
   "Upload…": "Hochladen…",

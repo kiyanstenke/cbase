@@ -5,14 +5,16 @@
 //   OutputsFolder  the "Outputs" row in the artifact tree of the right bar, with the tree below it (lib/outputs.ts
 //                  outputsTree: newest first, `agents/` and `workflows/` collapsed under "Internal"); a jump from the
 //                  chat text expands and filters (a folder with a `*` pattern). While open it refetches the list every
-//                  10 s (live) as long as the page is visible.
+//                  10 s (live) as long as the page is visible. Every file and real folder row (and the "Outputs" row itself)
+//                  carries a download link that shows on hover (always on touch screens): a file as it is, a folder as ZIP
+//                  streamed by the server (GET …/outputs/folder; the "Internal" node is not a real folder and has none).
 //   OutputsWindow  the open file: the SAME window as an artifact (ArtifactModal without `onSave`: read-only). Images and
 //                  Markdown directly, other text as source (up to 1 MiB), everything else as a download. Always mounted
 //                  in the bar: a click on a path in the chat opens the file and the bar on Artifacts (`onJump`).
 import { useEffect, useMemo, useState } from "react";
 import { ArtifactModal, type ChatArtifact, type ChatArtifactContent } from "@/components/ArtifactBrowser";
-import { outputUrl } from "@/lib/api";
-import { type OutputEntry, type OutputsNode, outputMime, outputsTree, outputsWay, filterOutputs } from "@/lib/outputs";
+import { outputFolderUrl, outputUrl } from "@/lib/api";
+import { type OutputEntry, type OutputsNode, INTERNAL_KEY, outputMime, outputsTree, outputsWay, filterOutputs } from "@/lib/outputs";
 import { fmtSize } from "@/lib/chat-format";
 import { useT } from "@/lib/i18n";
 import { reloadOutputs, openOutputFile, useOutputs, useOutputsJump, useOpenOutput } from "@/components/chat/outputsStore";
@@ -34,6 +36,15 @@ const Deposit = () => svg(<><path d="M22 12h-6l-2 3h-4l-2-3H2" /><path d="M5.45 
 const File = ({ mime }: { mime: string }) => mime.startsWith("image/")
   ? svg(<><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="9" cy="10" r="1.6" /><path d="m5 18 5-5 4 4 2-2 3 3" /></>)
   : svg(<><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z" /><path d="M14 3v5h5" /><path d="M9 13h6" /><path d="M9 17h4" /></>);
+
+// The download as an anchor, not fetch+Blob: the browser (and Electron) stream straight to disk; the name comes from
+// Content-Disposition. Hidden until the row is hovered or the link focused; on touch screens (no hover) always visible.
+const DownloadLink = ({ href, label }: { href: string; label: string }) => (
+  <a href={href} download="" rel="noopener" data-output-download title={label} aria-label={label}
+    className="mr-1 grid h-6 w-6 shrink-0 place-items-center rounded-md text-dim opacity-0 transition-[opacity,color,background-color] hover:bg-hover hover:text-fg focus-visible:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100">
+    {svg(<><path d="M12 4v11" /><path d="m7 10 5 5 5-5" /><path d="M5 20h14" /></>, 13)}
+  </a>
+);
 
 const ROW = "group flex items-center rounded-lg transition-colors hover:bg-hover";
 // The folder name: "Spend" already stands for COSTS (usage) in lib/i18n-de.ts, so the same key would read "Spend"
@@ -102,6 +113,9 @@ export function OutputsFolder({ chatId }: { chatId: string }) {
               <span className={`min-w-0 flex-1 truncate ${k.internal ? "text-dim" : "font-medium"}`}>{k.name}</span>
               <span className="shrink-0 tabular-nums text-[10px] text-dim">{k.files}</span>
             </button>
+            {k.key !== INTERNAL_KEY && (
+              <DownloadLink href={outputFolderUrl(chatId, k.key.replace(/\/$/, ""))} label={t("Download as ZIP")} />
+            )}
           </div>
           {on && rows(k.children, depth + 1)}
         </div>
@@ -118,6 +132,7 @@ export function OutputsFolder({ chatId }: { chatId: string }) {
           <span className="min-w-0 flex-1 truncate font-mono text-[11.5px]">{k.name}</span>
           <span className="shrink-0 text-[10px] tabular-nums text-dim">{fmtSize(k.entry.size)}</span>
         </button>
+        <DownloadLink href={outputUrl(chatId, k.entry.path)} label={t("Download")} />
       </div>
     );
   });
@@ -134,6 +149,7 @@ export function OutputsFolder({ chatId }: { chatId: string }) {
           <span className="min-w-0 flex-1 truncate font-medium">{name}</span>
           <span className="shrink-0 tabular-nums text-[10px] text-dim">{list ? (list.clipped ? `${list.total}+` : entries.length) : ""}</span>
         </button>
+        {entries.length > 0 && <DownloadLink href={outputFolderUrl(chatId, "")} label={t("Download all as ZIP")} />}
         {open && (
           <button type="button" onClick={() => void reloadOutputs(chatId, { force: true })} title={t("Refresh")} aria-label={t("Refresh")}
             className={`mr-1 grid h-6 w-6 shrink-0 place-items-center rounded-md text-dim transition-colors hover:bg-hover hover:text-fg ${state.loading ? "animate-pulse" : ""}`}>

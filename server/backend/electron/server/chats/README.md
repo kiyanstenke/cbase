@@ -60,8 +60,9 @@
   `server/backend/test/captures-turn-end.test.js`.
 - **Outputs** (`outputs-routes.js`): the sub-slice `outputsChatRoutes` — `GET /outputs` (list of the output folder) and
   `GET /outputs/file?path=<rel>[&inline=1]` (the file via the checked descriptor, `nosniff`, active types in the sandbox
-  CSP, `private, no-cache`). GET only. The computation lives in `../runs/outputs-view.js`. Guard
-  `server/backend/test/outputs-view.test.js`.
+  CSP, `private, no-cache`), `GET /outputs/folder?path=<rel>` (a folder — `path=` empty: the whole location — as a streamed ZIP
+  inside the area, links skipped). GET only. The computation lives in `../runs/outputs-view.js`. Guards
+  `server/backend/test/outputs-view.test.js`, `outputs-folder-zip.test.js`.
 - **Ultracode** (`ultracode.js`): `ultracodeFollowUp(chat, fields)`, the ONE ultracode rule. Effort level and ultracode
   are two INDEPENDENT axes: the rule only normalises the toggle (`chats.ultracode`) to 0/1 and never touches level, model
   or provider. Every write path passes through it (`chats/routes.js`, `chats/creation.js`, `runs/routes.js`,

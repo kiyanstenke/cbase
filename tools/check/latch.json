@@ -26,6 +26,7 @@
     "agent-never-into-the-empty.test.js",
     "agent-user-browser.test.js",
     "outputs-view.test.js",
+    "outputs-folder-zip.test.js",
     "chat-browser.test.js",
     "agent-stall.test.js",
     "agent-stop.test.js",

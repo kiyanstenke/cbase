@@ -52,7 +52,7 @@ ingredients (`ChatCatalog`, `ChatIcons`).
 | `StatusLine.tsx`, `SeparatorRow.tsx`, `DaySeparator.tsx` | The two forms of status messages (line and card), the separator row for boundaries in the history, and the wavy day separator (`lib/day-separator.ts`, twin iOS `Chat/DaySeparator.swift`). |
 | `WorkflowApprovalCard.tsx`, `AgentMessageCard.tsx`, `AgentMessageSheet.tsx` | Approval card of a dynamic workflow without opt-in; card of an agent message; the sheet of the "Message" button. |
 | `DynWorkflowTree.tsx`, `GraphRunCard.tsx` | The cards of a dynamic workflow and of a graph workflow in the "Background Tasks" list, and the shared `SymbolButton`. |
-| `OutputsFolder.tsx`, `outputsStore.ts` | The "Outputs" folder at the top of the artifact section (the chat's output place, LIVE and read-only) and its module-wide state. |
+| `OutputsFolder.tsx`, `outputsStore.ts` | The "Outputs" folder at the top of the artifact section (the chat's output place, LIVE and read-only; a download link on hover per file, per folder as ZIP and for the whole place) and its module-wide state. |
 | `ChatQuotes.tsx` | The annotations ("Reply" at selected text): marker in the composer and the card above it. |
 | `ChatTabBar.tsx`, `ChatCodeArea.tsx`, `DiffTabSwitch.tsx`, `chatTabs.ts` | Code tabs in the chat: tab bar `[Chat]` + file, diff and preview tabs, title line, code area. |
 | `ChatCatalog.tsx` | Slash commands (`SLASH_COMMANDS`, `SLASH_RE`, `withSlashGlow`), aliases (`MODEL_ALIAS`, `MODE_ALIAS`, `EFFORT_ALIAS`, bound to the iOS aliases), model fallback (`CLAUDE_MODELS`, `CODEX_MODELS`, `modelsFor`, `contextWindowFor`), `PERM_MODES`, `STATUS_WORDS`/`verbFor`, `fmtTokens`. |

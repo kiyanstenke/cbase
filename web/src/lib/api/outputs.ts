@@ -1,5 +1,5 @@
-// A chat's output location, read-only. Routes `GET /api/chats/:id/outputs` (list) and
-// `GET /api/chats/:id/outputs/file?path=…[&inline=1]` (file); server chats/outputs-routes.js. The calculations over the list (tree,
+// A chat's output location, read-only. Routes `GET /api/chats/:id/outputs` (list),
+// `GET /api/chats/:id/outputs/file?path=…[&inline=1]` (file) and `GET /api/chats/:id/outputs/folder?path=…` (folder as ZIP); server chats/outputs-routes.js. The calculations over the list (tree,
 // paths in the chat text) live in the leaf lib/outputs.ts. Leaf: nothing outside lib/api/ and lib/outputs.ts (README there).
 import { API_BASE, api } from "./core.js";
 import type { OutputEntry, OutputsList } from "../outputs.js";
@@ -21,3 +21,7 @@ export async function loadOutputs(chatId: string): Promise<OutputsList> {
 /** The address of a file (download, or `inline` for display). */
 export const outputUrl = (chatId: string, path: string, inline = false) =>
   `${API_BASE}/api/chats/${chatId}/outputs/file?path=${encodeURIComponent(path)}${inline ? "&inline=1" : ""}`;
+
+/** The address of a folder as ZIP download; `path` empty = the whole output location. */
+export const outputFolderUrl = (chatId: string, path: string) =>
+  `${API_BASE}/api/chats/${chatId}/outputs/folder?path=${encodeURIComponent(path)}`;
