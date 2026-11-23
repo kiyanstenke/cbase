@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="web/public/cbase-lens.png">
+    <img src="web/public/cbase-lens-ink.png" alt="cbase" width="96">
+  </picture>
+</p>
+
 # cbase
 
 **A self-hosted workbench for long-running coding agents.** Let Claude Code, Codex and OpenRouter models work for hours in an

@@ -625,6 +625,7 @@
     "vscode-tunnel.test.mjs",
     "waiting-until-binding.test.mjs",
     "watermark.test.mjs",
+    "lens-theme.test.mjs",
     "wfe-ios-binding.test.mjs",
     "workflow-chats.test.mjs",
     "workflow-settings-binding.test.mjs",

@@ -26,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         {/* The boot splash shows from frame 1, so its lens must be requested BEFORE first paint, else it shows only the text for a blink. */}
         <link rel="preload" as="image" href="/cbase-lens.png" />
+        <link rel="preload" as="image" href="/cbase-lens-ink.png" />
       </head>
       {/* suppressHydrationWarning: browser extensions inject attributes into the body tag.
           `cb-flat` on the body: the flat form of menus, modals, scrims and cards (globals.css, `.cb-flat …`) applies

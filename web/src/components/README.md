@@ -36,6 +36,9 @@ the tab strip because Electron computes regions in DOM order; if it does not fit
   `EmptyRow`, `symbol`, the Coding symbols `SYM`, the same icons as the rail). Used by Projects, Instances, Services,
   Agents (subagents, outer loop), Workflows (graph list and Dynamic, not editor and runs), MCP, Context and Credentials:
   rounded rows without hairlines, tile in the colour of the state, facts with 12 px icons, summary above the list.
+- `CbaseLens.tsx`: the cbase mark inside the app (header, boot splash, gateway login): two images from
+  `tools/icon/build-icons.mjs` (`cbase-lens-ink.png` for a light ground, `cbase-lens.png` for a dark one), CSS shows the one that
+  fits `data-theme`. Never an `<img src="/cbase-lens.png">` of its own (guard `web/test/lens-theme.test.mjs`).
 - `Origin.tsx`: `OriginMarker` and `OriginSection` (a whole kit `Section` with a tinted tile): project versus workspace
   entries in Agents, MCP, Credentials and Workflows; names via the `OriginNames` context of the Coding page.
 - `CategoryBar.tsx` (the context categories; also exports `CategorySymbol` for the tile of each context row), `TopNav.tsx`,

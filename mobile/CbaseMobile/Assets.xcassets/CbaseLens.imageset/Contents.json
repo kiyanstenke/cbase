@@ -1,6 +1,16 @@
 {
   "images" : [
     {
+      "filename" : "lens-ink.png",
+      "idiom" : "universal"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
       "filename" : "lens.png",
       "idiom" : "universal"
     }

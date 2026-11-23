@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CbaseLens } from "@/components/CbaseLens";
 
 // Boot splash on app start: the lens and "cbase" beside it, centered, nothing else. Runs once per app start (sessionStorage
 // survives reloads in the same window, a fresh Electron start begins empty), then the overlay fades out.
@@ -50,12 +51,7 @@ export function BootSplash() {
         }`}
         style={{ transitionDuration: `${FADE_IN_MS}ms` }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element -- static asset, no next/image in a static export */}
-        <img
-          src="/cbase-lens.png"
-          alt=""
-          className="h-[clamp(52px,7vw,76px)] w-[clamp(52px,7vw,76px)]"
-        />
+        <CbaseLens className="h-[clamp(52px,7vw,76px)] w-[clamp(52px,7vw,76px)]" />
         {/* Lens and wordmark are ONE glyph and grow with the window (vw), not with the text size: `cb-text-fest` holds the factor
             at 1. The computation is still written out in the value — a size in vw is unknown to the text-scale plugin
             (web/postcss-text-scale.cjs), which only leaves alone what `--cb-text-scale` already carries. */}

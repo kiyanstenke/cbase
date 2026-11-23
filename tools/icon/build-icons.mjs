@@ -7,13 +7,19 @@
 //   mobile/…/AppIcon.appiconset/AppIcon.png (iOS, 1024, no alpha, full bleed)
 //   web/src/app/apple-icon.png              (web, home screen of iPhone/iPad: apple-touch-icon, 180, no alpha, full bleed)
 //
-// LENS (tools/icon/lens.png) — the mark INSIDE the app and wherever the environment brings its own background:
-//   web/public/cbase-lens.png             (header, boot splash, gateway login)
-//   mobile/…/CbaseLens.imageset/lens.png  (top bar, boot splash)
-//   web/src/app/icon.png                    (browser tab, favicon)
+//   web/src/app/icon.png                    (browser tab, favicon: the tile, 512, no alpha)
 //
-// The tab is deliberately the LENS, not the tile: a tab strip shows 16 px, and a dark tile with a small symbol in it is a grey blob at
-// that size. The lens carries its shape all the way down — and it brings no background that fights light or dark tab strips.
+// LENS (tools/icon/lens.png) — the mark INSIDE the app, without the tile. The source is drawn for a DARK ground (light letter, blue
+// square); on a light ground that letter would vanish. So every lens comes twice:
+//   web/public/cbase-lens.png                 (dark ground: the source as it is)
+//   web/public/cbase-lens-ink.png             (light ground: the letter in the tile colour, the square stays)
+//   mobile/…/CbaseLens.imageset/lens.png      (dark appearance)   + lens-ink.png (any/light appearance)
+//   client/connect.html                       (both inline as data URIs, 128 px; the page's prefers-color-scheme picks)
+// Web picks by `data-theme` (`.cb-lens-on-dark` / `.cb-lens-on-light`, component `CbaseLens`), iOS by the asset catalog's luminosity
+// appearance. The watermark uses cbase-lens.png only as a CSS mask, so only its alpha counts there.
+//
+// The tab is the TILE: the lens brings no ground of its own, and a light letter on a light tab strip is invisible. The mark is a
+// simple, bold shape, so the tile still reads at 16 px.
 //
 // Both crops find the content via the ALPHA CHANNEL, not via fixed numbers — a new source with a different margin runs through without
 // adjustment.
@@ -47,6 +53,11 @@ const TARGETS = {
     path.join(REPO, "web/public/cbase-lens.png"),
     path.join(REPO, "mobile/CbaseMobile/Assets.xcassets/CbaseLens.imageset/lens.png"),
   ],
+  lensInk: [
+    path.join(REPO, "web/public/cbase-lens-ink.png"),
+    path.join(REPO, "mobile/CbaseMobile/Assets.xcassets/CbaseLens.imageset/lens-ink.png"),
+  ],
+  connect: path.join(REPO, "client/connect.html"),
   tab: path.join(REPO, "web/src/app/icon.png"),
   touch: path.join(REPO, "web/src/app/apple-icon.png"),
 };
@@ -132,9 +143,18 @@ async function fullBleed(crop, reason, px) {
 // The lens without a tile: cropped to the content and centred in a square field (`contain`, transparent). Cropping goes via the alpha
 // channel — so the mark sits the same at every size, however much air the source brings. Palette PNG, because a 512 lens then weighs
 // about 50 instead of 260 KB and the difference is not visible on a 28 px logo (let alone a 16 px tab).
-async function lensField(px) {
+//
+// `ink` (an {r,g,b}) gives the light-ground variant: every pixel that is not the blue accent takes the ink colour, alpha untouched, so
+// the anti-aliased edge stays as soft as in the source. "Blue" = blue clearly above red; the light letter is near-grey, the accent is not.
+async function lensField(px, ink = null) {
   const { data, info } = await sharp(LENS).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const { width: w, height: h, channels: c } = info;
+  if (ink) {
+    for (let i = 0; i < data.length; i += c) {
+      if (data[i + 3] === 0 || data[i + 2] - data[i] > 60) continue;
+      data[i] = ink.r; data[i + 1] = ink.g; data[i + 2] = ink.b;
+    }
+  }
   let l = w, r = -1, t = h, b = -1;
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     if (data[(y * w + x) * c + 3] > 8) { if (x < l) l = x; if (x > r) r = x; if (y < t) t = y; if (y > b) b = y; }
@@ -190,7 +210,23 @@ for (const z of TARGETS.macIcns) { await icns(canvas, z); console.log("→", pat
 const full1024 = await fullBleed(crop, reason, 1024);
 fs.writeFileSync(TARGETS.ios, full1024); console.log("→", path.relative(REPO, TARGETS.ios));
 fs.writeFileSync(TARGETS.touch, await fullBleed(crop, reason, 180)); console.log("→", path.relative(REPO, TARGETS.touch));
+fs.writeFileSync(TARGETS.tab, await fullBleed(crop, reason, 512)); console.log("→", path.relative(REPO, TARGETS.tab));
 await assetsCar(full1024, reason, TARGETS.car);
 
 const lens512 = await lensField(512);
-for (const z of [...TARGETS.lens, TARGETS.tab]) { fs.writeFileSync(z, lens512); console.log("→", path.relative(REPO, z)); }
+for (const z of TARGETS.lens) { fs.writeFileSync(z, lens512); console.log("→", path.relative(REPO, z)); }
+// Ink = the tile's own ground colour: on a light ground the letter takes the colour it has as the background of the app icon.
+const lensInk512 = await lensField(512, reason);
+for (const z of TARGETS.lensInk) { fs.writeFileSync(z, lensInk512); console.log("→", path.relative(REPO, z)); }
+
+// The client's connect page carries both lenses inline (128 px, data URI): one `<img class="mark mark-ink">` and one
+// `<img class="mark mark-light">`, the page's own prefers-color-scheme rule shows the fitting one. Each slot must occur exactly once.
+{
+  let html = fs.readFileSync(TARGETS.connect, "utf8");
+  for (const [slot, png] of [["mark-ink", await lensField(128, reason)], ["mark-light", await lensField(128)]]) {
+    const re = new RegExp(`(<img class="mark ${slot}" alt="" src=")data:image/png;base64,[^"]*(")`, "g");
+    if ((html.match(re) || []).length !== 1) throw new Error(`${path.relative(REPO, TARGETS.connect)}: slot ${slot} not found exactly once`);
+    html = html.replace(re, `$1data:image/png;base64,${png.toString("base64")}$2`);
+  }
+  fs.writeFileSync(TARGETS.connect, html); console.log("→", path.relative(REPO, TARGETS.connect));
+}

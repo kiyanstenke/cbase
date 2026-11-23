@@ -1344,3 +1344,6 @@ textarea {
 .cb-watermark-shortcut dl:last-of-type { margin-bottom: 0; }
 .cb-watermark-shortcut dt { letter-spacing: 0.04em; }
 .cb-watermark-shortcut dd { text-align: left; margin-inline-start: 24px; }
+
+/* The cbase mark (component CbaseLens): dark letter on a light ground, light letter on a dark ground. */
+:root[data-theme="dark"] .cb-lens-on-light, :root:not([data-theme="dark"]) .cb-lens-on-dark { display: none; }

@@ -6,6 +6,7 @@
 // the app: login (or first-time setup) → start environment → app.
 import { createContext, useContext, useEffect, useState } from "react";
 import { useT } from "@/lib/i18n";
+import { CbaseLens } from "@/components/CbaseLens";
 
 export interface GatewayUser { username: string; role: "admin" | "user" }
 interface GatewayCtx { user: GatewayUser; logout: () => void }
@@ -112,8 +113,7 @@ function GatewayLogin({ setup, onDone }: { setup: boolean; onDone: (u: GatewayUs
     <div className="cb-kit grid h-screen place-items-center bg-bg">
       <form onSubmit={submit} className="cb-kit-pane w-[min(340px,calc(100vw-2rem))] rounded-2xl p-7">
         <div className="mb-6 flex items-center gap-2.5">
-          {/* eslint-disable-next-line @next/next/no-img-element -- static asset, no next/image with static export */}
-          <img src="/cbase-lens.png" alt="" className="h-8 w-8" />
+          <CbaseLens className="h-8 w-8" />
           <div>
             <div className="text-[15px] font-bold tracking-tight text-fg">cbase</div>
             <div className="text-xs text-dim">{setup ? t("First-time setup — create the admin account") : t("Sign in to the server")}</div>

@@ -15,6 +15,7 @@ import { ADMINISTRATION_PAGE, usageJump } from "@/lib/api";
 import { syncLangToBackend, useT, dateLocale } from "@/lib/i18n";
 import { useGateway } from "@/lib/gateway";
 import { ProviderMark } from "@/components/ProviderMarks";
+import { CbaseLens } from "@/components/CbaseLens";
 import { shellBridge, drawsWindowButtons } from "@/lib/shell-bridge";
 
 // ── Window buttons for the window WITHOUT focus — only for an OLD client ───────────────────────
@@ -426,8 +427,7 @@ export function TopNav() {
         ) : (
           <span className="mr-1 flex shrink-0 items-center gap-2.5 sm:mr-6">
             {/* The brand IN the app is always the lens, never the app-icon tile (its dark background belongs on the desktop, not in a light header). */}
-            {/* eslint-disable-next-line @next/next/no-img-element -- static asset, no next/image in static export */}
-            <img src="/cbase-lens.png" alt="cbase" className="h-7 w-7" />
+            <CbaseLens alt="cbase" className="h-7 w-7" />
             {/* The lettering is dropped on narrow windows — the logo already carries the brand. */}
             <span className="hidden text-[15px] font-bold tracking-tight sm:inline">cbase</span>
           </span>
