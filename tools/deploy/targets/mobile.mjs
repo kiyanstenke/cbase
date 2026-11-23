@@ -17,7 +17,7 @@ import { confirm } from "../lib/prompt.mjs";
 import { findIphones, xcrunCaller } from "../lib/iphone.mjs";
 import * as log from "../../check/lib/log.mjs";
 import {
-  LIVE_WALKTHROUGH, LOAD_LIMIT, WARMUP, WARMUP_DEADLINE_MS, deviationVerdict, bootTime, draftsResult,
+  LIVE_WALKTHROUGH, NOT_IN_FULL_RUN, LOAD_LIMIT, WARMUP, WARMUP_DEADLINE_MS, deviationVerdict, bootTime, draftsResult,
   HW_KEYBOARD_PREDICATE, SIM_DOMAIN, hwKeyboardInDevice, hwKeyboardPreference, hwKeyboardKey, logShowTime,
   draftKey, draftPlist, expectation, loadGateDecision, loadVerdict, normIdentifiers,
   parseEnumeration, parseLsof,
@@ -696,7 +696,7 @@ export async function runMobileTests({ only = [], runs = 1, wait = 0, stamp, for
     // (8) runs
     const runArgs = onlyList.length
       ? expected.args.map((k) => `-only-testing:${k}`)
-      : [`-skip-testing:${LIVE_WALKTHROUGH}`];
+      : NOT_IN_FULL_RUN.map((k) => `-skip-testing:${k}`);
     for (let i = 1; i <= runsN; i += 1) {
       log.step(`UITests (8/9): run ${i}/${runsN}${onlyList.length ? ` — ${expected.args.join(", ")}` : " — all classes"}`);
       const runStart = Date.now();

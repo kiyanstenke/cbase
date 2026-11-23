@@ -247,7 +247,8 @@ node mobile/test-fixtures/chat-gateway.mjs 17718 &   # the fixture gateway; port
 X="xcodebuild -project mobile/CbaseMobile.xcodeproj -scheme CbaseMobile -destination id=<simulator-udid> -derivedDataPath /tmp/CbaseMobile-UITests"
 $X build-for-testing
 $X test-without-building -only-testing:CbaseMobileUITests/AAAWarmupUITests
-$X test-without-building -skip-testing:CbaseMobileUITests/CbaseMobileUITests/testFullCategorySweepAgainstLiveGateway
+$X test-without-building -skip-testing:CbaseMobileUITests/CbaseMobileUITests/testFullCategorySweepAgainstLiveGateway \
+  -skip-testing:CbaseMobileUITests/ScreenshotUITests
 ```
 
 Before the run delete the persistent composer drafts (see below), and run the warm-up test (`AAAWarmupUITests`, software keyboard)
@@ -296,6 +297,25 @@ not be a flat colour and must stand still, `inkRatio`). Server, user name and pa
 (`CBASE_MOBILE_E2E_{SERVER,USERNAME,PASSWORD}`) through a temporary copy of the `.xctestrun` file that a `trap` removes even after a
 failure: `build-for-testing`, fill the copy's `EnvironmentVariables`, `test-without-building -xctestrun <copy>`. Production values
 belong in no Swift file, scheme or git.
+
+**App Store screenshots** (`Tests/ScreenshotUITests.swift`, not part of the full run — the tool passes it as `-skip-testing`, and it
+skips itself without `TEST_RUNNER_CBASE_SCREENSHOTS=1`). It walks the app against the fixture's English showcase data
+(`CBASE_FIXTURE_SHOWCASE=1`, `test-fixtures/chat-gateway/showcase.mjs`) and keeps six attachments, `01-chats` … `06-settings`. On a
+6.9-inch simulator (iPhone 17 Pro Max: 1320×2868, no alpha):
+
+```sh
+U=<pro-max-udid>; xcrun simctl boot $U; xcrun simctl ui $U appearance light
+xcrun simctl status_bar $U override --time 9:41 --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3
+CBASE_FIXTURE_SHOWCASE=1 node mobile/test-fixtures/chat-gateway.mjs 17718 &
+X="xcodebuild -project mobile/CbaseMobile.xcodeproj -scheme CbaseMobile -destination id=$U -derivedDataPath /tmp/CbaseMobile-Shots"
+$X build-for-testing
+TEST_RUNNER_CBASE_SCREENSHOTS=1 $X -resultBundlePath /tmp/shots.xcresult test-without-building -only-testing:CbaseMobileUITests/ScreenshotUITests
+xcrun xcresulttool export attachments --path /tmp/shots.xcresult --output-path /tmp/shots   # names in manifest.json
+```
+
+The run takes about 13 minutes: it keeps the header blur on (a paused animation, so XCUITest waits for idle before every step until it
+gives up) because without it the history shows hard under the status bar. Check each PNG with `sips -g pixelWidth -g pixelHeight
+-g hasAlpha` before uploading.
 
 Automation traps:
 

@@ -13,7 +13,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import {
-  DIAGNOSTIC_SKIPS, LIVE_WALKTHROUGH, LOAD_LIMIT, MODULE, WARMUP, WARMUP_DEADLINE_MS, WARMUP_ATTEMPT_MIN_MS,
+  DIAGNOSTIC_SKIPS, LIVE_WALKTHROUGH, NOT_IN_FULL_RUN, SCREENSHOTS, inFullRun, LOAD_LIMIT, MODULE, WARMUP, WARMUP_DEADLINE_MS, WARMUP_ATTEMPT_MIN_MS,
   completionWarning, deviationVerdict, bootTime, draftsResult, draftKey, draftPlist, expectation,
   foreignProcesses, isClassIdentifier, loadGateDecision, loadVerdict, normIdentifier, normIdentifiers,
   parseEnumeration, parseLsof,
@@ -166,6 +166,23 @@ test("expectation: all identifiers minus the live walkthrough — the walkthroug
   assert.equal(e.list.length, ENUM_N - 1);
   assert.ok(!e.list.includes(LIVE_WALKTHROUGH));
   assert.deepEqual(e.unknown, []);
+});
+
+test("expectation: the screenshot class is not in the full run, but --only reaches it; NOT_IN_FULL_RUN names both exclusions", () => {
+  const shot = `${SCREENSHOTS}/testAppStoreScreenshots`;
+  const all = [...parseEnumeration(ENUM), shot];
+  const e = expectation(all);
+  assert.ok(!e.list.includes(shot), "the screenshot test would be counted (and skip) in the full run");
+  assert.equal(e.list.length, ENUM_N - 1);
+  assert.deepEqual(NOT_IN_FULL_RUN, [LIVE_WALKTHROUGH, SCREENSHOTS]);
+  assert.equal(inFullRun(shot), false);
+  assert.equal(inFullRun("ScreenshotUITests/testAppStoreScreenshots()"), false);
+  assert.equal(inFullRun(WARMUP), true);
+  // A class whose name only STARTS like the excluded one stays in.
+  assert.equal(inFullRun("CbaseMobileUITests/ScreenshotUITestsExtra/testX"), true);
+  const only = expectation(all, { only: ["CbaseMobileUITests/ScreenshotUITests"] });
+  assert.deepEqual(only.list, [shot]);
+  assert.deepEqual(only.args, [SCREENSHOTS]);
 });
 
 test("expectation with --only: exactly the wanted ones, normalised; an unknown one is named", () => {

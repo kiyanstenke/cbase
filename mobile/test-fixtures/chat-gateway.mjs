@@ -9,6 +9,7 @@ import { routesRun } from "./chat-gateway/routes-run.mjs";
 import { routesGit } from "./chat-gateway/routes-git.mjs";
 import { routesDevtools } from "./chat-gateway/routes-devtools.mjs";
 import { routesChat } from "./chat-gateway/routes-chat.mjs";
+import { routesShowcase, applyShowcase } from "./chat-gateway/showcase.mjs";
 import { NEXT, json, clearRun, chatStreams, globalStreams } from "./chat-gateway/state.mjs";
 
 const port = Number(process.argv[2] || 17718);
@@ -19,6 +20,7 @@ const host = process.env.CBASE_FIXTURE_HOST || "127.0.0.1";
 // Order matters, first match wins: the startsWith(git/) catch-all sits behind its siblings in
 // routes-git, and the two /api/chats/<id> catch-alls in routes-chat stay the LAST checks.
 const ROUTERS = [
+  routesShowcase, // only with CBASE_FIXTURE_SHOWCASE=1 (App Store screenshots); otherwise it answers nothing
   routesSettings,
   routesUsage,
   routesScheduled, // before routes-chat: the job chats live under /api/chats/<id>
@@ -29,6 +31,9 @@ const ROUTERS = [
   routesDevtools,
   routesChat,
 ];
+
+// The opt-in showcase data set (chat-gateway/showcase.mjs) rewrites the seed in place before the first request.
+applyShowcase();
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || "/", `http://127.0.0.1:${port}`);

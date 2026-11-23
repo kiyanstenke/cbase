@@ -26,6 +26,18 @@
 export const MODULE = "CbaseMobileUITests";
 export const LIVE_WALKTHROUGH = `${MODULE}/${MODULE}/testFullCategorySweepAgainstLiveGateway`;
 export const WARMUP = `${MODULE}/AAAWarmupUITests/testKeyboardAppears`;
+// The App Store screenshots (`ScreenshotUITests`): a production run against the fixture's showcase mode, not a check. It skips
+// itself without `TEST_RUNNER_CBASE_SCREENSHOTS=1` — kept out of the full run all the same, so it neither costs time nor counts
+// as a skip. Reachable with `--only CbaseMobileUITests/ScreenshotUITests`.
+export const SCREENSHOTS = `${MODULE}/ScreenshotUITests`;
+/** Identifiers (tests or whole classes) the full run leaves out — each goes to xcodebuild as `-skip-testing:`. */
+export const NOT_IN_FULL_RUN = [LIVE_WALKTHROUGH, SCREENSHOTS];
+
+/** Whether a test belongs to the full run: not named in `NOT_IN_FULL_RUN`, not inside a class named there. */
+export function inFullRun(k) {
+  const n = normIdentifier(k);
+  return !NOT_IN_FULL_RUN.some((x) => n === x || n.startsWith(`${x}/`));
+}
 export const DRAFT_PREFIX = "cbase.mobile.draft:";
 export const LOAD_LIMIT = 3;
 export const MDS_CPU_LIMIT = 100;
@@ -144,7 +156,7 @@ export function expectation(identifiers, { only = [] } = {}) {
     for (const k of explicit) fromClass.delete(k);
     return { list, unknown, args, fromClass: [...fromClass] };
   }
-  const list = all.filter((k) => k !== LIVE_WALKTHROUGH);
+  const list = all.filter(inFullRun);
   return { list, unknown: [], args: [], fromClass: [] };
 }
 

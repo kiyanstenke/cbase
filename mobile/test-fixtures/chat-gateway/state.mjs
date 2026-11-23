@@ -645,7 +645,7 @@ const ASK_QUESTIONS_THREE = [
 ];
 
 function fileByPath(at) {
-  if (at === "") return { path: "", name: "Mobile Fixture", type: "dir" };
+  if (at === "") return { path: "", name: workspace.name, type: "dir" };
   return fixtureFiles.find((f) => f.path === at) || null;
 }
 
