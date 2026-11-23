@@ -49,11 +49,19 @@
 // dockerd, the script lives until the signal and ends with 143/130.
 // Counter-tests: a version that enters 3a without the file breaks the same sequence; without sorting inner before outer;
 // without `mountpoint -q` mounted twice; with `exit 1` instead of resting it ends before the signal (exit ≠ 0); without `exit`
-// in the trap it keeps resting — the ripcord of the fake `sleep 3600` reports that instead of the test hanging.
+// in the trap it keeps resting — the fake `sleep 3600` reports a rest that starts after the signal (counted, not timed) instead of
+// the test hanging. A trap that only takes effect when the current rest ends (what macOS's bash 3.2 sometimes does) is NOT
+// resting on: it starts no new rest, and a test holds that it stays green — but only for bash 3.2; on dash and bash 5 a rest that
+// runs out after the signal is red (it is what a foreground `sleep` does, and a counter-test holds that).
+//
+// The shells under test are macOS's own (SHELLS). Two of their faults are not the script's and must not read as its faults:
+// bash 3.2 may defer a trapped TERM that arrives as it enters `wait` (handled by the slices of FAKES.sleep), and both may
+// crash with SIGSEGV on a signal (handled by entryTest: the test runs again, see CRASH_SIGNALS). bash 5.2 and dash in the Linux
+// image of the real container showed neither in 2,000 runs each.
 //
 // Run:  node --test --test-reporter=tap tools/check/projectbox-entry.test.mjs
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -190,12 +198,35 @@ const FAKES = {
   mount: `printf '%s\\n' "forbidden: mount from the PATH $*" >> "$FAKE_LOG"; exit 99`,
   mountpoint: `printf '%s\\n' "forbidden: mountpoint from the PATH $*" >> "$FAKE_LOG"; exit 99`,
   umount: `printf '%s\\n' "forbidden: umount from the PATH $*" >> "$FAKE_LOG"; exit 99`,
-  // The resting without dockerd (`sleep 3600 &` + `wait`) gets the ripcord: if it does not end at the signal, it writes a line after
-  // FAKE_RIPCORD_S, and the test turns red instead of hanging. Every other duration is the real sleep.
+  // The resting without dockerd (`sleep 3600 &` + `wait` in a loop). The fake rests in short slices (FAKE_REST_SLICE_S) and ends,
+  // so the script's loop calls it again — which the script is built for. The ripcord is COUNTED, not timed: the harness drops
+  // `signalled` into FAKE_BASE right after the signal, and from then on every rest that begins is counted. The SECOND one is the
+  // ripcord, not the first: the script forks a rest, the signal comes, and only then does the fork reach this program — so the
+  // first rest that begins after the signal may well have been started before it (seen in a trace under load). The second one
+  // the script started itself, after the signal: it keeps resting.
+  // Why slices and not one long sleep: macOS's /bin/bash 3.2 sometimes defers a trapped TERM that arrives as it enters `wait`
+  // until the child ends on its own (measured: 42 of 2,000 runs; bash 5.2 of the real image and dash: none). With one long
+  // sleep that deferral looked like "keeps resting" and pulled a 120-s ripcord; with slices it costs one slice, and the script
+  // still starts no new rest after the signal. Every other duration is the real sleep. The count lives beside the log, not in it: the log is compared row by row elsewhere.
+  // The other half: a rest that RUNS OUT although a signal came. A correct script kills its rest in the trap, so after the
+  // signal no slice ends on its own; a foreground `sleep 3600` (which holds the trap until it ends) lets it run out and starts
+  // no new rest, so the count alone never sees it. Hence no `exec`: the pid the script kills is this fake, which has no trap
+  // and dies at once on TERM; a slice that ended with `signalled` present waits FAKE_REST_GRACE_S more (a script that is just
+  // ending kills it there; only a trap slower than that under load could read as red) and then pulls this ripcord. Only bash 3.2 may let a rest run out (FAKE_DEFERRED_TRAP_OK, see run()).
   sleep: [
     `if [ "$1" = 3600 ]; then`,
-    `  /bin/sleep "$FAKE_RIPCORD_S"`,
-    `  printf '%s\\n' "ripcord: the script keeps resting without dockerd although a signal came" >> "$FAKE_LOG"`,
+    `  if [ -e "$FAKE_BASE/signalled" ]; then`,
+    `    printf '\\n' >> "$FAKE_BASE/rests-after-signal"`,
+    `    n=$(wc -l < "$FAKE_BASE/rests-after-signal")`,
+    `    if [ $((n)) -ge 2 ]; then`,
+    `      printf '%s\\n' "ripcord: the script keeps resting without dockerd although a signal came" >> "$FAKE_LOG"`,
+    `    fi`,
+    `  fi`,
+    `  /bin/sleep "$FAKE_REST_SLICE_S"`,
+    `  if [ -e "$FAKE_BASE/signalled" ] && [ -z "$FAKE_DEFERRED_TRAP_OK" ]; then`,
+    `    /bin/sleep "$FAKE_REST_GRACE_S"`,
+    `    printf '%s\\n' "ripcord: the script let its rest run out although a signal came" >> "$FAKE_LOG"`,
+    `  fi`,
     `  exit 0`,
     `fi`,
     `exec /bin/sleep "$@"`,
@@ -250,6 +281,48 @@ function build(prior) {
 }
 
 const tick = () => new Promise((r) => setTimeout(r, 20)); // a tick, no deadline
+
+// One slice of the fake rest (FAKES.sleep). Its length only says how long a deferred trap of bash 3.2 may take; no test waits on it.
+const REST_SLICE_S = "0.5";
+// After a slice that ran out past the signal: how long a correct script has to kill the fake before it counts as letting its rest
+// run out. Only a red run waits it out.
+const REST_GRACE_S = "2";
+// Whether a shell may let its current rest run out after a trapped TERM (FAKES.sleep): only a bash older than 4 — macOS's
+// /bin/bash 3.2, measured. dash and bash 5 (the real image) must kill the rest in the trap; for them a rest that runs out is red.
+const defersTrapSeen = new Map();
+function defersTrap(shell) {
+  if (path.basename(shell) !== "bash") return false;
+  if (!defersTrapSeen.has(shell)) defersTrapSeen.set(shell, Number(execFileSync(shell, ["-c", 'printf %s "${BASH_VERSINFO[0]}"'], { encoding: "utf8" })) < 4);
+  return defersTrapSeen.get(shell);
+}
+
+// A crash of the INTERPRETER, not of the script: a shell script cannot make its own shell fault. macOS's shells do, now and then,
+// when a trapped signal arrives — measured with the pattern of this file (script rests, TERM as it enters `wait`): /bin/bash 3.2
+// died of SIGSEGV in 4 of 2,000 runs, /bin/dash once in a full gate; bash 5.2 and dash in the Linux image of the real container:
+// none in 2,000 each. Such a run says nothing about the script, so the test body runs again from a fresh tree — at most
+// CRASH_ATTEMPTS times in all, every repeat named in the output, and a shell that crashes every time stays red. Only these two
+// signals: TERM, KILL, an exit code or a failed assertion are never repeated.
+const CRASH_SIGNALS = new Set(["SIGSEGV", "SIGBUS"]);
+const CRASH_ATTEMPTS = 3;
+class InterpreterCrash extends Error {
+  constructor(shell, sig, stderr) {
+    super(`${shell} itself died of ${sig} (an interpreter crash, not the script)${stderr ? `; stderr: ${stderr.trim().slice(-300)}` : ""}`);
+    this.name = "InterpreterCrash";
+  }
+}
+/** Runs `body` again while it fails with an InterpreterCrash, up to CRASH_ATTEMPTS runs; `note` hears every repeat. */
+async function againOnCrash(body, note) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await body();
+    } catch (e) {
+      if (!(e instanceof InterpreterCrash) || attempt >= CRASH_ATTEMPTS) throw e;
+      note(`${e.message} — run ${attempt} of ${CRASH_ATTEMPTS}, the test runs again from a fresh tree`);
+    }
+  }
+}
+/** `test`, with the body repeated on an interpreter crash (againOnCrash). Every test that starts the script goes through here. */
+const entryTest = (name, body) => test(name, (t) => againOnCrash(() => body(t), (m) => t.diagnostic(m)));
 const read = (p) => { try { return fs.readFileSync(p, "utf8"); } catch { return ""; } };
 const rows = (w) => read(w.log).split("\n").filter(Boolean);
 const phase = (w) => (read(w.status).match(/^phase=(.*)$/m) || [])[1] || "";
@@ -270,7 +343,7 @@ async function waitForTruthy(check, kind, w) {
 // One run from start to end. `gate: false` never opens the gate (cap); `signal: null` sends none (the script ends by itself);
 // `beforeSignal(w)` is an event that is additionally waited for before the signal.
 // `during(w)` runs at every tick of the first wait — there the test opens the gate `.prepared`.
-async function run(w, { shell = "/bin/bash", script = ENTRY, env = {}, signal = "SIGTERM", gate = true, beforeSignal = null, during = null } = {}) {
+async function run(w, { shell = "/bin/bash", script = ENTRY, env = {}, signal = "SIGTERM", gate = true, beforeSignal = null, during = null, deferredTrapOk = defersTrap(shell) } = {}) {
   const subprocess = spawn(shell, [script], {
     detached: true,
     stdio: ["ignore", "ignore", "pipe"],
@@ -285,6 +358,9 @@ async function run(w, { shell = "/bin/bash", script = ENTRY, env = {}, signal = 
       FAKE_DOCKERD_RC: RC,
       FAKE_RIPCORD_S: RIPCORD_S,
       FAKE_RIPCORD_TICKS: RIPCORD_TICKS,
+      FAKE_REST_SLICE_S: REST_SLICE_S,
+      FAKE_REST_GRACE_S: REST_GRACE_S,
+      FAKE_DEFERRED_TRAP_OK: deferredTrapOk ? "1" : "",
       FAKE_NODE: process.execPath,
       CBASE_MOUNT_BIN: path.join(w.bin, "fake-mount"),
       CBASE_MOUNTPOINT_BIN: path.join(w.bin, "fake-mountpoint"),
@@ -316,10 +392,17 @@ async function run(w, { shell = "/bin/bash", script = ENTRY, env = {}, signal = 
     if (beforeSignal) await waitForTruthy(() => beforeSignal(w), subprocess, w);
     b.statusBeforeSignal = read(w.status);
     b.wasAliveAtSignal = !past();
-    if (b.wasAliveAtSignal && signal) { try { process.kill(subprocess.pid, signal); } catch { /* just ended */ } }
+    if (b.wasAliveAtSignal && signal) {
+      try { process.kill(subprocess.pid, signal); } catch { /* just ended */ }
+      // AFTER the signal, never before: from here on the fake `sleep` counts the rests that begin, and the second is the ripcord
+      // (the first may have been forked before the signal). A rest that runs across the signal is no ripcord — that is the
+      // deferred trap of bash 3.2, see FAKES.sleep.
+      fs.writeFileSync(path.join(w.base, "signalled"), "");
+    }
     // The end of the script OR a ripcord of the stub — never a wait without exit.
     await waitForTruthy(() => past(), subprocess, w);
     const e = ended(subprocess) ? await end : { code: null, sig: null };
+    if (CRASH_SIGNALS.has(e.sig)) throw new InterpreterCrash(shell, e.sig, err);
     return { ...b, ...e, err, log: rows(w), status: read(w.status), ripcord: ripcords(w) };
   } finally {
     try { process.kill(-subprocess.pid, "SIGKILL"); } catch { /* already gone */ }
@@ -422,13 +505,13 @@ function sabotage(w, name, ...pairs) {
 
 // ── Promises ──
 
-test("both shells exist (the image runs bash 5.2, the gate bash 3.2; dash for portability)", () => {
+entryTest("both shells exist (the image runs bash 5.2, the gate bash 3.2; dash for portability)", () => {
   for (const s of SHELLS) assert.ok(fs.existsSync(s), `${s} missing`);
   assert.ok((fs.statSync(ENTRY).mode & 0o111) === 0o111, "the entrypoint is not executable");
 });
 
 for (const shell of SHELLS) {
-  test(`${shell}: leftovers before dockerd, cgroup, pool 24, DNAT only after "info answers" and the jump, TERM reaches dockerd`, async () => {
+  entryTest(`${shell}: leftovers before dockerd, cgroup, pool 24, DNAT only after "info answers" and the jump, TERM reaches dockerd`, async () => {
     const w = build((w) => { for (const f of LEFTOVERS) fs.writeFileSync(path.join(w.root, f), "999999\n"); fs.writeFileSync(path.join(w.root, "run/cbase-projectbox.status"), "phase=prestart\nnotice=old\n"); });
     try {
       const r = await run(w, { shell });
@@ -438,21 +521,21 @@ for (const shell of SHELLS) {
     } finally { way(w); }
   });
 
-  test(`${shell}: CBASE_DNAT_LIMIT=0 sets the measured form (without -i, without port limit)`, async () => {
+  entryTest(`${shell}: CBASE_DNAT_LIMIT=0 sets the measured form (without -i, without port limit)`, async () => {
     const w = build();
     try {
       checkRun(await run(w, { shell, env: { CBASE_DNAT_LIMIT: "0" } }), w, { limit: false });
     } finally { way(w); }
   });
 
-  test(`${shell}: INT to the script goes as TERM to dockerd`, async () => {
+  entryTest(`${shell}: INT to the script goes as TERM to dockerd`, async () => {
     const w = build();
     try {
       checkRun(await run(w, { shell, signal: "SIGINT" }), w, { signal: "SIGINT" });
     } finally { way(w); }
   });
 
-  test(`${shell}: without a pool (or with one that is no CIDR) exit ≠ 0 and no dockerd`, async () => {
+  entryTest(`${shell}: without a pool (or with one that is no CIDR) exit ≠ 0 and no dockerd`, async () => {
     for (const pool of ["", "10.241.0.0", '10.0.0.0/8", "x": "y']) {
       const w = build();
       try {
@@ -465,7 +548,7 @@ for (const shell of SHELLS) {
     }
   });
 
-  test(`${shell}: an iptables error does not end with exit ≠ 0 and fills the status file`, async () => {
+  entryTest(`${shell}: an iptables error does not end with exit ≠ 0 and fills the status file`, async () => {
     const w = build();
     try {
       const r = await run(w, { shell, env: { FAKE_IPTABLES_ERROR: "1" } });
@@ -474,7 +557,7 @@ for (const shell of SHELLS) {
     } finally { way(w); }
   });
 
-  test(`${shell}: if the jump PREROUTING → DOCKER is missing, no PREROUTING rule comes (status error, the container runs)`, async () => {
+  entryTest(`${shell}: if the jump PREROUTING → DOCKER is missing, no PREROUTING rule comes (status error, the container runs)`, async () => {
     const w = build();
     try {
       const r = await run(w, { shell, env: { FAKE_JUMP: "0" } });
@@ -485,7 +568,7 @@ for (const shell of SHELLS) {
     } finally { way(w); }
   });
 
-  test(`${shell}: EBUSY when writing the controllers ⇒ move to init again, new attempt; dockerd starts with delegation`, async () => {
+  entryTest(`${shell}: EBUSY when writing the controllers ⇒ move to init again, new attempt; dockerd starts with delegation`, async () => {
     const w = build();
     try {
       const r = await run(w, { shell, env: { FAKE_SED_ERROR: "2" } });
@@ -497,7 +580,7 @@ for (const shell of SHELLS) {
     } finally { way(w); }
   });
 
-  test(`${shell}: if it fails five times, phase=error (cgroup) stands until the end, also after "info answers" and DNAT; dockerd runs, TERM reaches it`, async () => {
+  entryTest(`${shell}: if it fails five times, phase=error (cgroup) stands until the end, also after "info answers" and DNAT; dockerd runs, TERM reaches it`, async () => {
     const w = build((w) => fs.writeFileSync(w.gate, "")); // `docker info` answers as soon as dockerd stands
     try {
       const lastRule = RULES.limit[RULES.limit.length - 1];
@@ -507,7 +590,7 @@ for (const shell of SHELLS) {
     } finally { way(w); }
   });
 
-  test(`${shell}: at the cap of the waiting no DNAT, status error — but no end (unless-stopped would loop otherwise)`, async () => {
+  entryTest(`${shell}: at the cap of the waiting no DNAT, status error — but no end (unless-stopped would loop otherwise)`, async () => {
     const w = build();
     try {
       const r = await run(w, { shell, gate: false, env: { CBASE_PROJECTBOX_ATTEMPTS: "3" } });
@@ -521,7 +604,7 @@ for (const shell of SHELLS) {
 
 // ── Counter-tests: sabotaged copies turn the check red ──
 
-test("counter-test: a version with `exec dockerd` has no DNAT row", async () => {
+entryTest("counter-test: a version with `exec dockerd` has no DNAT row", async () => {
   const w = build();
   try {
     const copy = sabotage(w, "exec-dockerd.sh", ["dockerd &\n", "exec dockerd\n"]);
@@ -532,7 +615,7 @@ test("counter-test: a version with `exec dockerd` has no DNAT row", async () => 
   } finally { way(w); }
 });
 
-test("counter-test: without the rm step the fake dockerd aborts with \"pid file found\"", async () => {
+entryTest("counter-test: without the rm step the fake dockerd aborts with \"pid file found\"", async () => {
   const w = build((w) => { for (const f of LEFTOVERS) fs.writeFileSync(path.join(w.root, f), "999999\n"); });
   try {
     const copy = sabotage(w, "without-rm.sh", [/^rm -f "\$W\/var\/run\/docker\.pid".*\n/m, ""]);
@@ -544,7 +627,7 @@ test("counter-test: without the rm step the fake dockerd aborts with \"pid file 
   } finally { way(w); }
 });
 
-test("counter-test: -I instead of -A at PREROUTING is red", async () => {
+entryTest("counter-test: -I instead of -A at PREROUTING is red", async () => {
   const w = build();
   try {
     const copy = sabotage(w, "with-I.sh", [/-A PREROUTING/g, "-I PREROUTING"]);
@@ -554,7 +637,7 @@ test("counter-test: -I instead of -A at PREROUTING is red", async () => {
   } finally { way(w); }
 });
 
-test("counter-test: a fatal DNAT error (without the capsule) is red", async () => {
+entryTest("counter-test: a fatal DNAT error (without the capsule) is red", async () => {
   const w = build();
   try {
     const copy = sabotage(w, "dnat-fatal.sh", ["  if dnat; then\n", "  dnat\n  if true; then\n"]);
@@ -563,7 +646,7 @@ test("counter-test: a fatal DNAT error (without the capsule) is red", async () =
   } finally { way(w); }
 });
 
-test("counter-test: without trap the script dies on TERM, dockerd stays as an orphan — red", async () => {
+entryTest("counter-test: without trap the script dies on TERM, dockerd stays as an orphan — red", async () => {
   const w = build();
   try {
     const copy = sabotage(w, "without-trap.sh", [/^trap 'passOn 143' TERM\n/m, ""]);
@@ -573,7 +656,7 @@ test("counter-test: without trap the script dies on TERM, dockerd stays as an or
   } finally { way(w); }
 });
 
-test("counter-test: DNAT without waiting for `docker info` is red", async () => {
+entryTest("counter-test: DNAT without waiting for `docker info` is red", async () => {
   const w = build();
   try {
     const copy = sabotage(w, "without-info.sh", ["  if docker info >/dev/null 2>&1; then READY=1; break; fi\n", "  READY=1; break\n"]);
@@ -584,7 +667,7 @@ test("counter-test: DNAT without waiting for `docker info` is red", async () => 
   } finally { way(w); }
 });
 
-test("counter-test: the state before the cgroup retry (BEFORE_PC_7) dies at the first EBUSY before dockerd, the status file stays on phase=start", async () => {
+entryTest("counter-test: the state before the cgroup retry (BEFORE_PC_7) dies at the first EBUSY before dockerd, the status file stays on phase=start", async () => {
   const w = build();
   try {
     const old = withoutFix([CGROUP_TODAY, CGROUP_BEFORE_PC_7]);
@@ -600,7 +683,7 @@ test("counter-test: the state before the cgroup retry (BEFORE_PC_7) dies at the 
   } finally { way(w); }
 });
 
-test("counter-test: if TERM does not reach dockerd, the run turns red instead of hanging — dockerd ends via the ripcord", async () => {
+entryTest("counter-test: if TERM does not reach dockerd, the run turns red instead of hanging — dockerd ends via the ripcord", async () => {
   const w = build();
   try {
     const copy = sabotage(w, "without-pass-on.sh", ['    kill -TERM "$DOCKERD_PID" 2>/dev/null || :\n', "    :\n"]);
@@ -610,7 +693,7 @@ test("counter-test: if TERM does not reach dockerd, the run turns red instead of
   } finally { way(w); }
 });
 
-test("counter-test: if the script does not end after dockerd, the run turns red instead of hanging — the watchdog reports it", async () => {
+entryTest("counter-test: if the script does not end after dockerd, the run turns red instead of hanging — the watchdog reports it", async () => {
   const w = build();
   try {
     const copy = sabotage(w, "ends-not.sh", ['log "dockerd ended with $rc"\n', 'sleep 100000\nlog "dockerd ended with $rc"\n']);
@@ -740,7 +823,7 @@ function oldScript(w) {
 }
 
 for (const shell of SHELLS) {
-  test(`${shell}: without overlays.tsv the same call sequence, status file and code as BEFORE_ST2_0 (also with mounts under /cbase-main)`, async () => {
+  entryTest(`${shell}: without overlays.tsv the same call sequence, status file and code as BEFORE_ST2_0 (also with mounts under /cbase-main)`, async () => {
     const wOld = withoutFileBuild();
     const wNew = withoutFileBuild();
     try {
@@ -753,7 +836,7 @@ for (const shell of SHELLS) {
     } finally { way(wOld); way(wNew); }
   });
 
-  test(`${shell}: with overlays.tsv every overlay outer before inner before dockerd; without .prepared phase=prepare, only the gate frees dockerd; then the raw roots go`, async () => {
+  entryTest(`${shell}: with overlays.tsv every overlay outer before inner before dockerd; without .prepared phase=prepare, only the gate frees dockerd; then the raw roots go`, async () => {
     const w = copyBuild({ prepared: false });
     let waited = null;
     try {
@@ -770,7 +853,7 @@ for (const shell of SHELLS) {
     } finally { way(w); }
   });
 
-  test(`${shell}: mountpoint -q prevents double mounting (if EXACTLY this overlay is mounted at the target, it stays as it is)`, async () => {
+  entryTest(`${shell}: mountpoint -q prevents double mounting (if EXACTLY this overlay is mounted at the target, it stays as it is)`, async () => {
     const foreign = (wu) => [...FOREIGN(wu), overlayEntry(wu, rowFor(Z))];
     const w = copyBuild({ mounted: [Z], foreign });
     try {
@@ -780,7 +863,7 @@ for (const shell of SHELLS) {
     } finally { way(w); }
   });
 
-  test(`${shell}: if something else is mounted at the target (bind, other overlay, no entry): phase=error, no dockerd, never on without the overlay`, async () => {
+  entryTest(`${shell}: if something else is mounted at the target (bind, other overlay, no entry): phase=error, no dockerd, never on without the overlay`, async () => {
     const cases = [
       ["bind from the Docker configuration", (wu) => [...FOREIGN(wu), `${wu}${Z}`], /already a mount point \(ext4 \/dev\/vda1\), not the overlay from overlays\.tsv/],
       ["overlay with another upper layer", (wu) => [...FOREIGN(wu), overlayEntry(wu, rowFor(Z), { different: true })], /already a mount point \(overlay overlay with other layers\)/],
@@ -798,7 +881,7 @@ for (const shell of SHELLS) {
     }
   });
 
-  test(`${shell}: if a mount fails: phase=error (overlay: <target>), no dockerd, no exit, the script lives until TERM`, async () => {
+  entryTest(`${shell}: if a mount fails: phase=error (overlay: <target>), no dockerd, no exit, the script lives until TERM`, async () => {
     const w = copyBuild();
     try {
       const r = await run(w, { shell, env: { FAKE_MOUNT_ERROR: `${Z}/repo` } });
@@ -808,7 +891,7 @@ for (const shell of SHELLS) {
     } finally { way(w); }
   });
 
-  test(`${shell}: a broken overlays.tsv mounts NOTHING and starts nothing`, async () => {
+  entryTest(`${shell}: a broken overlays.tsv mounts NOTHING and starts nothing`, async () => {
     const cases = [
       ["", /overlay: \/cbase-copy\/overlays\.tsv without a line/],
       ["\n\n", /overlay: \/cbase-copy\/overlays\.tsv without a line/],
@@ -840,7 +923,7 @@ for (const shell of SHELLS) {
     }
   });
 
-  test(`${shell}: cap of the waiting for .prepared, failed umount, ineffective umount, line break in mountinfo: each phase=error, no dockerd`, async () => {
+  entryTest(`${shell}: cap of the waiting for .prepared, failed umount, ineffective umount, line break in mountinfo: each phase=error, no dockerd`, async () => {
     const cases = [
       [{ prepared: false }, { CBASE_PROJECTBOX_PREPARE_S: "0" }, /prepare: \/cbase-copy\/\.prepared not there after 0 s \(cap CBASE_PROJECTBOX_PREPARE_S\)/, 0],
       [{}, { FAKE_UMOUNT_ERROR: "/cbase-copy" }, /unmount: \/cbase-copy — umount: .*target is busy\./, 3],
@@ -859,7 +942,7 @@ for (const shell of SHELLS) {
   });
 }
 
-test("INT in the error state ends the script with 130", async () => {
+entryTest("INT in the error state ends the script with 130", async () => {
   const w = copyBuild();
   try {
     checkCopyError(await run(w, { signal: "SIGINT", env: { FAKE_MOUNT_ERROR: Z } }), w, /overlay: /, { signal: "SIGINT" });
@@ -868,7 +951,7 @@ test("INT in the error state ends the script with 130", async () => {
 
 // ── Counter-tests of step 3a ──
 
-test("counter-test: a version that enters 3a even without overlays.tsv breaks the same sequence — red", async () => {
+entryTest("counter-test: a version that enters 3a even without overlays.tsv breaks the same sequence — red", async () => {
   const wOld = withoutFileBuild();
   const wNew = withoutFileBuild();
   try {
@@ -879,7 +962,7 @@ test("counter-test: a version that enters 3a even without overlays.tsv breaks th
   } finally { way(wOld); way(wNew); }
 });
 
-test("counter-test: without sorting the file mounts inner before outer — red", async () => {
+entryTest("counter-test: without sorting the file mounts inner before outer — red", async () => {
   const w = copyBuild();
   try {
     const copy = sabotage(w, "without-sort.sh", ['ov_list=$(LC_ALL=C sort -- "$OVERLAYS")', 'ov_list=$(cat -- "$OVERLAYS")']);
@@ -888,7 +971,7 @@ test("counter-test: without sorting the file mounts inner before outer — red",
   } finally { way(w); }
 });
 
-test("counter-test: without mountpoint -q an already mounted target is mounted twice — red", async () => {
+entryTest("counter-test: without mountpoint -q an already mounted target is mounted twice — red", async () => {
   const foreign = (wu) => [...FOREIGN(wu), overlayEntry(wu, rowFor(Z))];
   const w = copyBuild({ mounted: [Z], foreign });
   try {
@@ -898,7 +981,7 @@ test("counter-test: without mountpoint -q an already mounted target is mounted t
   } finally { way(w); }
 });
 
-test("counter-test: the state BEFORE_GL_E skipped a target with a bind and started dockerd — red", async () => {
+entryTest("counter-test: the state BEFORE_GL_E skipped a target with a bind and started dockerd — red", async () => {
   const w = copyBuild({ mounted: [Z], foreign: (wu) => [...FOREIGN(wu), `${wu}${Z}`] });
   try {
     const old = withoutFix([TARGET_CHECK_TODAY, SKIP_BEFORE_GL_E]);
@@ -911,7 +994,7 @@ test("counter-test: the state BEFORE_GL_E skipped a target with a bind and start
   } finally { way(w); }
 });
 
-test("counter-test: `exit 1` instead of resting ends before the signal with exit ≠ 0 — red", async () => {
+entryTest("counter-test: `exit 1` instead of resting ends before the signal with exit ≠ 0 — red", async () => {
   const w = copyBuild();
   try {
     const copy = sabotage(w, "exit-1.sh", ["    without_dockerd_rest\n", "    exit 1\n"]);
@@ -921,15 +1004,98 @@ test("counter-test: `exit 1` instead of resting ends before the signal with exit
   } finally { way(w); }
 });
 
-test("counter-test: without `exit` in the trap the script keeps resting after the signal — the ripcord turns it red instead of hanging", async () => {
+entryTest("counter-test: without `exit` in the trap the script keeps resting after the signal — the ripcord turns it red instead of hanging", async () => {
   const w = copyBuild();
   try {
     const copy = sabotage(w, "rests-continue.sh", ['    [ -z "$QUIET_PID" ] || kill "$QUIET_PID" 2>/dev/null || :\n    exit "$1"\n', '    [ -z "$QUIET_PID" ] || kill "$QUIET_PID" 2>/dev/null || :\n']);
-    const r = await run(w, { script: copy, env: { FAKE_MOUNT_ERROR: Z, FAKE_RIPCORD_S: "1" } });
+    const r = await run(w, { script: copy, env: { FAKE_MOUNT_ERROR: Z } });
     // At least one line (if it keeps resting, it sleeps again — a second may already stand by the time the test reads it).
     assert.ok(r.ripcord.length >= 1, JSON.stringify(r.ripcord));
     assert.ok(r.ripcord.every((z) => z === "ripcord: the script keeps resting without dockerd although a signal came"), JSON.stringify(r.ripcord));
     assert.equal(r.code, null, "the script was still alive when the test went on");
     assert.throws(() => checkCopyError(r, w, /overlay: /), assert.AssertionError);
+  } finally { way(w); }
+});
+
+// What macOS's bash 3.2 does now and then, written out so that it happens on every shell and every run: the trap takes effect
+// only when the current rest ends on its own. That is no resting on — the script starts no new rest after the signal and ends
+// with its code. Before the slices of FAKES.sleep this read as "keeps resting" and pulled the 120-s ripcord (the flake of the
+// full gate); if the fake ever goes back to timing one long rest, this turns red.
+entryTest("a trap that takes effect only when the current rest ends (bash 3.2's deferred trap) is no resting on — green", async () => {
+  for (const shell of SHELLS) {
+    const w = copyBuild();
+    try {
+      // Deferred ONLY while waiting, as bash 3.2 does it: a signal outside the wait still ends the script at once; one inside
+      // takes effect when the rest has ended. No window where a rest could start after the signal.
+      const copy = sabotage(w, "deferred-trap.sh",
+        ['    [ -z "$QUIET_PID" ] || kill "$QUIET_PID" 2>/dev/null || :\n    exit "$1"\n', '    [ -n "${IN_WAIT:-}" ] || exit "$1"\n'],
+        ['    wait "$QUIET_PID" || :\n', '    IN_WAIT=1\n    while kill -0 "$QUIET_PID" 2>/dev/null; do wait "$QUIET_PID" || :; done\n    IN_WAIT=\n    [ -z "$END" ] || exit 143\n']);
+      const r = await run(w, { shell, script: copy, env: { FAKE_MOUNT_ERROR: Z }, deferredTrapOk: true });
+      checkCopyError(r, w, /overlay: /);
+    } finally { way(w); }
+  }
+});
+
+// Where that tolerance ends: a foreground `sleep` (the trap waits until it ends — in the real container 3600 s, until the
+// runtime's SIGKILL) starts no new rest either, so only the rest that runs out shows it. Red on every shell held strict.
+entryTest("counter-test: a foreground rest lets the trap wait until it ends — red unless the shell may defer (bash 3.2)", async () => {
+  for (const shell of SHELLS) {
+    const w = copyBuild();
+    try {
+      const copy = sabotage(w, "foreground-rest.sh",
+        ['    sleep 3600 &\n    QUIET_PID=$!\n    wait "$QUIET_PID" || :\n', '    sleep 3600\n']);
+      const r = await run(w, { shell, script: copy, env: { FAKE_MOUNT_ERROR: Z }, deferredTrapOk: false });
+      assert.deepEqual(r.ripcord, ["ripcord: the script let its rest run out although a signal came"], `${shell}: ${JSON.stringify(r.ripcord)}`);
+      assert.throws(() => checkCopyError(r, w, /overlay: /), assert.AssertionError);
+    } finally { way(w); }
+  }
+});
+
+test("only a bash older than 4 may let its rest run out after the signal", () => {
+  assert.equal(defersTrap("/bin/dash"), false);
+  const major = Number(execFileSync("/bin/bash", ["-c", 'printf %s "${BASH_VERSINFO[0]}"'], { encoding: "utf8" }));
+  assert.ok(major > 0, "no bash version read");
+  assert.equal(defersTrap("/bin/bash"), major < 4);
+  // Both answers on every machine, not only the one of the bash at hand: a "bash" that reports 5 and one that reports 3.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cbase-bash-"));
+  try {
+    for (const [v, expected] of [["5", false], ["3", true]]) {
+      fs.mkdirSync(path.join(dir, v));
+      const fake = path.join(dir, v, "bash");
+      fs.writeFileSync(fake, `#!/bin/sh\nprintf ${v}\n`, { mode: 0o755 });
+      assert.equal(defersTrap(fake), expected, `bash ${v}`);
+    }
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+// The repeat on an interpreter crash, without a shell: exactly the crash is repeated, nothing else, and not without end.
+test("againOnCrash repeats an interpreter crash up to CRASH_ATTEMPTS runs, and nothing else", async () => {
+  const crash = () => new InterpreterCrash("/bin/x", "SIGSEGV", "");
+  // Once crashed, then green: green, and the one repeat is named.
+  let runs = 0; const notes = [];
+  assert.equal(await againOnCrash(async () => { if (++runs === 1) throw crash(); return "ok"; }, (m) => notes.push(m)), "ok");
+  assert.equal(runs, 2);
+  assert.equal(notes.length, 1);
+  assert.match(notes[0], /\/bin\/x itself died of SIGSEGV .* run 1 of 3/);
+  // Crashing every time: red after CRASH_ATTEMPTS runs, with the crash itself.
+  runs = 0; notes.length = 0;
+  await assert.rejects(againOnCrash(async () => { runs++; throw crash(); }, (m) => notes.push(m)), InterpreterCrash);
+  assert.equal(runs, CRASH_ATTEMPTS);
+  assert.equal(notes.length, CRASH_ATTEMPTS - 1);
+  // A failed assertion is the script's fault (or the test's): never repeated.
+  runs = 0; notes.length = 0;
+  await assert.rejects(againOnCrash(async () => { runs++; assert.equal(1, 2); }, (m) => notes.push(m)), assert.AssertionError);
+  assert.equal(runs, 1);
+  assert.equal(notes.length, 0);
+});
+
+// The other half: run() tells an interpreter crash from the script's end. A "shell" that faults at once is reported as
+// InterpreterCrash; plain `test`, so the repeat of entryTest does not hide the throw this test is about.
+test("run() reports a shell that dies of SIGSEGV as an interpreter crash, not as the script's end", async () => {
+  const w = copyBuild();
+  try {
+    const crashing = path.join(w.base, "crashing-shell");
+    fs.writeFileSync(crashing, "#!/bin/sh\nkill -SEGV $$\n", { mode: 0o755 });
+    await assert.rejects(run(w, { shell: crashing, env: { FAKE_MOUNT_ERROR: Z } }), (e) => e instanceof InterpreterCrash && /died of SIGSEGV/.test(e.message));
   } finally { way(w); }
 });
