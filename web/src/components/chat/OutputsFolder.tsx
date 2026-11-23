@@ -39,14 +39,18 @@ const File = ({ mime }: { mime: string }) => mime.startsWith("image/")
 
 // The download as an anchor, not fetch+Blob: the browser (and Electron) stream straight to disk; the name comes from
 // Content-Disposition. Hidden until the row is hovered or the link focused; on touch screens (no hover) always visible.
-const DownloadLink = ({ href, label }: { href: string; label: string }) => (
+// It lies OVER the row's trailing size or count (absolute, out of the flow): no space is held for it while it is hidden, and on
+// hover it takes the place of the number, which fades out (SWAPS_FOR_DOWNLOAD). `right` moves it left of a following button.
+const DownloadLink = ({ href, label, right = "right-1" }: { href: string; label: string; right?: string }) => (
   <a href={href} download="" rel="noopener" data-output-download title={label} aria-label={label}
-    className="mr-1 grid h-6 w-6 shrink-0 place-items-center rounded-md text-dim opacity-0 transition-[opacity,color,background-color] hover:bg-hover hover:text-fg focus-visible:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100">
+    className={`absolute top-1/2 ${right} grid h-6 w-6 -translate-y-1/2 place-items-center rounded-md text-dim opacity-0 transition-[opacity,color,background-color] hover:bg-hover hover:text-fg focus-visible:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100`}>
     {svg(<><path d="M12 4v11" /><path d="m7 10 5 5 5-5" /><path d="M5 20h14" /></>, 13)}
   </a>
 );
 
-const ROW = "group flex items-center rounded-lg transition-colors hover:bg-hover";
+const ROW = "group relative flex items-center rounded-lg transition-colors hover:bg-hover";
+// The trailing size or count of a row WITH a download link: it gives way where the link appears (hover, keyboard focus, touch).
+const SWAPS_FOR_DOWNLOAD = "transition-opacity group-hover:opacity-0 group-focus-within:opacity-0 pointer-coarse:opacity-0";
 // The folder name: "Spend" already stands for COSTS (usage) in lib/i18n-de.ts, so the same key would read "Spend"
 // here. Hence a separate key with a context suffix.
 const useFolderName = () => useT()("Outputs##folder");
@@ -111,7 +115,7 @@ export function OutputsFolder({ chatId }: { chatId: string }) {
               <span className="shrink-0 text-dim"><Chevron open={on} /></span>
               <span className={`shrink-0 ${k.internal ? "text-dim" : "text-accent/80"}`}><Folder open={on} /></span>
               <span className={`min-w-0 flex-1 truncate ${k.internal ? "text-dim" : "font-medium"}`}>{k.name}</span>
-              <span className="shrink-0 tabular-nums text-[10px] text-dim">{k.files}</span>
+              <span className={`shrink-0 tabular-nums text-[10px] text-dim ${k.key !== INTERNAL_KEY ? SWAPS_FOR_DOWNLOAD : ""}`}>{k.files}</span>
             </button>
             {k.key !== INTERNAL_KEY && (
               <DownloadLink href={outputFolderUrl(chatId, k.key.replace(/\/$/, ""))} label={t("Download as ZIP")} />
@@ -130,7 +134,7 @@ export function OutputsFolder({ chatId }: { chatId: string }) {
           <span className="w-3 shrink-0" aria-hidden />
           <span className="shrink-0 text-dim"><File mime={outputMime(k.name)} /></span>
           <span className="min-w-0 flex-1 truncate font-mono text-[11.5px]">{k.name}</span>
-          <span className="shrink-0 text-[10px] tabular-nums text-dim">{fmtSize(k.entry.size)}</span>
+          <span className={`shrink-0 text-[10px] tabular-nums text-dim ${SWAPS_FOR_DOWNLOAD}`}>{fmtSize(k.entry.size)}</span>
         </button>
         <DownloadLink href={outputUrl(chatId, k.entry.path)} label={t("Download")} />
       </div>
@@ -147,9 +151,9 @@ export function OutputsFolder({ chatId }: { chatId: string }) {
           <span className="shrink-0 text-dim"><Chevron open={open} /></span>
           <span className="shrink-0 text-accent"><Deposit /></span>
           <span className="min-w-0 flex-1 truncate font-medium">{name}</span>
-          <span className="shrink-0 tabular-nums text-[10px] text-dim">{list ? (list.clipped ? `${list.total}+` : entries.length) : ""}</span>
+          <span className={`shrink-0 tabular-nums text-[10px] text-dim ${entries.length > 0 ? SWAPS_FOR_DOWNLOAD : ""}`}>{list ? (list.clipped ? `${list.total}+` : entries.length) : ""}</span>
         </button>
-        {entries.length > 0 && <DownloadLink href={outputFolderUrl(chatId, "")} label={t("Download all as ZIP")} />}
+        {entries.length > 0 && <DownloadLink href={outputFolderUrl(chatId, "")} label={t("Download all as ZIP")} right={open ? "right-8" : "right-1"} />}
         {open && (
           <button type="button" onClick={() => void reloadOutputs(chatId, { force: true })} title={t("Refresh")} aria-label={t("Refresh")}
             className={`mr-1 grid h-6 w-6 shrink-0 place-items-center rounded-md text-dim transition-colors hover:bg-hover hover:text-fg ${state.loading ? "animate-pulse" : ""}`}>

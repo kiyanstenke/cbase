@@ -18,6 +18,8 @@ versions follow [Semantic Versioning](https://semver.org/) as [VERSIONING.md](VE
 
 - iOS build numbers are computed from the commit count instead of being set by App Store Connect; store builds are made only
   from a release tag.
+- In the chat's Outputs list the download button now appears in place of the size or count on hover instead of pushing it
+  aside.
 
 ## [0.2.0] - 2026-11-23
 

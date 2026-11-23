@@ -21,7 +21,9 @@
 //   Markdown.tsx `freeText(part, references)` -> `part`                                          => (c) red;
 //   ChatRightSidebar.tsx the line `<OutputsFolder chatId={activeId} />` struck                    => (d) red;
 //   OutputsFolder.tsx the folder row's `<DownloadLink … outputFolderUrl(chatId, k.key…)` struck     => (e) red;
-//   OutputsFolder.tsx `k.key !== INTERNAL_KEY &&` struck (the virtual node would link a folder "internal:") => (e) red.
+//   OutputsFolder.tsx `k.key !== INTERNAL_KEY &&` struck (the virtual node would link a folder "internal:") => (e) red;
+//   OutputsFolder.tsx `${SWAPS_FOR_DOWNLOAD}` struck from the size span (link and size would overlap)      => (e) red;
+//   OutputsFolder.tsx the link back to an `mr-1` slot in the flow (the size moves left again)              => (e) red.
 //
 // Run:  ./check  (single file: node --test web/test/outputs.test.mjs)
 import { test, after } from "node:test";
@@ -171,13 +173,20 @@ test("(e) download: file rows, real folder rows and the Outputs row link a downl
   assert.match(link, /opacity-0/);
   assert.match(link, /group-hover:opacity-100/, "shows on hover of the row");
   assert.match(link, /pointer-coarse:opacity-100/, "always visible without hover");
-  assert.match(view, /const ROW = "group /, "the row is the hover group");
+  assert.match(view, /const ROW = "group relative /, "the row is the hover group and holds the link");
+  // It takes the place of the size or count instead of holding a slot of its own: out of the flow, and the number gives way.
+  assert.match(link, /absolute top-1\/2 \$\{right\}/, "lies over the row, takes no space");
+  assert.doesNotMatch(link, /\bmr-1\b|\bshrink-0\b/, "no reserved slot");
+  assert.match(view, /const SWAPS_FOR_DOWNLOAD = "[^"]*group-hover:opacity-0[^"]*group-focus-within:opacity-0[^"]*pointer-coarse:opacity-0/);
   // Folder rows: the real path (key without the trailing slash), never the virtual "Internal" node.
   const folderRow = view.slice(view.indexOf('if (k.kind === "folder")'), view.indexOf("const selected"));
   assert.match(folderRow, /\{k\.key !== INTERNAL_KEY && \(\s*<DownloadLink href=\{outputFolderUrl\(chatId, k\.key\.replace\(\/\\\/\$\/, ""\)\)\} label=\{t\("Download as ZIP"\)\} \/>/);
   const fileRow = view.slice(view.indexOf("const selected"), view.indexOf("const list = state.list"));
   assert.match(fileRow, /<DownloadLink href=\{outputUrl\(chatId, k\.entry\.path\)\} label=\{t\("Download"\)\} \/>/);
-  assert.match(view, /<DownloadLink href=\{outputFolderUrl\(chatId, ""\)\} label=\{t\("Download all as ZIP"\)\} \/>/, "the whole location");
+  assert.match(fileRow, /\$\{SWAPS_FOR_DOWNLOAD\}`\}>\{fmtSize\(k\.entry\.size\)\}/, "the size gives way to the link");
+  assert.match(folderRow, /k\.key !== INTERNAL_KEY \? SWAPS_FOR_DOWNLOAD : ""\}`\}>\{k\.files\}/, "the count gives way, not on the virtual node");
+  assert.match(view, /<DownloadLink href=\{outputFolderUrl\(chatId, ""\)\} label=\{t\("Download all as ZIP"\)\} right=\{open \? "right-8" : "right-1"\} \/>/, "the whole location, left of the refresh button");
+  assert.match(view, /entries\.length > 0 \? SWAPS_FOR_DOWNLOAD : ""/, "the header count gives way");
   assert.equal(A.INTERNAL_KEY.endsWith("/"), false, "the virtual node's key is no folder path");
   // The client's route is the server's.
   const api = read("lib", "api", "outputs.ts");
