@@ -2,7 +2,8 @@
 // only if the bytes changed or the marker is old. Proves (1) the hash sees EVERY change of the working tree — changed, new,
 // deleted — and not ignored files, (2) the validity rule with its four reasons, (3) in the source: the marker is written ONLY
 // after the green verdict of a full gate, never on the quick path, (4) SCOPE: a marker serves only a request of its own scope
-// whose suites it covers.
+// whose suites it covers, (5) ONE PER MACHINE: the files lie outside the clone, and the key a second clone is asked with holds
+// what such a clone can have differently — the ops working tree and the installed dependencies.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
@@ -11,7 +12,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
-import { workingTreeHash, gateMarkerApplies, readGateMarker, writeGateMarker, markerFile, MARKER_FILES } from "./lib/gate-marker.mjs";
+import { workingTreeHash, gateKey, depsFingerprint, DEP_DIRS, gateMarkerApplies, readGateMarker, writeGateMarker, markerFile, MARKER_FILES, MARKER_DIR } from "./lib/gate-marker.mjs";
+import { REPO } from "./config-repo.mjs";
+import { PRIVATE_ROOT } from "./cleanliness.mjs";
 import { DEFAULT_PLAN, PUBLIC_PLAN, mergePlans, planSuiteNames } from "./lib/gate-plans.mjs";
 
 // A stand-in for the private plan on top of the public one (the real one lives in the maintainer's private part): the ops scope, two more suites.
@@ -201,5 +204,197 @@ test("in the source: the marker arises exactly once, after the green verdict, be
   assert.ok(fast < thrown && thrown < verdict && verdict < write, "order: quick-path return → throw on red → green verdict → marker");
   // The written marker names the plan's scope and the suites it ran.
   assert.match(check.slice(write, write + 200), /scope: plan\.markerScope, suites: planSuiteNames\(plan\)/, "the marker is not written with the plan's scope and suites");
-  assert.match(check, /const treeHash = quick \? "" : await workingTreeHash\(\)/, "the hash is taken BEFORE the suites and not on the quick path");
+  assert.match(check, /const treeHash = quick \? "" : await gateKey\(\)/, "the key is taken BEFORE the suites and not on the quick path");
+  // Writer and both readers use the same key — a reader on the bare tree hash would never match a written key (or worse, the other way round).
+  for (const f of [path.join(HERE, "run.mjs"), path.join(HERE, "..", "deploy", "deploy.mjs")]) {
+    const src = fs.readFileSync(f, "utf8");
+    assert.match(src, /readGateMarker\(markerFile\([^)]*\)\), await gateKey\(\)/, `${path.basename(f)} asks the marker with gateKey()`);
+    assert.doesNotMatch(src, /workingTreeHash/, `${path.basename(f)} still uses the bare tree hash`);
+  }
+});
+
+// ── one marker per machine, valid across clones ───────────────────────────────────────────────
+const writeInstalled = (repo, dir, packages, extra = {}) => {
+  fs.mkdirSync(path.join(repo, dir, "node_modules"), { recursive: true });
+  fs.writeFileSync(path.join(repo, dir, "node_modules", ".package-lock.json"), JSON.stringify({ name: "x", lockfileVersion: 3, ...extra, packages }, null, 2));
+};
+
+test("the marker files lie outside the clone, so a rollout clone reads what the development clone wrote", () => {
+  for (const f of Object.values(MARKER_FILES)) {
+    assert.equal(path.dirname(f), MARKER_DIR);
+    assert.ok(!path.resolve(f).startsWith(path.resolve(REPO) + path.sep), `${f} lies inside the clone — a second clone never sees it`);
+  }
+});
+
+test("deps fingerprint: same installed packages = same, whatever the root name or formatting; another version or a missing install = different", () => {
+  const a = fs.mkdtempSync(path.join(os.tmpdir(), "cbase-deps-a-"));
+  const b = fs.mkdtempSync(path.join(os.tmpdir(), "cbase-deps-b-"));
+  try {
+    const pk = { "": { name: "x" }, "node_modules/left-pad": { version: "1.3.0", integrity: "sha512-AAA", resolved: "https://r/left-pad-1.3.0.tgz" } };
+    for (const d of DEP_DIRS) { writeInstalled(a, d, pk, { name: "old-name" }); writeInstalled(b, d, pk); }
+    fs.appendFileSync(path.join(b, "web", "node_modules", ".package-lock.json"), "\n  ");
+    assert.equal(depsFingerprint(a), depsFingerprint(b), "root name and whitespace do not count");
+    writeInstalled(b, "web", { ...pk, "node_modules/left-pad": { ...pk["node_modules/left-pad"], version: "1.3.1", integrity: "sha512-BBB" } });
+    assert.notEqual(depsFingerprint(a), depsFingerprint(b), "another installed version counts");
+    writeInstalled(b, "web", pk);
+    assert.equal(depsFingerprint(a), depsFingerprint(b));
+    fs.rmSync(path.join(b, "client", "node_modules"), { recursive: true });
+    assert.notEqual(depsFingerprint(a), depsFingerprint(b), "a folder without npm ci never matches one with");
+  } finally {
+    fs.rmSync(a, { recursive: true, force: true });
+    fs.rmSync(b, { recursive: true, force: true });
+  }
+});
+
+test("gate key: two clones of the same commit match; ops working tree and installed deps each make them differ", async () => {
+  const dev = tempRepo();
+  const roll = fs.mkdtempSync(path.join(os.tmpdir(), "cbase-gate-roll-"));
+  try {
+    execFileSync("git", ["clone", "-q", dev, roll], { stdio: "ignore" });
+    for (const r of [dev, roll]) {
+      fs.mkdirSync(path.join(r, PRIVATE_ROOT));
+      git(path.join(r, PRIVATE_ROOT), "init", "-q", "-b", "main");
+      git(path.join(r, PRIVATE_ROOT), "-c", "user.email=t@example.invalid", "-c", "user.name=t", "commit", "-q", "--allow-empty", "-m", "init");
+      fs.writeFileSync(path.join(r, PRIVATE_ROOT, "note.md"), "n\n");
+      for (const d of DEP_DIRS) writeInstalled(r, d, { "node_modules/a": { version: "1.0.0" } });
+    }
+    // The private folder is ignored by the outer repo in the real tree; here too.
+    for (const r of [dev, roll]) fs.appendFileSync(path.join(r, ".git", "info", "exclude"), `${PRIVATE_ROOT}/\nnode_modules/\n`);
+    const kd = await gateKey(dev);
+    assert.match(kd, /^[0-9a-f]{40}\+ops:[0-9a-f]{16}\+deps:[0-9a-f]{16}\+env:[0-9a-f]{16}$/);
+    assert.equal(await gateKey(roll), kd, "same commit, same ops, same deps — the rollout clone is served by the dev clone's marker");
+    fs.writeFileSync(path.join(roll, PRIVATE_ROOT, "note.md"), "older\n");
+    const opsDiff = await gateKey(roll);
+    assert.notEqual(opsDiff, kd, "another ops working tree is another key");
+    const marker = { hash: kd, stamp: NOW - 60_000, node: process.version, result: "green", scope: "ops", suites: ["Backend"] };
+    assert.match(gateMarkerApplies(marker, opsDiff, { scope: "ops", suites: ["Backend"], now: NOW }).reason, /working tree changed \(ops [0-9a-f]{12} → [0-9a-f]{12}\)$/, "the reason names the part that differs");
+    fs.writeFileSync(path.join(roll, PRIVATE_ROOT, "note.md"), "n\n");
+    writeInstalled(roll, "server/backend", { "node_modules/a": { version: "2.0.0" } });
+    const depsDiff = await gateKey(roll);
+    assert.notEqual(depsDiff, kd, "other installed dependencies are another key");
+    assert.match(gateMarkerApplies(marker, depsDiff, { scope: "ops", suites: ["Backend"], now: NOW }).reason, /\(deps /);
+    // A git repository the private clone keeps ignored (the old-history bare clone its suites read): missing in one clone = other key.
+    writeInstalled(roll, "server/backend", { "node_modules/a": { version: "1.0.0" } });
+    for (const r of [dev, roll]) fs.appendFileSync(path.join(r, PRIVATE_ROOT, ".git", "info", "exclude"), "/.history.git/\n");
+    fs.mkdirSync(path.join(dev, PRIVATE_ROOT, ".history.git", "objects"), { recursive: true });
+    fs.writeFileSync(path.join(dev, PRIVATE_ROOT, ".history.git", "HEAD"), "ref: refs/heads/main\n");
+    assert.notEqual(await gateKey(roll), await gateKey(dev), "the ignored history clone missing in one clone counts");
+    fs.cpSync(path.join(dev, PRIVATE_ROOT, ".history.git"), path.join(roll, PRIVATE_ROOT, ".history.git"), { recursive: true });
+    assert.equal(await gateKey(roll), await gateKey(dev));
+    // Without an ops clone the key has no ops part (the public tree on its own).
+    fs.rmSync(path.join(roll, PRIVATE_ROOT), { recursive: true });
+    assert.doesNotMatch(await gateKey(roll), /\+ops:/);
+  } finally {
+    fs.rmSync(dev, { recursive: true, force: true });
+    fs.rmSync(roll, { recursive: true, force: true });
+  }
+});
+
+test("gate key, environment: a CBASE_* variable, an ignored symlink and a native file's mode each change it; a private folder without git is unknown", async () => {
+  const repo = tempRepo();
+  const saved = process.env.CBASE_GATE_KEY_PROBE;
+  try {
+    fs.appendFileSync(path.join(repo, ".git", "info", "exclude"), "node_modules/\nlinked\n");
+    const helper = path.join(repo, "server/backend/node_modules/node-pty/prebuilds/darwin-arm64/spawn-helper");
+    fs.mkdirSync(path.dirname(helper), { recursive: true });
+    fs.writeFileSync(helper, "bin");
+    fs.chmodSync(helper, 0o755);
+    const k0 = await gateKey(repo);
+    assert.match(k0, /\+env:[0-9a-f]{16}$/);
+    assert.equal(await gateKey(repo), k0, "stable");
+    process.env.CBASE_GATE_KEY_PROBE = "1";
+    assert.notEqual(await gateKey(repo), k0, "a CBASE_* variable in the caller's environment counts");
+    delete process.env.CBASE_GATE_KEY_PROBE;
+    assert.equal(await gateKey(repo), k0);
+    fs.symlinkSync("a.txt", path.join(repo, "linked"));
+    assert.notEqual(await gateKey(repo), k0, "an ignored symlink (the private overlay) counts");
+    fs.unlinkSync(path.join(repo, "linked"));
+    assert.equal(await gateKey(repo), k0);
+    fs.chmodSync(helper, 0o644);
+    assert.notEqual(await gateKey(repo), k0, "spawn-helper without +x after an npm ci counts — the lockfile alone would not see it");
+    fs.chmodSync(helper, 0o755);
+    assert.equal(await gateKey(repo), k0);
+    fs.mkdirSync(path.join(repo, PRIVATE_ROOT));
+    fs.writeFileSync(path.join(repo, PRIVATE_ROOT, "x"), "copied\n");
+    assert.equal(await gateKey(repo), "", "a private folder without its own git cannot be hashed: unknown, never served");
+  } finally {
+    if (saved === undefined) delete process.env.CBASE_GATE_KEY_PROBE; else process.env.CBASE_GATE_KEY_PROBE = saved;
+    fs.rmSync(repo, { recursive: true, force: true });
+  }
+});
+
+test("in the source: the key is taken again after the suites — a changed tree gets no marker; the suites run without deploy.local.json", () => {
+  const check = fs.readFileSync(path.join(HERE, "targets", "check.mjs"), "utf8");
+  const write = check.indexOf("writeGateMarker({");
+  const again = check.indexOf("const keyAfter = treeHash ? await gateKey() : \"\";");
+  assert.ok(again !== -1 && again < write, "the key is not re-taken before the marker is written");
+  assert.match(check.slice(again, write), /if \(treeHash && keyAfter !== treeHash\) \{\n\s+log\.detail\([^\n]*\n\s+return;\n\s+\}/, "a changed key must end without a marker");
+  assert.match(check, /testEnv\.CBASE_DEPLOY_LOCAL = "off";/, "the suites must not read the installation's deploy.local.json");
+  const config = fs.readFileSync(path.join(HERE, "..", "deploy", "config.mjs"), "utf8");
+  const from = config.slice(config.indexOf("function fromFile()"), config.indexOf("function fromEnv()"));
+  assert.ok(from.indexOf('process.env.CBASE_DEPLOY_LOCAL === "off"') !== -1 && from.indexOf('process.env.CBASE_DEPLOY_LOCAL === "off"') < from.indexOf("readFileSync"), "config.mjs reads deploy.local.json although the gate switched it off");
+});
+
+test("a marker that cannot be written leaves the gate green: it says why and is not there", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cbase-marker-ro-"));
+  try {
+    fs.writeFileSync(path.join(dir, "file"), "x");
+    const m = writeGateMarker({ hash: "a".repeat(40), result: "green", file: path.join(dir, "file", "gate-ok.json"), scope: "public", suites: ["Backend"] });
+    assert.match(m.notWritten, /ENOTDIR|EEXIST|not a directory/i);
+    const check = fs.readFileSync(path.join(HERE, "targets", "check.mjs"), "utf8");
+    assert.match(check, /if \(marker\?\.notWritten\) log\.detail\(/, "check.mjs must report the unwritten marker, not throw");
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// COUNTER-PROOF, built in: a copy of gate-marker.mjs whose key leaves out the ops part, resp. the deps part, gives the two clones
+// above the SAME key although they differ — the key test would then be idle.
+test("counter-proof: without the ops, deps or environment part in the key, differing clones would share a marker", async () => {
+  const src = fs.readFileSync(path.join(HERE, "lib/gate-marker.mjs"), "utf8");
+  const probes = [];
+  const load = async (name, text) => {
+    const p = path.join(HERE, "lib", `.probe-${process.pid}-${name}-gate-marker.mjs`);
+    fs.writeFileSync(p, text);
+    probes.push(p);
+    return import(`${p}?x=${name}`);
+  };
+  const swap = (from, to) => { assert.ok(src.includes(from), `gone from gate-marker.mjs: ${from} — move the counter-proof, do NOT delete it`); return src.replace(from, to); };
+  const a = tempRepo();
+  const b = fs.mkdtempSync(path.join(os.tmpdir(), "cbase-gate-cp-"));
+  try {
+    execFileSync("git", ["clone", "-q", a, b], { stdio: "ignore" });
+    for (const r of [a, b]) {
+      fs.mkdirSync(path.join(r, PRIVATE_ROOT));
+      git(path.join(r, PRIVATE_ROOT), "init", "-q", "-b", "main");
+      git(path.join(r, PRIVATE_ROOT), "-c", "user.email=t@example.invalid", "-c", "user.name=t", "commit", "-q", "--allow-empty", "-m", "init");
+      fs.appendFileSync(path.join(r, ".git", "info", "exclude"), `${PRIVATE_ROOT}/\nnode_modules/\n`);
+    }
+    fs.writeFileSync(path.join(a, PRIVATE_ROOT, "x"), "1\n");
+    fs.writeFileSync(path.join(b, PRIVATE_ROOT, "x"), "2\n");
+    const noOps = await load("noops", swap("key += `+ops:${ops.slice(0, 16)}`;", ""));
+    assert.equal(await noOps.gateKey(a), await noOps.gateKey(b), "relaxed copy still tells the ops trees apart — the ops test is idle");
+    assert.notEqual(await gateKey(a), await gateKey(b));
+    fs.writeFileSync(path.join(b, PRIVATE_ROOT, "x"), "1\n");
+    writeInstalled(b, "web", { "node_modules/a": { version: "9.9.9" } });
+    const noDeps = await load("nodeps", swap("return `${key}+deps:${depsFingerprint(repo)}+env:${env}`;", "return `${key}+env:${env}`;"));
+    assert.equal(await noDeps.gateKey(a), await noDeps.gateKey(b), "relaxed copy still tells the installs apart — the deps test is idle");
+    assert.notEqual(await gateKey(a), await gateKey(b));
+    writeInstalled(b, "web", {});
+    fs.rmSync(path.join(b, "web"), { recursive: true });
+    assert.equal(await gateKey(a), await gateKey(b), "fixture: the two clones match again");
+    process.env.CBASE_GATE_KEY_PROBE = "x";
+    const kb = await gateKey(b);
+    delete process.env.CBASE_GATE_KEY_PROBE;
+    assert.notEqual(kb, await gateKey(a));
+    const noEnv = await load("noenv", swap("for (const k of Object.keys(process.env).filter((k) => k.startsWith(\"CBASE_\")).sort()) h.update(`env\\t${k}=${process.env[k]}\\n`);", ""));
+    process.env.CBASE_GATE_KEY_PROBE = "x";
+    const relaxed = await noEnv.gateKey(b);
+    delete process.env.CBASE_GATE_KEY_PROBE;
+    assert.equal(relaxed, await noEnv.gateKey(a), "relaxed copy still sees the CBASE_* variable — the environment test is idle");
+  } finally {
+    for (const p of probes) fs.rmSync(p, { force: true });
+    fs.rmSync(a, { recursive: true, force: true });
+    fs.rmSync(b, { recursive: true, force: true });
+  }
 });

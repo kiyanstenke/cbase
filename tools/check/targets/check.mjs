@@ -13,7 +13,7 @@ import { readRegister, guardInTree, guardRegister, guardRegisterText } from "../
 import { backImports, hookRegistry, hookRegistryText, routeRegistry, routeRuleViolations, schemaRegistry, schemaRegistryText } from "../lib/tree-rules.mjs";
 import { report, manifestDiff, manifestOpen, readManifest } from "../lib/manifest-diff.mjs";
 import * as log from "../lib/log.mjs";
-import { workingTreeHash, writeGateMarker } from "../lib/gate-marker.mjs";
+import { gateKey, writeGateMarker } from "../lib/gate-marker.mjs";
 import { DEFAULT_PLAN, buildSuites, planGlobs, planSuiteNames, suiteContext } from "../lib/gate-plans.mjs";
 import { backendParallelism, backendParallelismText, runSuites, shortParallelism, shortSelection, suiteDeadlines } from "../lib/gate-plan.mjs";
 import { takeLock } from "../lib/gate-lock.mjs";
@@ -147,7 +147,7 @@ export async function check({ quick = false, quickReason = "--quick", plan = DEF
   const failures = [];
   // The tree is hashed BEFORE the suites: if someone changes it during the run, the marker no longer fits
   // the tree afterwards — and the next `deploy` runs the full gate again. Right so.
-  const treeHash = quick ? "" : await workingTreeHash();
+  const treeHash = quick ? "" : await gateKey();
   let registerRaw = null;
   let registerFiles = null;
 
@@ -447,6 +447,10 @@ export async function check({ quick = false, quickReason = "--quick", plan = DEF
   // NOTHING and ends with exit 0, even for a failure. `valuesSuite` is red on an empty output;
   // here the cause is removed.
   delete testEnv.NODE_TEST_CONTEXT;
+  // And the installation's deploy.local.json (host, root, port of the maintainer's server — present only in a rollout clone):
+  // the suites test the code, not one installation. Without it a development clone and a rollout clone run the same suites,
+  // which is what lets a marker serve both (lib/gate-marker.mjs). config.mjs reads the file only when this is not "off".
+  testEnv.CBASE_DEPLOY_LOCAL = "off";
   // And the network: `embeddings.js` caches the model under `$HOME/.cache/cbase-models`, and
   // almost every test file sets HOME to a fresh temp directory — every test process loaded the model
   // (~130 MB) from Hugging Face. On a fast line 13 s in the background, on a slow one 15 min: a test
@@ -574,6 +578,14 @@ export async function check({ quick = false, quickReason = "--quick", plan = DEF
   log.ok("all checks passed");
   // The marker only AFTER the verdict and only for a full gate (see lib/gate-marker.mjs) — `--short` is none.
   if (short) return;
+  // The key was taken at the start, before the wait at the lock and the suites. Whatever changed since (an edit, a pull, an npm
+  // ci) was tested in part or not at all: the marker vouches for nothing then. Same key at the end, or no marker.
+  const keyAfter = treeHash ? await gateKey() : "";
+  if (treeHash && keyAfter !== treeHash) {
+    log.detail(`No gate marker: the tree or its environment changed during the gate (${treeHash.slice(0, 12)} → ${keyAfter.slice(0, 12) || "unknown"}) — the next deploy runs the suites.`);
+    return;
+  }
   const marker = writeGateMarker({ hash: treeHash, result: resultsValue.join(" · "), scope: plan.markerScope, suites: planSuiteNames(plan) });
-  if (marker) log.detail(`Gate marker written (${treeHash.slice(0, 12)}) — a deploy on the same tree within an hour does not repeat the suites (--recheck forces it).`);
+  if (marker?.notWritten) log.detail(`Gate marker not written (${marker.notWritten}) — the gate stays green; the next deploy runs the suites.`);
+  else if (marker) log.detail(`Gate marker written (${treeHash.slice(0, 12)}) — a deploy with the same tree and environment within an hour, from any clone on this machine, does not repeat the suites (--recheck forces it).`);
 }

@@ -14,7 +14,7 @@ server/backend/build-context/
 # Build artifacts
 *.tsbuildinfo
 
-# Logs and the green-gate marker of ./check
+# Logs of ./check and ./deploy (the green-gate marker lives per machine, tools/check/lib/gate-marker.mjs)
 .deploy-logs/
 
 # Stray copies of backend sources in the root folder (the real ones live in server/backend/electron/server/)

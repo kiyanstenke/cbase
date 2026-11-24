@@ -26,7 +26,7 @@ import { setDryRun, isDryRun } from "../check/lib/sh.mjs";
 import { setAssumeYes, Aborted } from "./lib/prompt.mjs";
 import { assertMainBranch, commitAndPush } from "./lib/git-rollout.mjs";
 import { check } from "../check/targets/check.mjs";
-import { workingTreeHash, gateMarkerApplies, readGateMarker, markerFile } from "../check/lib/gate-marker.mjs";
+import { gateKey, gateMarkerApplies, readGateMarker, markerFile } from "../check/lib/gate-marker.mjs";
 import { PUBLIC_PLAN, planSuiteNames } from "../check/lib/gate-plans.mjs";
 import { importPrivate, needsPrivatePart } from "./lib/private-part.mjs";
 import { buildWeb, deployWebOut } from "./targets/web.mjs";
@@ -339,7 +339,7 @@ async function main() {
     let marker = { applies: false, reason: "" };
     if (!o.quick && !o.recheck && suppliesCode) {
       // The marker of the plan the gate would run (scope and suites): a smaller plan's marker does not skip a larger one.
-      marker = gateMarkerApplies(readGateMarker(markerFile(DEFAULT_PLAN.markerScope)), await workingTreeHash(), {
+      marker = gateMarkerApplies(readGateMarker(markerFile(DEFAULT_PLAN.markerScope)), await gateKey(), {
         scope: DEFAULT_PLAN.markerScope, suites: planSuiteNames(DEFAULT_PLAN),
       });
     }

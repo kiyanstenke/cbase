@@ -76,6 +76,8 @@ function deepMerge(base, extra) {
 
 function fromFile() {
   const p = path.join(REPO, "deploy.local.json");
+  // The gate's suites run with CBASE_DEPLOY_LOCAL=off (tools/check/targets/check.mjs): they test the code, never one installation.
+  if (process.env.CBASE_DEPLOY_LOCAL === "off") return {};
   if (!fs.existsSync(p)) return {};
   try {
     return JSON.parse(fs.readFileSync(p, "utf8"));

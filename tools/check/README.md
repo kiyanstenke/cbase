@@ -11,8 +11,9 @@ device — only this repository. (The private part of a clone, when there is one
 ./check --skip-tests   # the same as --quick
 ```
 
-A full gate that ends green writes a marker (`.deploy-logs/gate-ok.json`, scope `public`) with the hash of the working tree and the
-suites that ran. A repeated call on the same bytes within the hour runs only the quick checks and says why.
+A full gate that ends green writes a marker (`~/.cache/cbase-gate/gate-ok.json`, scope `public`; one per machine, so another clone
+of the same commit uses it too) with a key of the working tree, the private clone's working tree if present and the installed dependencies,
+plus the suites that ran. A repeated call with the same key within the hour runs only the quick checks and says why.
 The pre-push hook (`.githooks/pre-push`, switch on with `git config core.hooksPath .githooks`) runs `--quick`.
 
 ## Setup the full gate needs

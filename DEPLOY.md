@@ -196,10 +196,12 @@ with `--skip-tests`, or reduced to the quick checks when nothing is shipped, for
 - **One gate per machine.** A full gate takes the lock `/tmp/cbase.gate.lock`; a second one (other session, other worktree, or the
   gate of a `./deploy all`) waits and says on whom. A lock whose process is dead, or whose pid was reused, is free. `--quick` never
   takes the lock.
-- **Gate marker.** A full, green gate records the hash of the working tree (`.deploy-logs/gate-ok.json`, or
-  the private part's own marker for the merged plan). A deploy on the same bytes within one hour runs only the quick checks and logs why.
-  `--recheck` forces the suites; `--quick` never writes a marker. So the efficient way is `./deploy check`, read the result, then
-  `./deploy all`.
+- **Gate marker.** A full, green gate records a key of what it tested: the working tree, the working tree of the maintainer's private
+  clone if there is one, and the installed dependencies. The marker lives once per machine (`~/.cache/cbase-gate/gate-ok.json`, or the private
+  part's own file for the merged plan; `CBASE_GATE_MARKER_DIR` moves it), not per clone. A deploy with the same key within one hour,
+  from any clone, runs only the quick checks and logs why. `--recheck` forces the suites; `--quick` never writes a marker. So the
+  efficient way is `./deploy check` in the development clone, read the result, push, pull in the rollout clone (also its private clone),
+  then `./deploy all` there.
 
 Knobs for other machines (for example a clone with few cores):
 

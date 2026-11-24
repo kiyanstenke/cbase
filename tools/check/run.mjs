@@ -10,8 +10,8 @@
 //                  needs an hour for the backend; the nightly CI runs the full gate). Writes no gate marker: it is never a full gate.
 //   --recheck      run the suites even when a full gate was green on exactly this working tree within the last hour
 //
-// A green full gate writes a marker (.deploy-logs/gate-ok.json, scope "public"); the same bytes need no second proof, so a repeated
-// call within the hour runs only the quick checks and says why. Exit code 0 green, 1 red, 2 wrong call.
+// A green full gate writes a marker (lib/gate-marker.mjs: one per machine, scope "public"); the same key needs no second proof, so a
+// repeated call within the hour runs only the quick checks and says why. Exit code 0 green, 1 red, 2 wrong call.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,7 +19,7 @@ import { REPO } from "./config-repo.mjs";
 import * as log from "./lib/log.mjs";
 import { check } from "./targets/check.mjs";
 import { PUBLIC_PLAN, planSuiteNames } from "./lib/gate-plans.mjs";
-import { gateMarkerApplies, markerFile, readGateMarker, workingTreeHash } from "./lib/gate-marker.mjs";
+import { gateKey, gateMarkerApplies, markerFile, readGateMarker } from "./lib/gate-marker.mjs";
 
 export function parseArgs(argv) {
   const o = { quick: false, recheck: false, skipTests: false, short: false };
@@ -51,7 +51,7 @@ export async function main(argv = process.argv.slice(2), plan = PUBLIC_PLAN) {
   let quickReason = o.skipTests ? "--skip-tests" : "--quick";
   if (!quick && !o.recheck && !o.short) {
     // The marker of the plan the gate would run (scope and suites).
-    const m = gateMarkerApplies(readGateMarker(markerFile(plan.markerScope)), await workingTreeHash(), { scope: plan.markerScope, suites: planSuiteNames(plan) });
+    const m = gateMarkerApplies(readGateMarker(markerFile(plan.markerScope)), await gateKey(), { scope: plan.markerScope, suites: planSuiteNames(plan) });
     if (m.applies) { quick = true; quickReason = m.reason; }
   }
   await check({ quick, quickReason, plan, short: o.short && !quick });
