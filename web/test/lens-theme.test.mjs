@@ -115,3 +115,40 @@ test("counter-tests: each sabotage turns its check red", () => {
   assert.throws(() => checkConnect(once(connect, "    .brand .mark-ink { display: none; }\n", "")));
   assert.throws(() => checkConnect(connect.replace(/<img class="mark mark-ink"[^>]*>/, '<img class="mark" alt="" src="data:image/png;base64,AAAA">')));
 });
+
+// (5) The brand heads the window too: in the desktop client (Electron) lens and wordmark stand right of the traffic lights, not only
+//     in the browser — the placeholder for the native buttons comes FIRST, the brand after it, unconditionally. And every left
+//     drawer of the iOS app starts with lens + "cbase" (`LeftDrawer` in Shell/AppShell.swift) instead of the section's name.
+const SWIFT_SHELL = path.join(repo, "mobile", "CbaseMobile", "Shell", "AppShell.swift");
+function brandProblems(top, swift) {
+  const out = [];
+  const hole = top.indexOf('<span aria-hidden className="h-9 w-[62px] shrink-0" />');
+  const lens = top.indexOf('<CbaseLens alt="cbase" className="h-7 w-7" />');
+  const word = top.indexOf('data-brand-wordmark>cbase</span>');
+  if (hole < 0 || lens < 0 || word < 0) out.push("TopNav: placeholder, lens or wordmark missing");
+  else {
+    if (!(hole < lens && lens < word)) out.push("TopNav: order is not placeholder → lens → wordmark");
+    const between = top.slice(hole, lens);
+    if (/\)\s*:\s*\(/.test(between)) out.push("TopNav: the brand hangs on an inElectron branch — the window would lose it");
+  }
+  const a = swift.indexOf("struct LeftDrawer: View {");
+  const drawer = a < 0 ? "" : swift.slice(a, swift.indexOf("LeftDrawerBody()", a));
+  if (!drawer) out.push("iOS: LeftDrawer not found");
+  else {
+    if (!/CbaseLogo\(size: \d+\)\s*\n\s*Text\(verbatim: "cbase"\)/.test(drawer)) out.push("iOS: the left drawer header has no lens + \"cbase\"");
+    if (/Text\(drawerTitle\)/.test(drawer)) out.push("iOS: the left drawer still shows the section title");
+  }
+  return out;
+}
+
+test("brand: lens and wordmark in the desktop window header and atop every left drawer on iOS", () => {
+  const top = read("src", "components", "TopNav.tsx");
+  const swift = fs.readFileSync(SWIFT_SHELL, "utf8");
+  assert.deepEqual(brandProblems(top, swift), []);
+  // Counter-tests: the old shapes turn it red.
+  const once = (src, from, to) => { assert.equal(src.split(from).length, 2, `sabotage outdated: ${from}`); return src.replace(from, to); };
+  const ternary = once(top, '<span aria-hidden className="h-9 w-[62px] shrink-0" />\n        )}', '<span aria-hidden className="h-9 w-[62px] shrink-0" />\n        ) : (\n        <span />\n        )}');
+  assert.notDeepEqual(brandProblems(ternary, swift), [], "a brand only outside the window went unnoticed");
+  const oldTitle = once(swift, 'CbaseLogo(size: 26)\n                        Text(verbatim: "cbase")', 'Text(drawerTitle)');
+  assert.notDeepEqual(brandProblems(top, oldTitle), [], "the section title instead of the brand went unnoticed");
+});

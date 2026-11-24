@@ -1189,12 +1189,19 @@ struct LeftDrawer: View {
         VStack(spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 1) {
-                    // Title in the system font, bold (`cbTitle(.drawer)`).
-                    Text(drawerTitle)
-                        .cbTitle(.drawer)
-                        .foregroundStyle(CbColor.text)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
+                    // The brand heads every left drawer (lens + wordmark, like the app name atop the Claude app's sidebar) instead of
+                    // the section's name — the section shows in the drawer itself. The wordmark in the drawer title's type (`cbTitle(.drawer)`).
+                    HStack(spacing: 8) {
+                        CbaseLogo(size: 26)
+                        Text(verbatim: "cbase")
+                            .cbTitle(.drawer)
+                            .foregroundStyle(CbColor.text)
+                            .lineLimit(1)
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(Text(verbatim: "cbase"))
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityIdentifier("left-drawer-brand")
                     Text(state.scopeName)
                         .font(.caption)
                         .foregroundStyle(CbColor.textMuted)
@@ -1231,29 +1238,6 @@ struct LeftDrawer: View {
         .environment(\.drawerGlass, true)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("left-drawer")
-    }
-
-    private var drawerTitle: String {
-        switch state.tab {
-        case .apps: return L("Apps")
-        case .profile: return L("Profile")
-        case .workspaces:
-            guard state.activeWorkspaceId != nil else { return L("Workspaces") }
-            switch state.category {
-            case .chats: return L("Chats")
-            case .scheduled: return L("Scheduled")
-            case .context: return L("Context")
-            case .code: return L("Files")
-            case .terminal: return L("Terminal")
-            case .browser: return L("Browser")
-            case .projects: return state.enteredProject == nil ? L("Projects") : L("Project")
-            case .agents: return L("Agents")
-            case .workflows: return L("Workflows")
-            case .mcp: return L("MCP")
-            case .vars: return L("Credentials")
-            case .skills: return L("Skills")
-            }
-        }
     }
 }
 

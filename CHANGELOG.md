@@ -21,6 +21,8 @@ versions follow [Semantic Versioning](https://semver.org/) as [VERSIONING.md](VE
 - `./deploy`: a green gate now serves every clone on the same machine. Its marker lives in `~/.cache/cbase-gate` and is keyed by
   the working tree, the installed dependencies and the local environment, so a deploy from a separate rollout clone of the same
   commit no longer repeats the test suites. The suites no longer read the installation's `deploy.local.json`.
+- The desktop app shows the cbase lens and name next to the window buttons, and every left sidebar of the iOS app starts with
+  them instead of the section's name.
 - In the chat's Outputs list the download button now appears in place of the size or count on hover instead of pushing it
   aside.
 

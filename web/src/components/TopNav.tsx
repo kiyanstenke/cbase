@@ -411,10 +411,10 @@ export function TopNav() {
           wraps: brand and tabs top left, controls in the second row. */}
       <nav ref={navRef} className={`relative flex select-none flex-wrap items-center gap-x-2 gap-y-1.5 px-3 sm:px-5 ${inElectron ? "py-1.5" : "py-2"}`} style={drag}>
         {/* The centred slot (`cbase-topnav-center`) stands in the DOM BEHIND the tab strip, not here in front — the reason is at the slot. */}
-        {inElectron ? (
-          /* In the window the traffic lights stand on the left, not the brand: the window title and the Dock icon say
-             which app this is anyway, and two brands one above the other (lights + logo) only narrowed the row.
-             The placeholder is deliberately h-9 high — it keeps the first row at the 48 pt from which main.js derives the
+        {/* The brand: lens and wordmark, in the window too (to the right of the traffic lights, level with the tabs, like
+            the desktop apps of other tools). It is no control — it stays part of the drag region. */}
+        {inElectron && (
+          /* The placeholder is deliberately h-9 high — it keeps the first row at the 48 pt from which main.js derives the
              traffic-light height (centre 24: under Electron 44 y = 24 − 7 = 17, under 37 it was 24 − 8 = 16), even if the
              controls on the right wrap into a second row.
              The width must reach behind the third NATIVE button, in both shells: right edge under 44 at x 76 (frame 14 × 14
@@ -423,15 +423,14 @@ export function TopNav() {
              both main.js). 20 + 62 = 82 > 76 > 70: 62 covers both, with 6 pt of air under 44. Limit: the page zoom
              (View → Zoom Out) shrinks CSS pixels, not the buttons — at 90 % the placeholder ends at 73.8 pt, but the first
              control starts only at (82 + 16 + 8) · 0.9 = 95.4 pt; content slides under the buttons only below 72 %. */
-          <span aria-hidden className="mr-1 h-9 w-[62px] shrink-0 sm:mr-4" />
-        ) : (
-          <span className="mr-1 flex shrink-0 items-center gap-2.5 sm:mr-6">
-            {/* The brand IN the app is always the lens, never the app-icon tile (its dark background belongs on the desktop, not in a light header). */}
-            <CbaseLens alt="cbase" className="h-7 w-7" />
-            {/* The lettering is dropped on narrow windows — the logo already carries the brand. */}
-            <span className="hidden text-[15px] font-bold tracking-tight sm:inline">cbase</span>
-          </span>
+          <span aria-hidden className="h-9 w-[62px] shrink-0" />
         )}
+        <span className={`mr-1 flex shrink-0 items-center gap-2.5 sm:mr-6 ${inElectron ? "ml-1" : ""}`}>
+          {/* The brand IN the app is always the lens, never the app-icon tile (its dark background belongs on the desktop, not in a light header). */}
+          <CbaseLens alt="cbase" className="h-7 w-7" />
+          {/* The lettering is dropped on narrow windows — the logo already carries the brand. */}
+          <span className="hidden text-[15px] font-bold tracking-tight sm:inline" data-brand-wordmark>cbase</span>
+        </span>
         {ownWindowButtons && <WindowButtons />}
         {/* flex-1: takes the free space so the controls sit on the right. cb-strip scrolls the tabs horizontally if needed
             instead of pushing them out of the window. min-w-[13rem] is the lower bound they must NOT shrink below: with
