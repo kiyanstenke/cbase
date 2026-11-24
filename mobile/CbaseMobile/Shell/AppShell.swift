@@ -1192,7 +1192,7 @@ struct LeftDrawer: View {
                     // The brand heads every left drawer (lens + wordmark, like the app name atop the Claude app's sidebar) instead of
                     // the section's name — the section shows in the drawer itself. The wordmark in the drawer title's type (`cbTitle(.drawer)`).
                     HStack(spacing: 8) {
-                        CbaseLogo(size: 26)
+                        CbaseLogo(size: 21)
                         Text(verbatim: "cbase")
                             .cbTitle(.drawer)
                             .foregroundStyle(CbColor.text)

@@ -427,7 +427,7 @@ export function TopNav() {
         )}
         <span className={`mr-1 flex shrink-0 items-center gap-2.5 sm:mr-6 ${inElectron ? "ml-1" : ""}`}>
           {/* The brand IN the app is always the lens, never the app-icon tile (its dark background belongs on the desktop, not in a light header). */}
-          <CbaseLens alt="cbase" className="h-7 w-7" />
+          <CbaseLens alt="cbase" className="h-5.5 w-5.5" />
           {/* The lettering is dropped on narrow windows — the logo already carries the brand. */}
           <span className="hidden text-[15px] font-bold tracking-tight sm:inline" data-brand-wordmark>cbase</span>
         </span>

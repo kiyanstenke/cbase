@@ -106,7 +106,7 @@ const once = (text, old, fresh) => {
 
 test("counter-tests: each sabotage turns its check red", () => {
   const top = path.join("src", "components", "TopNav.tsx");
-  const strayed = { ...files, [top]: once(files[top], '<CbaseLens alt="cbase" className="h-7 w-7" />', '<img src="/cbase-lens.png" alt="cbase" className="h-7 w-7" />') };
+  const strayed = { ...files, [top]: once(files[top], '<CbaseLens alt="cbase" className="h-5.5 w-5.5" />', '<img src="/cbase-lens.png" alt="cbase" className="h-7 w-7" />') };
   assert.notDeepEqual(strayImages(strayed), [], "a bare <img> in TopNav went unnoticed");
 
   assert.throws(() => checkComponent(once(files[COMPONENT], "cb-lens-on-light ${className}", "cb-lens-on-dark ${className}")));
@@ -123,7 +123,7 @@ const SWIFT_SHELL = path.join(repo, "mobile", "CbaseMobile", "Shell", "AppShell.
 function brandProblems(top, swift) {
   const out = [];
   const hole = top.indexOf('<span aria-hidden className="h-9 w-[62px] shrink-0" />');
-  const lens = top.indexOf('<CbaseLens alt="cbase" className="h-7 w-7" />');
+  const lens = top.indexOf('<CbaseLens alt="cbase" className="h-5.5 w-5.5" />');
   const word = top.indexOf('data-brand-wordmark>cbase</span>');
   if (hole < 0 || lens < 0 || word < 0) out.push("TopNav: placeholder, lens or wordmark missing");
   else {
@@ -149,6 +149,6 @@ test("brand: lens and wordmark in the desktop window header and atop every left 
   const once = (src, from, to) => { assert.equal(src.split(from).length, 2, `sabotage outdated: ${from}`); return src.replace(from, to); };
   const ternary = once(top, '<span aria-hidden className="h-9 w-[62px] shrink-0" />\n        )}', '<span aria-hidden className="h-9 w-[62px] shrink-0" />\n        ) : (\n        <span />\n        )}');
   assert.notDeepEqual(brandProblems(ternary, swift), [], "a brand only outside the window went unnoticed");
-  const oldTitle = once(swift, 'CbaseLogo(size: 26)\n                        Text(verbatim: "cbase")', 'Text(drawerTitle)');
+  const oldTitle = once(swift, 'CbaseLogo(size: 21)\n                        Text(verbatim: "cbase")', 'Text(drawerTitle)');
   assert.notDeepEqual(brandProblems(top, oldTitle), [], "the section title instead of the brand went unnoticed");
 });
