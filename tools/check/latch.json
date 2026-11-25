@@ -314,6 +314,7 @@
     "run-injection.test.js",
     "injection-synthetic.test.js",
     "native-catalog.test.js",
+    "start-answers-message-path.test.js",
     "run-inputs-persistence.test.js",
     "schema-register.test.js",
     "loop-watch.test.js",

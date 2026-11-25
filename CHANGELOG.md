@@ -6,6 +6,12 @@ versions follow [Semantic Versioning](https://semver.org/) as [VERSIONING.md](VE
 
 ## [Unreleased]
 
+### Fixed
+
+- When an agent starts a dynamic workflow or a graph workflow in the background, the start answer now tells it how to write to
+  the running agents (`cbase_agent_send` to `wf:<runId>:<n>` or `graph:<startId>`). Agents used to stop and restart a workflow
+  to change one instruction, or claimed its agents could not be reached.
+
 ## [0.3.1] - 2026-11-25
 
 ### Added

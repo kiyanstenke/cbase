@@ -404,7 +404,9 @@ function startChecked(chat, { script, meta, args, callId, request, before = null
     status: 201,
     body: {
       status: "started", taskId, runId, scriptPath, name,
-      note: T`The workflow "${name}" runs in the background. End your turn now: when it finishes, a <task-notification> arrives with the result. Stop it with cbase_dynamic_workflow_stop and taskId ${taskId}.`,
+      // The ways to the running workflow, named where the agent gets hold of it: a message reaches each of its agents
+      // (communication/target-wf.js), so correcting never needs a stop and a restart. Guard: test/start-answers-message-path.test.js.
+      note: T`The workflow "${name}" runs in the background. End your turn now: when it finishes, a <task-notification> arrives with the result. To correct or add to one of its agents, write to it with cbase_agent_send to "wf:${runId}:<n>" (cbase_agents_list shows the agents and their numbers) — it keeps its work. Stop it with cbase_dynamic_workflow_stop and taskId ${taskId} only when the task as a whole no longer holds, then start anew.`,
     },
     go: () => {
       run2.end = run(run2, script, args, { old, journalNew: true }).catch((e) => runFailed(run2, e));

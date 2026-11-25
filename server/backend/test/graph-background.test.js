@@ -12,6 +12,8 @@
 // or "HALT:<x>" (in the text of a step) at the gate and answers a step with "ERLEDIGT …", everything else with "Gestartet.".
 //
 // Counter-tests (each run once):
+//   - the sentence with cbase_agent_send and "graph:<startId>" struck from the background hint (workflows/graph-start.js `end`)
+//     => "main seam" red (the hint names no way to the node agent);
 //   - the filter `id NOT IN (… graph_starts …)` struck from store/chats.js listChats => "main seam" red (the child chat is in the list);
 //   - `setGraphSource(graphRunsOpen)` struck from server.js => "main seam" red (the archive accepts the orchestrator);
 //   - `withChildren` bypassed in chats/erase.js closeChats => "main seam" red (the child chat survives its orchestrator);
@@ -28,6 +30,7 @@ import { fakeClaude, json, withAgentsServer, waitForTruthy } from "./agent-harne
 import { readJsonl } from "./jsonl.mjs";
 import * as store from "../electron/server/store.js";
 import { DIRS } from "../electron/server/app-state.js";
+import { readAddress } from "../electron/server/communication/address.js";
 import { deliverUserPrompt } from "../electron/server/runs/queue.js";
 import { running } from "../electron/server/runs/state.js";
 import { backgroundWork } from "../electron/server/runs/background.js";
@@ -117,6 +120,9 @@ test("main seam: child chat arises and runs, is missing from the list, carries p
       assert.equal(start.state, "running", JSON.stringify(start));
       assert.notEqual(start.chatId, chat.id, "the run happens in the child chat");
       assert.match(r.hint, /Gestartet im Hintergrund \(eigener Chat\)\. Am Ende kommt eine <task-notification>/);
+      // The start answer names the way to the running node agent, in the form the send route reads (communication/address.js).
+      const named = (r.hint.match(/cbase_agent_send an "([^"]+)"/) || [])[1];
+      assert.deepEqual(readAddress(named), { kind: "graph", startId: start.startId }, `the hint names the graph address: ${r.hint}`);
       const childId = start.chatId;
       const row = store.graphStart(start.startId);
       assert.equal(row.childChatId, childId);

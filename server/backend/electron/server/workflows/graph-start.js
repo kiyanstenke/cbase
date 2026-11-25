@@ -390,7 +390,9 @@ async function backgroundStart(chat, { flow, input, announcement, callId, worktr
   if (creating) await creating;
   const row = store.graphStart(created.id);
   const start = graphRunView(row);
-  const end = T("A <task-notification> arrives at the end; the human gives answers and approvals through the card. Status: cbase_workflow_status. End your turn with one line.");
+  // The way to the running node agent, named where the agent gets hold of the run (communication/target-graph.js accepts it).
+  // Guard: test/start-answers-message-path.test.js.
+  const end = T`A <task-notification> arrives at the end; the human gives answers and approvals through the card. Status: cbase_workflow_status. To steer the node agent while it runs, write to it with cbase_agent_send to "graph:${row.id}". End your turn with one line.`;
   const hint = row.status === "started"
     ? `${T("Started in the background (its own chat).")} ${end}`
     : row.status === "dismissed"
