@@ -64,7 +64,7 @@ import { FAILED_ATTEMPTS_MAX, FOLLOW_UP, STRUCTURE_FRAME, openOutput, withoutRes
 import { budgetOfTheTurn, potFor } from "./budget.js";
 import { sizesWarning } from "./size.js";
 import { createProviderPark } from "./parking.js";
-import { jobWithMessages, earmarkParked, reportLeftBehind, deliverAfterStart, messagesFromJournal, setRunAccess, reportUndelivered } from "./message.js";
+import { jobWithMessages, earmarkParked, reportLeftBehind, deliverAfterStart, messagesFromJournal, setRunAccess, reportUndelivered, takeAhead, aheadFromJournal, reportAheadLeft } from "./message.js";
 import { reminderChatClosed } from "./reminder.js";
 import { TREE_EVENT, RUNS_CAP, treeView } from "./tree.js";
 import { broadcast, sse } from "../runtime/sse.js";
@@ -153,6 +153,8 @@ function marker(run2, phase, status) {
     if (run2.endMarker) return; // exactly ONE end marker per run, even if a safety net still fires after the end
     run2.endMarker = true;
     reportGlobal(run2, false);
+    // What was noted for agents the script never called (not at the server end: the restart takes it over).
+    if (status !== "interrupted") reportAheadLeft(run2, status);
   }
   const row = { phase, runId: run2.runId, taskId: run2.taskId, name: run2.name, ...(status ? { status } : {}), at: Date.now() };
   try { store.addMessage(run2.chatId, MARKER_ROLE, JSON.stringify(row), row.at); } catch { return; } // chat or database gone
@@ -406,7 +408,7 @@ function startChecked(chat, { script, meta, args, callId, request, before = null
       status: "started", taskId, runId, scriptPath, name,
       // The ways to the running workflow, named where the agent gets hold of it: a message reaches each of its agents
       // (communication/target-wf.js), so correcting never needs a stop and a restart. Guard: test/start-answers-message-path.test.js.
-      note: T`The workflow "${name}" runs in the background. End your turn now: when it finishes, a <task-notification> arrives with the result. To correct or add to one of its agents, write to it with cbase_agent_send to "wf:${runId}:<n>" (cbase_agents_list shows the agents and their numbers) — it keeps its work. Stop it with cbase_dynamic_workflow_stop and taskId ${taskId} only when the task as a whole no longer holds, then start anew.`,
+      note: T`The workflow "${name}" runs in the background. End your turn now: when it finishes, a <task-notification> arrives with the result. To correct or add to one of its agents, write to it with cbase_agent_send to "wf:${runId}:<n>" (a started agent; cbase_agents_list shows the numbers) — it keeps its work. An agent the script has not started yet you reach by its label, "wf:${runId}:<label>", and every agent it starts from now on with "wf:${runId}": the message goes onto its job. Stop it with cbase_dynamic_workflow_stop and taskId ${taskId} only when the task as a whole no longer holds, then start anew.`,
     },
     go: () => {
       run2.end = run(run2, script, args, { old, journalNew: true }).catch((e) => runFailed(run2, e));
@@ -476,7 +478,9 @@ function newRun({ runId, taskId, chatId, name, scriptPath, outputPath, callId, r
     park: createProviderPark(), entries: new Map(), onImage: null,
     // The agent() calls whose value is going back from a resume's cache right now (message.js workflowTarget:
     // "finished" without an entry in `entries` and without a result in the new journal).
-    fromCache: new Set() };
+    fromCache: new Set(),
+    // Messages for agents the script has not called yet (message.js messageAhead/takeAhead).
+    ahead: [] };
 }
 
 // The run's core — opened at the first agent(), with the chat's context without a turn (runs/do-run.js), held (`hold:
@@ -572,6 +576,8 @@ function closeCore(run2) {
 // run finds them; the restart continues the same journal and does not write them twice.
 async function run(run2, script, args, { old = [], journalNew = true } = {}) {
   const { runId, chatId } = run2;
+  // A restart that continues the journal takes over what was noted for agents not called yet.
+  if (!journalNew) run2.ahead = aheadFromJournal(old);
   const chain = createChain(old);
   const playback = createPlayback(old);
   let unanswered = 0;
@@ -805,6 +811,8 @@ async function run(run2, script, args, { old = [], journalNew = true } = {}) {
     const e = { n, key, ph, provider: target.provider, agentId: "", approve: null, parked: false, end: false, skipped: false,
       label: label || `workflow-agent ${n}`, earmarked: journalNew ? [] : messagesFromJournal(old, key), afterStart: [], starting: false, output: null };
     run2.entries.set(n, e);
+    // Noted for an agent not called yet (message.js): onto its job — or, for one picked up parked, into its continuation.
+    const aheadTaken = takeAhead(run2, e);
     const gibSlot = () => { const f = e.approve; e.approve = null; f?.(); };
     const p = (async () => {
       let start = null;
@@ -831,7 +839,8 @@ async function run(run2, script, args, { old = [], journalNew = true } = {}) {
           // What the park state brought back itself (agent-runtime: follow-ups after its turn and what was earmarked
           // while parked from before the image) does not go in a second time.
           const already = new Set((Array.isArray(image.supplyLater) ? image.supplyLater : []).map((x) => String(x?.messageId || "")).filter(Boolean));
-          await earmarkParked(run2, e, messagesFromJournal(old, key, { afterParking: true }), already);
+          const fromJournal = messagesFromJournal(old, key, { afterParking: true });
+          await earmarkParked(run2, e, [...fromJournal, ...aheadTaken.filter((m) => !fromJournal.some((x) => x.id === m.id))], already);
         } else { e.parked = false; e.agentId = ""; }
       }
       let output = null;

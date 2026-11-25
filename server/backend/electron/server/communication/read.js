@@ -243,7 +243,7 @@ export function summaryView(reader, fence = null, { outerLoop = false } = {}) {
     // Named empty entries: what will stand here later already stands as a field — a missing field could not be told from
     // "nothing there".
     // The agents of the running dynamic workflows of THIS chat (reader) — only its main agent may write to them.
-    workflowAgents: { entries: workflowAgentsList(reader.id), hint: T("Agents of your running dynamic workflows — message them with cbase_agent_send to the run address (main agent of the chat only); no reply comes back, it is in their result.") },
+    workflowAgents: { entries: workflowAgentsList(reader.id), hint: T("Agents of your running dynamic workflows — message them with cbase_agent_send to the run address (main agent of the chat only); no reply comes back, it is in their result. An agent the script has not started yet is not listed: reach it by its label, wf:<runId>:<label>, or every following agent with wf:<runId>.") },
     // The graph workflows in the background of THIS chat — only its main agent may write to the node agent.
     graphRuns: { entries: graphRunsSummary(reader.id), hint: T("Graph workflows this chat started in the background — message their node agent with cbase_agent_send to the address graph:<startId> (main agent of the chat only): if a step is running it goes in, otherwise to the next step. No reply comes back.") },
     channelPartner,

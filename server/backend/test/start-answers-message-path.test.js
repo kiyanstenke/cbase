@@ -34,6 +34,9 @@ test("workflow: the start answer names the way to each of its agents, in the for
     assert.ok(named, `the note names no address after cbase_agent_send: ${r.note}`);
     assert.deepEqual(readAddress(named.replace("<n>", "1")), { kind: "wf", runId: r.runId, n: 1 });
     assert.match(r.note, /cbase_agents_list/, "it says where the agents' numbers stand");
+    // An agent the script has not called yet has no number: the note names the label form and the form for all.
+    assert.ok(r.note.includes(`"wf:${r.runId}:<label>"`) && r.note.includes(`"wf:${r.runId}"`), r.note);
+    assert.deepEqual(readAddress(`wf:${r.runId}:writer`), { kind: "wf", runId: r.runId, n: null, label: "writer" });
     await waitForTruthy(() => store.readDynRun(r.runId)?.status !== "running", `run ${r.runId} ends`);
   });
 });

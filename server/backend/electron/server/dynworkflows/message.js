@@ -123,6 +123,7 @@ export function workflowTarget(chatId, address) {
     }
     return denied(404, T`No agent "${address.id}" in a running workflow of this chat.`);
   }
+  if (address?.runId && (address.label || address.all)) return aheadTarget(chatId, address);
   const n = Number(address?.n);
   if (!address?.runId || !Number.isInteger(n) || n < 1) {
     return denied(400, T("address wf:<runId>:<n> expected — the workflow's runId and its agent's number (from 1), as cbase_agents_list shows them."));
@@ -141,6 +142,90 @@ export function workflowTarget(chatId, address) {
   // Server end or restart before the script has reached agent(n) again: it will be running again in a moment.
   if (state || !run) return denied(409, RESTART());
   return denied(404, T`The script has not called agent ${n} (yet).`);
+}
+
+// ── Agents the script has not called yet ────────────────────────────────────────────────────────────────────────
+// A message can only reach an agent whose agent() call exists; in a sequential script the later agents do not exist
+// while the first ones work. Without a way to them, the main agent stopped and restarted the workflow to change one
+// instruction (measured). So `wf:<runId>:<label>` notes a message for the NEXT agent with that label, and `wf:<runId>`
+// for EVERY agent the script starts from now on; both go onto the job like an earmarked message (the same frame).
+// They live in `run.ahead` and in the journal (`{kind:"message", ahead: label|"*", id, from, text, state:"ahead"}`), so a
+// restart that continues the journal picks them up again (`aheadFromJournal`); an assignment is the usual earmarked
+// "message" entry of that agent, with the same id. What found no agent by the run's end is reported "not_delivered".
+const ALL = "*";
+
+function aheadTarget(chatId, address) {
+  const row = store.dynRunInChat(chatId, String(address.runId));
+  if (!row) return denied(404, T`No dynamic workflow "${address.runId}" in this chat.`);
+  const live = access.runs().find((l) => l.chatId === chatId && l.runId === row.runId);
+  if (!live || !open(live)) return denied(409, live?.serverEnd || ROW_ALIVE.has(row.status) && !live ? RESTART() : RUNNING_NOT(row.name));
+  if (address.all) return { run: live, ahead: ALL };
+  // A started, unfinished agent with this label is meant directly — the label is its alias.
+  const now = [...live.entries.values()].filter((e) => !e.end && nameOf(e) === address.label);
+  if (now.length === 1) return { run: live, n: now[0].n };
+  if (now.length > 1) {
+    const list = now.map((e) => `wf:${live.runId}:${e.n}`);
+    return denied(400, T`The name "${address.label}" is ambiguous — it matches ${now.length} workflow agents. Give the run address: ${list.join(", ")}`, { candidates: list });
+  }
+  return { run: live, ahead: address.label };
+}
+
+/** A message for agents the script has not called yet (`ahead` = a label, or "*" for all). → `{ state, id, text }`. */
+export function messageAhead(run, ahead, text, from) {
+  const m = { id: `m_${crypto.randomBytes(5).toString("hex")}`, from: from === "human" ? "human" : "agent", text: String(text), ahead, to: 0 };
+  run.ahead.push(m);
+  if (!run.silenced) {
+    try { store.writeDynJournal(run.runId, { kind: "message", n: null, ahead, id: m.id, from: m.from, text: m.text, state: "ahead" }); } catch (x) { console.error("[dynworkflow] journal (message ahead):", x?.message || x); }
+  }
+  const t = ahead === ALL ? T("noted — it goes onto the job of every agent the script starts from now on")
+    : T`noted — it goes onto the job of the next agent with the label "${ahead}" when the script starts it`;
+  return { state: "earmarked", id: m.id, text: t };
+}
+
+/**
+ * At an agent() call that starts a process (not one from a resume's cache): the noted messages it gets, earmarked on its
+ * job. A label's message is taken by the first agent with that label; "*" stays for every following agent.
+ */
+export function takeAhead(run, e) {
+  const taken = [];
+  if (!run.ahead?.length) return taken;
+  for (const m of [...run.ahead]) {
+    if (m.ahead !== ALL && m.ahead !== nameOf(e)) continue;
+    // After a restart the agent may already carry it from its continued journal (messagesFromJournal).
+    if (e.earmarked.some((x) => x.id === m.id)) { if (m.ahead !== ALL) run.ahead.splice(run.ahead.indexOf(m), 1); continue; }
+    if (m.ahead !== ALL) run.ahead.splice(run.ahead.indexOf(m), 1);
+    m.to++;
+    const one = { id: m.id, from: m.from, text: m.text };
+    e.earmarked.push(one);
+    taken.push(one);
+    log(run, e, { ...one, state: "earmarked" });
+  }
+  return taken;
+}
+
+/** The noted messages a restart that continues the journal takes over: noted, and (for a label) not yet assigned. */
+export function aheadFromJournal(entries = []) {
+  // An agent's own entry has n ≥ 1; a noted one is stored with n 0 (the journal's column has no null).
+  const assigned = new Set(entries.filter((x) => x?.kind === "message" && Number(x.n) > 0 && x.id).map((x) => x.id));
+  const out = [];
+  for (const x of entries) {
+    if (x?.kind !== "message" || x.state !== "ahead" || !x.id) continue;
+    if (x.ahead !== ALL && assigned.has(x.id)) continue;
+    out.push({ id: x.id, from: x.from === "human" ? "human" : "agent", text: String(x.text ?? ""), ahead: x.ahead, to: assigned.has(x.id) ? 1 : 0 });
+  }
+  return out;
+}
+
+/** At the run's end (not at the server end — the restart takes them over): what reached no agent; `status` the run's outcome. */
+export function reportAheadLeft(run, status = "") {
+  if (run.serverEnd || run.silenced) return;
+  for (const m of (run.ahead || []).splice(0)) {
+    if (m.to > 0) continue;
+    const reason = status === "stopped" ? T("the workflow was stopped before such an agent started")
+      : status === "failed" ? T("the workflow failed before such an agent started")
+        : m.ahead === ALL ? T("the script started no further agent") : T`the script started no agent with the label "${m.ahead}"`;
+    try { store.writeDynJournal(run.runId, { kind: "message", n: null, ahead: m.ahead, id: m.id, from: m.from, text: m.text, state: "not_delivered", reason }); } catch (x) { console.error("[dynworkflow] journal (message ahead):", x?.message || x); }
+  }
 }
 
 // ── Journal and transcript ──────────────────────────────────────────────────────────────────────────────────────

@@ -21,6 +21,12 @@
 //   - agent-runtime.js continue() without the resumption filter                      => "parked" red (the message comes only as a turn of its own after)
 //   - agent-runtime.js without the hand-over in the park state                       => "parked with restart" red (the message after the turn is lost)
 //   - agent-runtime.js continue() without `rec.lastInput = input`                    => "twice at the limit" red
+//   - run.js without `takeAhead(run2, e)`                                            => "ahead" red (B and C get nothing)
+//   - message.js takeAhead leaves a label's message in `run.ahead`                   => "ahead" red (C gets MARK-LABEL too)
+//   - message.js reportAheadLeft returns at once                                     => "ahead" red (no "not_delivered" for "nobody")
+//   - message.js aheadFromJournal without the `assigned` check                       => "ahead after a restart" red (m1 twice)
+//   - message.js aheadFromJournal with `x.n != null` instead of `> 0` (n 0 from the store) => "ahead after a restart" red
+//   - tree.js shownAttempts without skipping n 0                                     => "ahead" red (phantom agent 0)
 //   - run.js without putting back the passed messages in the catch                   => "start throws" red (stays "earmarked")
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
@@ -41,6 +47,7 @@ import { writeMcpConfig } from "../electron/server/toolchain/mcp-config.js";
 import { BODY } from "../electron/server/projectbox/fence.js";
 import { FENCE_TABLE } from "../electron/server/projectbox/fence-table.js";
 import { createAgentRuntime } from "../electron/server/providers/agent-runtime.js";
+import { aheadFromJournal } from "../electron/server/dynworkflows/message.js";
 
 process.env.CBASE_DYNWF_STAGGER_MS = "0";
 
@@ -225,6 +232,76 @@ test("human without a turn: to a background subagent and to a workflow agent 200
     for (const t of ["s", "a"]) gate.open(t);
     await runEnd(ctx, runId);
     await ctx.waitForIdle();
+  }, { claude });
+});
+
+test("ahead: an agent the script has not called yet - by label the NEXT agent with it, wf:<runId> every agent from now on; a label nobody starts ends not_delivered; a started agent's label is its alias", async () => {
+  await withAgentsServer(async (ctx) => {
+    const { base, chat, gate, root } = ctx;
+    await ultracode(ctx);
+    const script = "export const meta = { name: 'ahead', description: 'Sequential' }\n"
+      + "const a = await agent('A {TAG:a} {GATE:a}', { label: 'first' })\n"
+      + "const b = await agent('B {TAG:b}', { label: 'second' })\n"
+      + "const c = await agent('C {TAG:c}', { label: 'second' })\n"
+      + "return [a, b, c]";
+    const runId = runIdFrom((await mainTurn(ctx, [WF("k", script)])).k);
+    await gate.reached("a");
+    // Only A exists: the overview lists it alone and says how the others are reached.
+    const ue = await json(`${base}/api/chats/${chat.id}/communication?view=summary`);
+    assert.deepEqual(ue.workflowAgents.entries.map((x) => x.label), ["first"]);
+    assert.match(ue.workflowAgents.hint, /wf:<runId>:<label>/);
+
+    const label = await send(ctx, { to: `wf:${runId}:second`, message: "MARK-LABEL", from: "agent" });
+    assert.equal(label.status, 200, JSON.stringify(label.body));
+    assert.equal(label.body.state, "earmarked");
+    assert.match(label.body.text, /vorgemerkt — sie kommt an den Auftrag des nächsten Agenten mit dem Label "second"/);
+    const all = await send(ctx, { to: `wf:${runId}`, message: "MARK-ALL", from: "human" });
+    assert.equal(all.status, 200, JSON.stringify(all.body));
+    assert.equal(all.body.address, `wf:${runId}`);
+    const none = await send(ctx, { to: `wf:${runId}:nobody`, message: "MARK-NONE", from: "agent" });
+    assert.equal(none.status, 200, JSON.stringify(none.body));
+    // The label of a STARTED agent is its alias: it goes into A's running turn, not ahead.
+    const alias = await send(ctx, { to: `wf:${runId}:first`, message: "MARK-ALIAS", from: "agent" });
+    assert.equal(alias.status, 200, JSON.stringify(alias.body));
+    assert.equal(alias.body.address, `wf:${runId}:1`);
+    gate.open("a");
+
+    const row = await runEnd(ctx, runId);
+    assert.equal(row.status, "finished", row.error);
+    const jobs = (tag) => read(root, `jobs-${tag}`);
+    assert.doesNotMatch(jobs("a"), /MARK-LABEL|MARK-ALL/, "A was already running: nothing noted ahead goes onto its job");
+    assert.match(jobs("b"), /MARK-LABEL/, "the next agent with the label gets it");
+    assert.match(jobs("b"), /MARK-ALL/);
+    assert.doesNotMatch(jobs("c"), /MARK-LABEL/, "a label's message is taken once");
+    assert.match(jobs("c"), /MARK-ALL/, "the message for all reaches every following agent");
+    assert.match(jobs("b"), /Message from the main agent:/, "the same fence as an earmarked message");
+    const j = store.readDynJournal(runId);
+    assert.deepEqual(j.filter((e) => e.kind === "message" && e.n === 2).map((e) => [e.text, e.state]), [["MARK-LABEL", "earmarked"], ["MARK-ALL", "earmarked"]]);
+    const left = j.find((e) => e.kind === "message" && e.ahead === "nobody" && e.state === "not_delivered");
+    assert.ok(left, "a label no agent carried is reported at the end");
+    assert.match(left.reason, /keinen Agenten mit dem Label "nobody"/);
+    // The noted entries (n 0 in the journal) are no agents: the progress tree shows exactly the three agent() calls.
+    const trees = await json(`${base}/api/chats/${chat.id}/dyn-workflows/tree`);
+    const tree = (Array.isArray(trees) ? trees : trees.runs || trees.trees || []).find((x) => (x.runId || x.run?.runId) === runId);
+    assert.ok(tree, JSON.stringify(trees).slice(0, 300));
+    const ns = JSON.stringify(tree).match(/"n":\d+/g) || [];
+    assert.ok(!ns.includes('"n":0'), `no phantom agent 0 in the tree: ${JSON.stringify(tree).slice(0, 400)}`);
+  }, { claude });
+});
+
+test("ahead after a restart: the continued journal (through the store) gives back what no agent took yet - a label taken once stays taken, the message for all stays", async () => {
+  // Written and read through the store: a noted entry comes back with n 0 (the column has no null), an agent's with n >= 1.
+  await withAgentsServer(async () => {
+  const runId = `wf_ahead_${crypto.randomUUID().slice(0, 8)}`;
+  const j = [
+    { kind: "message", n: null, ahead: "second", id: "m1", from: "agent", text: "L", state: "ahead" },
+    { kind: "message", n: null, ahead: "*", id: "m2", from: "human", text: "ALL", state: "ahead" },
+    { kind: "message", n: null, ahead: "third", id: "m3", from: "agent", text: "T", state: "ahead" },
+    { kind: "message", n: 2, key: "k2", id: "m1", from: "agent", text: "L", state: "earmarked" },
+    { kind: "message", n: 2, key: "k2", id: "m2", from: "human", text: "ALL", state: "earmarked" },
+  ];
+  for (const x of j) store.writeDynJournal(runId, x);
+  assert.deepEqual(aheadFromJournal(store.readDynJournal(runId)).map((m) => [m.id, m.ahead, m.to]), [["m2", "*", 1], ["m3", "third", 0]]);
   }, { claude });
 });
 

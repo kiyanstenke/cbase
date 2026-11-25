@@ -86,6 +86,8 @@ const limitIn = (count, length) => Math.min(Math.max(0, Math.floor(Number(count)
 function shownAttempts(journal, fromJ) {
   const perN = new Map(); // n → [{ e, i }] (i = position in the journal)
   journal.forEach((e, i) => {
+    // n 0: a run-level entry (a message noted for an agent not called yet, dynworkflows/message.js) — no agent of the tree.
+    if (!(Number(e.n) > 0)) return;
     if (!perN.has(e.n)) perN.set(e.n, []);
     perN.get(e.n).push({ e, i });
   });

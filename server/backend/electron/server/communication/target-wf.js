@@ -5,7 +5,7 @@
 // Subagents, workflow agents and special chats (app agents, the read-only manager chats) ⇒ 403. No return channel.
 
 import { T } from "../i18n.js";
-import { responseText, messageToAgent, workflowTarget } from "../dynworkflows/message.js";
+import { messageAhead, responseText, messageToAgent, workflowTarget } from "../dynworkflows/message.js";
 // Who writes to `wf:` is the same set as for `channel:` — the main agent of a coding chat. ONE list in sender.js.
 import { WRITES_CHANNEL as WRITES_WF } from "./sender.js";
 
@@ -21,6 +21,12 @@ export async function sendToWorkflowAgent({ chat, address, text, from, role }) {
   if (!text) { const t = T("message missing"); return { status: 400, body: { ok: false, state: "denied", error: t, text: t } }; }
   const target = workflowTarget(chat.id, address);
   if (target.error) return target.error;
+  if (target.ahead) {
+    // An agent the script has not called yet (dynworkflows/message.js messageAhead): noted for its job.
+    const r = messageAhead(target.run, target.ahead, text, from);
+    const address = target.ahead === "*" ? `wf:${target.run.runId}` : `wf:${target.run.runId}:${target.ahead}`;
+    return { status: 200, body: { ok: true, state: r.state, text: r.text, address, runId: target.run.runId } };
+  }
   const r = await messageToAgent(target.run, target.n, text, from);
   if (r.error) return r.error;
   return { status: 200, body: { ok: true, state: r.state, text: responseText(r.state), address: `wf:${target.run.runId}:${target.n}`, runId: target.run.runId, n: target.n } };

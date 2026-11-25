@@ -34,7 +34,9 @@ test("address: no prefix is a subagent, otherwise wf/graph/channel/chat - a know
   // The sender address of an outer-loop card - never a subagent "outerloop:..." (as a target send.js rejects it, 400).
   assert.deepEqual(readAddress("outerloop:a-1"), { kind: "outerloop", agentId: "a-1" });
   assert.deepEqual(readAddress("wf:run-3:2"), { kind: "wf", runId: "run-3", n: 2 });
-  assert.deepEqual(readAddress("wf:run-3"), { kind: "wf", runId: "run-3", n: null });
+  // Without a number: every agent the script starts from now on; a non-number names an agent by label (also one not called yet).
+  assert.deepEqual(readAddress("wf:run-3"), { kind: "wf", runId: "run-3", n: null, all: true });
+  assert.deepEqual(readAddress("wf:run-3:reviewer"), { kind: "wf", runId: "run-3", n: null, label: "reviewer" });
   assert.deepEqual(readAddress("chat:"), { kind: "chat", chatId: "" });
   assert.deepEqual(readAddress(undefined), { kind: "subagent", id: "" });
 });
