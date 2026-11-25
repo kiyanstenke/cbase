@@ -20,6 +20,7 @@ import { reportConsumption } from "./consumption.js";
 // The prefix of a run (defaults + tool names), only if the thread does not carry it (see the header there).
 import { codexInput } from "./codex-prefix.js";
 import { successorOf } from "../retired.js";
+import { codexCatalogModels } from "../native-catalog.js";
 // The ONE start function: without an instance exactly `spawn`, with an instance in the project container (runtime/inProject.js).
 import { bOwnInOps, inProject, withGitWrapperFront } from "../../runtime/inProject.js";
 import { openFromRuntimeFolder } from "../../runs/runtime-write.js";
@@ -186,9 +187,15 @@ export function cleanCodexEnv() {
 // `catalogLevel`: the level Codex runs without `model_reasoning_effort` — `default_reasoning_level` from OpenAI's
 // model list (`~/.codex/models_cache.json`). It presets the provider's default level (`effortStandard` in
 // providers/index.js).
-// The order is that of the account catalog (`priority`) — the picker shows it that way.
+// The order is that of the account catalog (`priority`) — the picker shows it that way. This static list is the FLOOR:
+// with the CLI's account catalog (../native-catalog.js) `codexModels()` below takes the models from there.
 export const CODEX_MODELS = [
+  // GPT-6.2 Sol/Astra and GPT-6.1 Terra need Codex ≥ 0.166 (catalog `minimal_client_version`); measured at the pin 0.172.0
+  // with real oneshots on the ChatGPT account at `low` and `max` (with the 872k window) — all ran.
+  { id: "gpt-6.2-sol", label: "GPT-6.2 Sol", context: 872000, efforts: ["low", "medium", "high", "xhigh", "max"], catalogLevel: "medium" },
+  { id: "gpt-6.2-astra", label: "GPT-6.2 Astra", context: 872000, efforts: ["low", "medium", "high", "xhigh", "max"], catalogLevel: "low" },
   { id: "gpt-6.1-sol", label: "GPT-6.1 Sol", context: 872000, efforts: ["low", "medium", "high", "xhigh", "max"], catalogLevel: "medium" },
+  { id: "gpt-6.1-terra", label: "GPT-6.1 Terra", context: 872000, efforts: ["low", "medium", "high", "xhigh", "max"], catalogLevel: "low" },
   { id: "gpt-6-astra", label: "GPT-6 Astra", context: 872000, efforts: ["low", "medium", "high", "xhigh", "max"], catalogLevel: "low" },
   { id: "gpt-6-sol", label: "GPT-6 Sol", context: 872000, efforts: ["low", "medium", "high", "xhigh", "max"], catalogLevel: "medium" },
   { id: "gpt-6-luna", label: "GPT-6 Luna", context: 872000, efforts: ["low", "medium", "high", "xhigh", "max"], catalogLevel: "medium" },
@@ -198,13 +205,23 @@ export const CODEX_MODELS = [
   { id: "gpt-5.4", label: "GPT-5.4", context: 272000, efforts: ["low", "medium", "high", "xhigh", "max"], onlyApiKey: true },
   { id: "gpt-5.4-mini", label: "GPT-5.4 mini", context: 272000, efforts: ["low", "medium", "high", "xhigh", "max"], onlyApiKey: true },
 ];
-const CODEX_MODEL_IDS = new Set(CODEX_MODELS.map((m) => m.id).filter(Boolean));
+/**
+ * The Codex models cbase offers NOW: the CLI's account catalog (providers/native-catalog.js — order, levels, default level and
+ * window from there; hidden models and ones above the CLI's version drop out), plus the static `onlyApiKey` entries the
+ * catalog of a ChatGPT login never lists; without a catalog the static list above. Every reader asks here.
+ */
+export function codexModels() {
+  const dynamic = codexCatalogModels();
+  if (!dynamic) return CODEX_MODELS;
+  const extra = CODEX_MODELS.filter((m) => m.onlyApiKey && !dynamic.some((d) => d.id === m.id));
+  return [...dynamic, ...extra];
+}
 // The CLI's default for every model (`context_window` in the OpenAI catalog). Only above it a
 // `-c model_context_window` pays off; below it or for models outside the catalog the call stays unchanged — the CLI
 // then knows best itself what applies.
 const CODEX_CONTEXT_DEFAULT = 272000;
 export function codexContextWindow(modelId) {
-  const ctx = CODEX_MODELS.find((m) => m.id === modelId)?.context;
+  const ctx = codexModels().find((m) => m.id === modelId)?.context;
   return Number(ctx) > CODEX_CONTEXT_DEFAULT ? Number(ctx) : 0;
 }
 
@@ -227,7 +244,7 @@ export function resolveCodexModel(model) {
   // through below.
   const successor = successorOf("codex", m);
   if (successor) return successor;
-  if (CODEX_MODEL_IDS.has(m)) return m;
+  if (codexModels().some((mo) => mo.id === m)) return m;
   if (/^(gpt-|codex-|o[0-9])/i.test(m)) return m; // already an OpenAI model
   const l = m.toLowerCase();
   // "haiku" is the CHEAPEST of the three tiers and points at gpt-5.4-mini. Whether that model runs is a RUNTIME
@@ -262,7 +279,7 @@ export const CODEX_EFFORTS = new Set(["low", "medium", "high", "xhigh", "max"]);
 // production callers, and both clamp: `codexEffortFallback` below (at spawn) and `efforts` of the Codex connector in
 // providers/index.js (`effortRunning`). A change here reaches no picker.
 export function codexEfforts(modelId) {
-  const list = CODEX_MODELS.find((m) => m.id === modelId)?.efforts;
+  const list = codexModels().find((m) => m.id === modelId)?.efforts;
   // Outside the catalog: `null` = unknown (pass through), NOT `[]` — an empty list means "no levels" and would take
   // the level away from an unknown model.
   return Array.isArray(list) ? [...list] : null;

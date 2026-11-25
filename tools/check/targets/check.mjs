@@ -465,6 +465,9 @@ export async function check({ quick = false, quickReason = "--quick", plan = DEF
   // reachable (providers/openrouter-catalog.js). Guards: tools/check/test-output.test.mjs (set and read),
   // server/backend/test/openrouter-catalog.test.js (what it blocks).
   testEnv.CBASE_OPENROUTER_OFFLINE = "1";
+  // Same for the Claude/Codex account catalogs: a test server never reads the developer machine's real ones
+  // (providers/native-catalog.js; guarded in server/backend/test/native-catalog.test.js).
+  testEnv.CBASE_NATIVE_CATALOG_OFF = "1";
   // The browser of a chat: every turn of a coding chat starts it — in the suites that would mean a real Chromium per test turn
   // (over a hundred files with turns, ≈ 1 s and several hundred MB per start) and a trace `browser-profiles/chat-<id>` in
   // every test that counts the traces of a chat. Off; the guards of the chat browser

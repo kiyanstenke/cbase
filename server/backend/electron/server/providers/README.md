@@ -26,8 +26,13 @@ contract (`contract.js`), not a byte proof.
   SUBAGENT; a locked start is a tool error, not a start), the **visibility per account kind**, **"which effort level
   really runs"** (`effortRunning`) and the **default model and default level per provider** (`defaultModelFor` with
   `DEFAULT_MODEL_FALLBACK` lives HERE — the way back from `account/providers.js` would be a cycle; that module
-  re-exports it). The index does NOT hold the model catalogs: it imports `CLAUDE_MODELS` and `CODEX_MODELS` from
-  their connectors.
+  re-exports it). The index does NOT hold the model catalogs: the connectors' `models` are getters onto `claudeModels()` and
+  `codexModels()` from their connectors.
+- `native-catalog.js` — Claude's and Codex's model lists from the CLIs' own account catalogs
+  (`~/.claude/cache/model-catalog/*-cc.json`, `~/.codex/models_cache.json`): new models appear without a code change;
+  disabled, hidden and too-new ones drop out, levels are cut to cbase's five. No catalog ⇒ the static `CLAUDE_MODELS` /
+  `CODEX_MODELS` (the floor; what the tests see — the gate sets `CBASE_NATIVE_CATALOG_OFF=1`). Codex keeps its static
+  `onlyApiKey` entries on top.
 - `connectors/` — one file per wire format.
   - **Native** (`caps.ownsAgentLoop: true`, bring their own agentic loop): `claude.js` (`claude -p`, `CLAUDE_MODELS`
     with `efforts` and `catalogLevel` per model, `buildClaudeChatArgs`, `claudeEfforts`/`mapClaudeEffort`) and
@@ -295,7 +300,8 @@ per kind → `agent-runtime.js` · foreground deadline, wait edge of the MCP req
 `openrouter-catalog.js`.
 
 **The most common questions:**
-- A model is not selectable in the picker — catalog or account? → `CODEX_MODELS` / `CLAUDE_MODELS` (if it is not in
+- A model is not selectable in the picker — catalog or account? → `native-catalog.js` (the CLI's account catalog:
+  disabled, hidden or needs a newer CLI) / `CODEX_MODELS` / `CLAUDE_MODELS` without a catalog (if it is not in
   there at all, it is selectable nowhere; the picker knows no free text) / `index.js:visibleModels` (if it is in there
   and still missing, it carries `onlyApiKey` and the logged-in account is a ChatGPT subscription).
 - Which reasoning level really runs when the chat carries one the model does not have? → `index.js:effortRunning`.

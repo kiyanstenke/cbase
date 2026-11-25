@@ -701,7 +701,7 @@ test("/api/providers hides the onlyApiKey models on the ChatGPT account and show
     const ids = chatgpt.models.map((mo) => mo.id);
     // gpt-5.4 and -mini answer on a ChatGPT account with 400 ("not supported when using Codex with a ChatGPT account") - the
     // picker has no free text, so they must go.
-    assert.deepEqual(ids, ["gpt-6.1-sol", "gpt-6-astra", "gpt-6-sol", "gpt-6-luna", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"]);
+    assert.deepEqual(ids, ["gpt-6.2-sol", "gpt-6.2-astra", "gpt-6.1-sol", "gpt-6.1-terra", "gpt-6-astra", "gpt-6-sol", "gpt-6-luna", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"]);
     // What the client needs: the measured effort list. What it must never see: the mark.
     assert.deepEqual(chatgpt.models.find((mo) => mo.id === "gpt-6-luna").efforts, ["low", "medium", "high", "xhigh", "max"]);
     assert.ok(chatgpt.models.every((mo) => !("onlyApiKey" in mo)));
@@ -848,14 +848,14 @@ test("visibility: agentHosts follows the same decision as the picker - and unkno
     assert.ok(codexModels().includes("gpt-5.4"), "an empty account kind must hide nothing");
 
     setAccountKind("codex", "chatgpt");
-    assert.deepEqual(codexModels(), ["gpt-6.1-sol", "gpt-6-astra", "gpt-6-sol", "gpt-6-luna", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"]);
+    assert.deepEqual(codexModels(), ["gpt-6.2-sol", "gpt-6.2-astra", "gpt-6.1-sol", "gpt-6.1-terra", "gpt-6-astra", "gpt-6-sol", "gpt-6-luna", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"]);
     // And at the SAME place as the picker - a second version of this decision would be exactly the error this test closes.
     assert.deepEqual(visibleModels("codex", CODEX_MODELS).map((mo) => mo.id), codexModels());
     // The mark is a cbase measurement, no contract: it never leaves the server.
     assert.ok(visibleModels("codex", CODEX_MODELS).every((mo) => !("onlyApiKey" in mo)));
     // The catalog itself stays complete - a key account runs both, and a chat that already stands on gpt-5.4 should keep running
     // there.
-    assert.equal(CODEX_MODELS.length, 9);
+    assert.equal(CODEX_MODELS.length, 12);
 
     setAccountKind("codex", "apikey");
     assert.ok(codexModels().includes("gpt-5.4-mini"), "on the API key both stay selectable");

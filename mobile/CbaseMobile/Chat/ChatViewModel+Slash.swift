@@ -225,7 +225,8 @@ extension ChatViewModel {
                 "fable5.2": "claude-fable-5-2",
                 "fable5.1": "claude-fable-5-1",
                 "fable5": "claude-fable-5",
-                "astra": "gpt-6-astra"
+                "astra": "gpt-6.2-astra",
+                "astra6": "gpt-6-astra"
             ]
             let key = argument.lowercased().replacingOccurrences(of: " ", with: "")
             if ["standard", "default"].contains(key),

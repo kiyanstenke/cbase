@@ -6,6 +6,14 @@ versions follow [Semantic Versioning](https://semver.org/) as [VERSIONING.md](VE
 
 ## [Unreleased]
 
+### Added
+
+- Claude and Codex models now come from the CLIs' own account catalogs: a model the signed-in account can use appears in the
+  picker with its effort levels, default level and context window without a cbase update; a model the plan may not use, a
+  hidden one, or one that needs a newer CLI stays out. Without a catalog the built-in lists apply. The built-in Codex list
+  gains GPT-6.2 Sol, GPT-6.2 Astra and GPT-6.1 Terra, and the `/model astra` alias now points at GPT-6.2 Astra (`astra6`
+  for GPT-6 Astra).
+
 ### Changed
 
 - The backend image ships Claude Code 2.1.332 (was 2.1.322) and Codex 0.172.0 (was 0.162.1). Every flag, lock list and

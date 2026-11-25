@@ -17,6 +17,7 @@ import { withLfsEnvironment } from "../../runs/lfs-environment.js";
 // The order of the effort levels and the one clamp computation: workflows.js, a leaf without imports of its own (see
 // EFFORT_LEVELS there).
 import { EFFORT_LEVELS, effortFallback } from "../../workflows.js";
+import { claudeCatalogModels } from "../native-catalog.js";
 // CPU saver: nice in front of the CLI and the deadline of the wait hook — a leaf (mcp/cpu-saver.js).
 import { HOOK_DEADLINE_S, withNice } from "../../../mcp/cpu-saver.js";
 
@@ -46,7 +47,8 @@ export function bashGuardSettings({ cpuWait = false } = {}) {
 // The catalog lives HERE and not in the provider index — like the Codex catalog with its level lists lives in the Codex
 // connector and `providers/index.js` only imports both. The reason is the clamp: the index imports this connector, a
 // way back would be an import cycle, and only here the connector can clamp per model (`claudeEfforts`).
-// The catalog exists in THREE places (here, `web/src/components/chat/ChatCatalog.tsx` including the `/model` aliases,
+// This static list is the FLOOR: without the CLI's account catalog (../native-catalog.js) cbase offers exactly it, and
+// `claudeModels()` below is what every reader asks. The catalog exists in THREE places (here, `web/src/components/chat/ChatCatalog.tsx` including the `/model` aliases,
 // iOS `Chat/ChatViewModel+Slash.swift`); `web/test/composer-contract.test.mjs` binds the web fallback to this
 // declaration.
 export const CLAUDE_MODELS = [
@@ -84,6 +86,15 @@ export const CLAUDE_MODELS = [
   { id: "claude-haiku-5-5", label: "Haiku 5.5", context: 1000000, efforts: ["low", "medium", "high", "xhigh", "max"], catalogLevel: "medium" },
   { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5", context: 200000, efforts: [] },
 ];
+
+/**
+ * The Claude models cbase offers NOW: the CLI's account catalog (providers/native-catalog.js — new models appear without a
+ * code change, a model the plan may not use or the installed CLI is too old for drops out), else the static list above. Every
+ * reader asks here: `/api/providers` (the connector's `models` getter), the clamp (`claudeEfforts`), the default model.
+ */
+export function claudeModels() {
+  return claudeCatalogModels() || CLAUDE_MODELS;
+}
 
 // The CLI's native orchestrators are off in EVERY cbase Claude run. If a model calls Claude's `Workflow` tool, cbase
 // closes stdin after the first result, and the CLI silently aborts the workflow after its wait ceiling (exit 0, in the
@@ -372,7 +383,7 @@ const CLAUDE_EFFORTS = ["low", "medium", "high", "xhigh", "max"];
 
 /**
  * The levels this Claude model supports — the question `effortRunning` (providers/index.js) and the clamp at spawn
- * (`mapClaudeEffort`) ask THE SAME way. From `CLAUDE_MODELS`:
+ * (`mapClaudeEffort`) ask THE SAME way. From `claudeModels()` (account catalog, else `CLAUDE_MODELS`):
  *   • a model in the catalog ⇒ its list, also the EMPTY one (Haiku 4.5: no levels ⇒ no `--effort`);
  *   • a model outside (alias, future id, empty = CLI default) ⇒ `null`, "unknown": the level passes through — a
  *     provider's catalog is a lower bound.
@@ -381,7 +392,7 @@ const CLAUDE_EFFORTS = ["low", "medium", "high", "xhigh", "max"];
  * @returns {string[] | null}
  */
 export function claudeEfforts(model = "") {
-  const list = CLAUDE_MODELS.find((m) => m.id === model)?.efforts;
+  const list = claudeModels().find((m) => m.id === model)?.efforts;
   return Array.isArray(list) ? [...list] : null;
 }
 

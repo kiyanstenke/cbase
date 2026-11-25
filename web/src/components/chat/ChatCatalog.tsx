@@ -32,8 +32,9 @@ const MODEL_ALIAS: Record<string, string> = {
   sonnet: "claude-sonnet-5-5", "sonnet5.5": "claude-sonnet-5-5", "sonnet5": "claude-sonnet-5", haiku: "claude-haiku-5-5",
   "haiku5.5": "claude-haiku-5-5", "haiku4.5": "claude-haiku-4-5-20251001",
   fable: "claude-fable-5-2", "fable5.2": "claude-fable-5-2", "fable5.1": "claude-fable-5-1", "fable5": "claude-fable-5",
-  // Codex: one shorthand suffices, /model finds the other models by id or label ("gpt-6-sol").
-  astra: "gpt-6-astra",
+  // Codex: one shorthand suffices, /model finds the other models by id or label ("gpt-6-sol"). Like the Claude families,
+  // `astra` points to the newest Astra; the predecessor stays under `astra6`.
+  astra: "gpt-6.2-astra", astra6: "gpt-6-astra",
 };
 // Which provider an alias belongs to is told by its id — the alias table mixes both.
 const aliasProvider = (id: string) => (/^(gpt-|codex-|o[0-9])/i.test(id) ? "codex" : "claude");
@@ -155,7 +156,10 @@ const CLAUDE_MODELS: { id: string; label: string; context: number; efforts?: str
 // Order like the server (priority of the account catalogue). gpt-5.5 is gone — stored values migrate on the server to
 // gpt-6-sol (`account/model-migration.js`).
 const CODEX_MODELS: { id: string; label: string; context: number; efforts?: string[] }[] = [
+  { id: "gpt-6.2-sol", label: "GPT-6.2 Sol", context: 872_000, efforts: ["low", "medium", "high", "xhigh", "max"] },
+  { id: "gpt-6.2-astra", label: "GPT-6.2 Astra", context: 872_000, efforts: ["low", "medium", "high", "xhigh", "max"] },
   { id: "gpt-6.1-sol", label: "GPT-6.1 Sol", context: 872_000, efforts: ["low", "medium", "high", "xhigh", "max"] },
+  { id: "gpt-6.1-terra", label: "GPT-6.1 Terra", context: 872_000, efforts: ["low", "medium", "high", "xhigh", "max"] },
   { id: "gpt-6-astra", label: "GPT-6 Astra", context: 872_000, efforts: ["low", "medium", "high", "xhigh", "max"] },
   { id: "gpt-6-sol", label: "GPT-6 Sol", context: 872_000, efforts: ["low", "medium", "high", "xhigh", "max"] },
   { id: "gpt-6-luna", label: "GPT-6 Luna", context: 872_000, efforts: ["low", "medium", "high", "xhigh", "max"] },

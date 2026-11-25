@@ -62,6 +62,8 @@ import { scheduledWorkEnd, scheduledAbandoned, scheduledChatClosed, scheduledInp
 import { setScheduledCadenceText } from "./runs/system-prompt.js";
 import { migrateProviderAtStart } from "./account/provider-migration.js";
 import { startCatalog, stopCatalog } from "./providers/openrouter-catalog.js";
+import { startNativeCatalogs } from "./providers/native-catalog.js";
+import { claudeBin } from "./providers/connectors/claude.js";
 import { startAmountTick } from "./account/openrouter-inquiry.js";
 import { migrateRetiredModels } from "./account/model-migration.js";
 import { migrateAutoChats, migrateRoleLevelsLater } from "./chats/auto-gone.js";
@@ -144,7 +146,7 @@ import { writeGitProjects, gitProjectsIncomplete, createGitAccessKey, setGitLock
 import { dockerKind, dockerProgram } from "./projectbox/docker.js";
 import { thawRestartGrace, dockerChildAfterThaw, isFrozen } from "./projectbox/docker.js";
 import { setInstanceSource } from "./runs/instance.js";
-import { projectCodexDir, projectCodexHomes } from "./runs/session-location.js";
+import { bClaudeDir, bCodexDir, projectCodexDir, projectCodexHomes } from "./runs/session-location.js";
 import { setCodexHomeSource } from "./providers/connectors/codex.js";
 import { setInProjectSeam } from "./runtime/inProject.js";
 import { projectboxOps } from "./projectbox/ops.js";
@@ -289,6 +291,8 @@ export function startServer({ port, dataRoot, webDir, pickDirectory, notify }) {
   // The OpenRouter catalog: at once from the file, renewed in the background when older than 6 h or missing — the start does not
   // wait for it (only the migration below, and only when needed).
   startCatalog({ file: path.join(DIRS.data, "openrouter-catalog.json") });
+  // Claude's and Codex's models come from the CLIs' own account catalogs in the backend's homes (providers/native-catalog.js).
+  startNativeCatalogs({ claudeDir: bClaudeDir(), codexDir: bCodexDir(), claudeBin: claudeBin() });
   // Only three providers: the storage migrates ONCE (account/provider-migration.js). If it need not wait for the catalog, it runs
   // through synchronously here — otherwise the `listen` below waits for it (10 s at most), and no run starts before `listen`. The
   // migrations built on it run as `afterwards` ALWAYS behind it:

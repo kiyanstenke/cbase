@@ -17,9 +17,9 @@ import { normalizeCaps, parseModelRef, validateConnector } from "./contract.js";
 import { runChatViaEngine } from "./engine.js";
 // Both model catalogs live in THEIR connector — the index only imports them. A connector can only clamp against a
 // catalog it can read, and the way back from the connector to here would be an import cycle.
-import { CLAUDE_MODELS, buildClaudeChatArgs, claudeBin, claudeEfforts, cleanClaudeEnv, runChatClaude, runOnceClaude } from "./connectors/claude.js";
+import { buildClaudeChatArgs, claudeModels, claudeBin, claudeEfforts, cleanClaudeEnv, runChatClaude, runOnceClaude } from "./connectors/claude.js";
 import { reportConsumption } from "./connectors/consumption.js";
-import { CODEX_MODELS, cleanCodexEnv, codexAuthStatus, codexBin, codexEfforts, codexRateLimitSnapshot, codexUsage, resolveCodexModel, runChatCodex, runOnceCodex, setCodexVisibility } from "./connectors/codex.js";
+import { cleanCodexEnv, codexModels, codexAuthStatus, codexBin, codexEfforts, codexRateLimitSnapshot, codexUsage, resolveCodexModel, runChatCodex, runOnceCodex, setCodexVisibility } from "./connectors/codex.js";
 import { runningModel } from "./retired.js";
 import { makeOpenRouterConnector } from "./connectors/openrouter.js";
 import { catalogKnows } from "./openrouter-catalog.js";
@@ -35,7 +35,8 @@ const claudeConnector = {
   id: "claude",
   label: "Claude Code",
   bin: () => claudeBin(),
-  models: CLAUDE_MODELS,
+  // A getter: the list follows the CLI's account catalog (providers/native-catalog.js), which changes during operation.
+  get models() { return claudeModels(); },
   caps: normalizeCaps({
     ownsAgentLoop: true, nativeToolCalling: true, streaming: true, reasoning: true, vision: true,
     // The CLI passes a `document` block through to the Anthropic API (verified with a PDF whose statement is only in
@@ -57,7 +58,7 @@ const codexConnector = {
   id: "codex",
   label: "OpenAI Codex",
   bin: () => codexBin(),
-  models: CODEX_MODELS,
+  get models() { return codexModels(); },
   // `vision`: Codex SEES images — measured at 0.162.1: `-i <file>`
   // attaches them as `input_image` to the user message (runOnceCodex), `view_image` delivers an image file, and an MCP
   // result with an image block (cbase_screenshot, browser_take_screenshot) reaches the model as soon as the exec code
@@ -132,7 +133,7 @@ registerConnector(openRouterConnector);
 // instead of imported there: index.js imports codex.js, the way back would be a cycle. So it stays ONE computation
 // (`visibleModels`) with two callers. The assignment runs at load, the function itself only during a run —
 // `accountKinds` is further below and long present at call time.
-setCodexVisibility((id) => visibleModels("codex", CODEX_MODELS).some((mo) => mo.id === id));
+setCodexVisibility((id) => visibleModels("codex", codexModels()).some((mo) => mo.id === id));
 
 // ── Active provider & resolution ──────────────────────────────────────────────────
 export const isProviderId = (id) => registry.has(id);
