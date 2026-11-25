@@ -6,6 +6,8 @@ versions follow [Semantic Versioning](https://semver.org/) as [VERSIONING.md](VE
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-24
+
 ### Added
 
 - Settings in web and desktop show the running version under About.
@@ -64,6 +66,7 @@ versions follow [Semantic Versioning](https://semver.org/) as [VERSIONING.md](VE
 - VS Code Remote Tunnels start only after the user accepted the VS Code Server licence in the UI; cbase never accepts the licence
   on the user's behalf.
 
-[Unreleased]: https://github.com/kiyanstenke/cbase/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/kiyanstenke/cbase/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/kiyanstenke/cbase/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/kiyanstenke/cbase/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/kiyanstenke/cbase/releases/tag/v0.1.0
