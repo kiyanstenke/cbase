@@ -90,15 +90,22 @@ switch-off was announced under **"Deprecated"** in the changelog of an earlier r
 
 ## 8. Bump rules
 
+The number is measured against the public interface of section 3, not against how much changed. A new feature in the user
+interface, a larger model catalogue or a newer pinned CLI is a patch as long as the API, the self-hosting surface and the database
+stay as they were.
+
 Before 1.0:
 
-- **Minor** (0.x.0) for anything new, changed or removed; for every change of the database schema or of the API level; and for
-  every change of the self-hosting surface. A break carries a `Breaking:` line in the changelog with the step to migrate.
-  Choosing the number is the maintainer's call; the tool does not enforce it.
-- **Patch** (0.x.y) for fixes and security fixes only.
+- **Minor** (0.x.0) when the public interface changes: a route or field of the HTTP API is added, changed or removed; the API level
+  changes; the database schema changes; or the self-hosting surface changes. A break carries a `Breaking:` line in the changelog
+  with the step to migrate.
+- **Patch** (0.x.y) for everything else: features and changes that leave the public interface alone, fixes and security fixes.
 
-From 1.0 on: **major** for a break of anything in section 3 (including raising `oldest`), **minor** for new features and new API
-levels that keep the old one, **patch** for fixes.
+Choosing the number is the maintainer's call; the tool does not enforce it.
+
+From 1.0 on: **major** for a break of anything in section 3 (including raising `oldest`), **minor** for additions to it that keep
+what was there (new routes, new optional fields, a new API level that keeps the old one, a backward-compatible schema change),
+**patch** for everything else.
 
 ## 9. Build numbers
 
