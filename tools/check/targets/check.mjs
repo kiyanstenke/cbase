@@ -426,7 +426,7 @@ export async function check({ quick = false, quickReason = "--quick", plan = DEF
   // `--short`: the long suite stays out, in ONE row that says so (never a silent gap), and no marker is written below.
   const selection = short ? shortSelection(built.suites) : { run: built.suites, leftOut: [] };
   const suites = selection.run;
-  for (const name of selection.leftOut) log.table([[`${name} tests`, "left out (--short: the nightly CI and the full gate run it)", "warn"]]);
+  for (const name of selection.leftOut) log.table([[`${name} tests`, "left out (--short: only the full gate runs it)", "warn"]]);
   // A suite that cannot be built (directory gone, no files) is a red row with its reason — never a silent "none".
   for (const e of built.errors) {
     log.table([[`${e.name} tests`, e.message, "bad"]]);

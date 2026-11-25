@@ -25,7 +25,7 @@ Server code needs Node 22.x, at least 22.13 (the gateway and the backend use `no
   sandbox there.
 
 The gate runs on macOS and Linux; the macOS suite (Electron, code signature) only on macOS. A full run takes about 20 minutes on a
-recent multi-core Mac and about an hour on a two-core CI runner, most of it the backend suite. `tools/check/README.md` explains the
+recent multi-core Mac, most of it the backend suite. `tools/check/README.md` explains the
 gate in detail.
 
 ## Test
@@ -43,8 +43,8 @@ that is a sabotaged copy that must turn it red, over a test without one. Tests w
 
 - Work on `main` or on a short-lived branch and open a pull request against `main`.
 - Continuous integration (`.github/workflows/check.yml`) runs `./check --short` on Linux for every pull request and every push to
-  `main` (the backend suite needs about an hour on the runner's two cores), and the full `./check` every night and on demand. Run
-  the full gate locally before you ask for a review.
+  `main`. The backend suite does not run there (it needs about an hour on the runner's two cores): run the full gate locally before
+  you ask for a review.
 - Note a user-visible change under "Unreleased" in `CHANGELOG.md`.
 - Keep a change focused. Move code and change behavior in separate commits.
 - Commit messages: a short imperative subject (about 70 characters), then a body that says why, not what.

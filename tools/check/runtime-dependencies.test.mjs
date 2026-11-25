@@ -173,45 +173,24 @@ test("CI: every npm ci of server/backend sets ONNXRUNTIME_NODE_INSTALL_CUDA=skip
   assert.equal(ciBackendInstallsWithoutSkip(wf.replace("ONNXRUNTIME_NODE_INSTALL_CUDA=skip npm ci", "npm ci")).length, 1, "sabotage: the install without the switch stays green");
 });
 
-// The backend suite's real-browser tests (browsers.js resolveChromium) and the MP4 capture (captures.js) need what the image
-// ships: a Chromium that starts and ffmpeg. On the runner a missing one is a skip (red in the gate, no onlyMacOS exception) and the
-// runner's own /usr/bin/chromium dies at its sandbox (Ubuntu 24.04, AppArmor; CI red on 21.11.2026 with "Chromium ended (code 1)").
-// The workflow installs ffmpeg and hands the suites Google Chrome through CBASE_CHROMIUM, BEFORE the gate step.
-function ciBrowserFindings(text) {
-  const steps = text.split(/\n(?=\s+- (?:name|uses):)/);
-  const gate = steps.findIndex((s) => /- name: Gate\b/.test(s) && /\.\/check\b/.test(s));
-  if (gate < 0) throw new Error("no Gate step running ./check found in the workflow — update this guard");
-  const before = steps.slice(0, gate).join("\n");
-  const findings = [];
-  if (!/apt-get install[^\n]*\bffmpeg\b/.test(before)) findings.push("ffmpeg is not installed before the gate step");
-  if (!/echo "CBASE_CHROMIUM=\$chrome" >> "\$GITHUB_ENV"/.test(before)) findings.push("CBASE_CHROMIUM is not handed to the gate step");
-  if (!/chrome="\$\(command -v google-chrome\)"/.test(before)) findings.push("CBASE_CHROMIUM does not point at Google Chrome");
-  return findings;
-}
-test("CI: the gate step gets ffmpeg and a Chromium with a working sandbox (Google Chrome via CBASE_CHROMIUM) — with counter-proofs", () => {
-  const wf = fs.readFileSync(path.join(REPO, ".github", "workflows", "check.yml"), "utf8");
-  assert.deepEqual(ciBrowserFindings(wf), []);
-  assert.deepEqual(ciBrowserFindings(wf.replace(/--no-install-recommends ffmpeg/, "--no-install-recommends")), ["ffmpeg is not installed before the gate step"], "sabotage: without ffmpeg");
-  assert.deepEqual(ciBrowserFindings(wf.replace(/^.*CBASE_CHROMIUM=\$chrome.*\n/m, "")), ["CBASE_CHROMIUM is not handed to the gate step"], "sabotage: without CBASE_CHROMIUM");
-  assert.deepEqual(ciBrowserFindings(wf.replace("command -v google-chrome", "command -v chromium")), ["CBASE_CHROMIUM does not point at Google Chrome"], "sabotage: the runner's sandboxless Chromium");
-});
-
-// The CI runs the short gate on every push and PR and the FULL gate every night and on demand (21.11.2026: the backend suite needs
-// about an hour on the runner's two cores). The backend suite must not silently fall out of CI: the full branch must exist and be
-// reachable through the schedule.
+// The CI runs ONLY the short gate (25.11.2026: no heavy tests on GitHub). The backend suite runs in the full `./check` on a
+// developer machine before every commit to main; on the runner's two cores it needs about an hour. So: no schedule, every trigger
+// runs `./check --short`, and nothing in the workflow starts the full gate.
 function ciGateModeFindings(text) {
   const f = [];
-  if (!/^\s+schedule:\s*\n\s+- cron: "[^"]+"/m.test(text)) f.push("no nightly schedule");
-  if (!/^\s+workflow_dispatch:/m.test(text)) f.push("no manual trigger");
-  if (!/FULL: \$\{\{ github\.event_name == 'schedule' \|\| github\.event_name == 'workflow_dispatch' \}\}/.test(text)) f.push("FULL is not bound to schedule/dispatch");
-  if (!/if \[ "\$FULL" = "true" \]; then \.\/check; else \.\/check --short; fi/.test(text)) f.push("the gate step does not switch between ./check and ./check --short");
+  if (/^\s+schedule:/m.test(text)) f.push("a scheduled run");
+  const gate = text.split(/\n(?=\s+- (?:name|uses):)/).find((s) => /- name: Gate\b/.test(s));
+  if (!gate) throw new Error("no Gate step found in the workflow — update this guard");
+  if (!/run: \.\/check --short\s*$/.test(gate)) f.push("the gate step does not run exactly ./check --short");
+  if (/\.\/check(?! --short)(?! --quick)\b/.test(text.replace(/^\s*#.*$/gm, ""))) f.push("the workflow starts the full gate");
   return f;
 }
-test("CI: short gate on push/PR, the full gate (backend suite included) nightly and on demand — with counter-proofs", () => {
+test("CI: only the short gate, on every trigger, never the full one — with counter-proofs", () => {
   const wf = fs.readFileSync(path.join(REPO, ".github", "workflows", "check.yml"), "utf8");
   assert.deepEqual(ciGateModeFindings(wf), []);
-  assert.deepEqual(ciGateModeFindings(wf.replace(/^\s+schedule:\s*\n\s+- cron: "[^"]+"\n/m, "\n")), ["no nightly schedule"], "sabotage: without the nightly run");
-  assert.deepEqual(ciGateModeFindings(wf.replace("then ./check; else", "then ./check --short; else")), ["the gate step does not switch between ./check and ./check --short"], "sabotage: the full branch runs short");
+  assert.deepEqual(ciGateModeFindings(wf.replace(/^on:\n/m, 'on:\n  schedule:\n    - cron: "17 2 * * *"\n')), ["a scheduled run"], "sabotage: the nightly run is back");
+  assert.deepEqual(ciGateModeFindings(wf.replace("run: ./check --short", "run: ./check")), ["the gate step does not run exactly ./check --short", "the workflow starts the full gate"], "sabotage: the full gate");
+  assert.deepEqual(ciGateModeFindings(wf.replace("run: ./check --short", 'run: if [ "$FULL" = "true" ]; then ./check; else ./check --short; fi')), ["the gate step does not run exactly ./check --short", "the workflow starts the full gate"], "sabotage: a switch to the full gate");
 });
 
 // Supply chain of the CI: every third-party action is pinned to a full commit SHA (a tag can be moved to other code), and the

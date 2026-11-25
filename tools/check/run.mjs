@@ -7,7 +7,7 @@
 //   --quick        everything but the suites (a few seconds): what the pre-push hook runs
 //   --skip-tests   the same as --quick, named for the case "I know, no suites now"
 //   --short        all checks and the short suites, WITHOUT the long backend suite — the CI of every push and PR (a two-core runner
-//                  needs an hour for the backend; the nightly CI runs the full gate). Writes no gate marker: it is never a full gate.
+//                  needs an hour for the backend; the full gate runs on a developer machine). Writes no gate marker: it is never a full gate.
 //   --recheck      run the suites even when a full gate was green on exactly this working tree within the last hour
 //
 // A green full gate writes a marker (lib/gate-marker.mjs: one per machine, scope "public"); the same key needs no second proof, so a

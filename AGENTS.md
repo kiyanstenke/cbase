@@ -88,8 +88,8 @@ cannot be missing silently. The rest is this question.
 - `node --test` and `xcodebuild` count a skipped test as passed. The gate reads `# skipped N`.
 - Run the full gate in the background (`./check`, it takes a while); never a bare `node --test` over the suites. One full gate per
   machine at a time (`/tmp/cbase.gate.lock`). `./check --quick` (seconds, no suites) runs in the pre-push hook.
-- CI runs `./check --short` on every push and PR and the full `./check` nightly and on demand (`.github/workflows/check.yml`, Linux): the macOS suites (Electron, code signature, iOS UI tests) are
-  skipped there. A change to `client/` or `mobile/` has to be checked on a Mac.
+- CI runs only `./check --short` on every push and PR (`.github/workflows/check.yml`, Linux); the backend suite and the macOS
+  suites (Electron, code signature, iOS UI tests) run only in the full `./check` on a developer machine. A change to `client/` or `mobile/` has to be checked on a Mac.
 - `opacity < 1` creates a stacking context — measure with `elementFromPoint`, do not assume. `el.click()` is not a mouse sequence.
 - Synthesised `Decodable` (Swift) requires every key. A new Swift file simply goes into its folder (synchronised root group).
 - A runtime dependency of the backend lives in three places: manifest, lockfile, and the `npm ci` of the Dockerfile.

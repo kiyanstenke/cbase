@@ -1,13 +1,12 @@
 name: check
 
-# Every pull request and every push to `main`: `./check --short` (all checks and the short suites, about ten minutes). The long backend suite needs
-# about an hour on the runner's two cores — it runs in the full `./check` every night and on demand (Actions → check → Run workflow).
+# Every pull request and every push to `main` (and on demand): `./check --short` — all checks and the short suites, about ten minutes.
+# The long backend suite never runs here: it needs about an hour on the runner's two cores. It runs in the full `./check` on a
+# developer machine before every commit to `main`.
 on:
   push:
     branches: [main]
   pull_request:
-  schedule:
-    - cron: "17 2 * * *"
   workflow_dispatch:
 
 permissions:
@@ -16,8 +15,7 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
-    # The full gate (nightly, on demand): the backend suite alone takes about 65 min on the runner's two cores. The short one: ~10 min.
-    timeout-minutes: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 120 || 40 }}
+    timeout-minutes: 40
     steps:
       # Third-party actions are pinned to full commit SHAs (a tag can be moved); the comment names the release.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -38,19 +36,6 @@ jobs:
           echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/$archive" | sha256sum -c -
           tar -xzf "$RUNNER_TEMP/$archive" -C /usr/local/bin gitleaks
           gitleaks version
-      - name: Browser and ffmpeg for the real-browser tests
-        run: |
-          # The backend suite starts a real Chromium (browsers.js resolveChromium, CBASE_CHROMIUM first) and builds MP4s with ffmpeg
-          # (captures.js) — the container image ships both, the runner image does not promise ffmpeg. The runner's /usr/bin/chromium is a
-          # Chromium snapshot without SUID sandbox; Ubuntu 24.04 restricts unprivileged user namespaces with AppArmor, so it dies at
-          # once with "No usable sandbox!" (Chromium ended (code 1)). Google Chrome's package brings chrome-sandbox and Ubuntu's
-          # AppArmor profile for it: take that one, and start it once here so a broken browser is named here, not in the suite.
-          command -v ffmpeg || { sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg; }
-          ffmpeg -version | head -1
-          chrome="$(command -v google-chrome)"
-          "$chrome" --version
-          timeout 60 "$chrome" --headless=new --dump-dom about:blank > /dev/null
-          echo "CBASE_CHROMIUM=$chrome" >> "$GITHUB_ENV"
       - name: Install dependencies
         run: |
           (cd web && npm ci)
@@ -59,10 +44,4 @@ jobs:
           (cd server/backend && ONNXRUNTIME_NODE_INSTALL_CUDA=skip npm ci)
           chmod +x server/backend/node_modules/node-pty/prebuilds/*/spawn-helper || true
       - name: Gate
-        env:
-          # The gate's emergency cap per suite is one hour (tools/check/lib/gate-plan.mjs SUITE_CAP_MS); the backend suite needs about
-          # 65 min on the runner's two cores (run 44865499914: 3267 of ~3570 tests after 60 min). The stall rule (300 s) still applies.
-          CBASE_SUITE_TIMEOUT_MS: "5400000"
-          FULL: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
-        run: |
-          if [ "$FULL" = "true" ]; then ./check; else ./check --short; fi
+        run: ./check --short
