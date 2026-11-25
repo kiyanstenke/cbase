@@ -160,7 +160,7 @@ FROM base AS backend
 #   - the model catalog needs a minimum CLI version (account catalog `min_claude_code_version`);
 #   - Codex: since 0.155 the limit texts carry a typographic apostrophe, "insufficient_quota" reads "Quota exceeded. …" (limits.js);
 #     models of the newest generation need at least 0.155.0 — a rollback before that pin hits migrated chats.
-RUN npm install -g @anthropic-ai/claude-code@2.1.322 @openai/codex@0.162.1 \
+RUN npm install -g @anthropic-ai/claude-code@2.1.332 @openai/codex@0.172.0 \
     && claude --version && codex --version
 
 # go-task: widespread stack runner (Taskfile.yml, `task up`) — project start commands need it. PINNED to the version that was built

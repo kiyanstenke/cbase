@@ -6,6 +6,15 @@ versions follow [Semantic Versioning](https://semver.org/) as [VERSIONING.md](VE
 
 ## [Unreleased]
 
+### Changed
+
+- The backend image ships Claude Code 2.1.332 (was 2.1.322) and Codex 0.172.0 (was 0.162.1). Every flag, lock list and
+  stream shape cbase relies on was re-measured against the new binaries; the guide to dynamic workflows now says that a
+  failed call also ends the replay on resume, as the reference does.
+- Text that cbase hands a running Claude process without a human having typed it (a completion notice, an event, an
+  agent's message or report, a scheduled continuation) is marked `isSynthetic`, so the CLI never takes it for the user's
+  own words. A human follow-up stays unmarked.
+
 ## [0.3.0] - 2026-11-24
 
 ### Added

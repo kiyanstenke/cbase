@@ -238,7 +238,9 @@ test("third pass (computed): a resume from the whole journal hits EVERYTHING; th
   const list = await run({ script: FX.script, chain: createChain(old), values: new Map() });
   assert.deepEqual(list.filter((a) => !a.cache).map((a) => a.label), [], "nothing runs anew");
   assert.deepEqual(perLabel(list, (a) => a.key), Object.fromEntries(list.map((a) => [a.label, START2.get(a.label) ?? START1.get(a.label)])));
-  assert.equal(list.find((a) => a.label === "fuenf").cache.value, "FUENF", "the result of the second pass, not the failure of the first");
+  // The answer of the second pass as the generator gave it (stamp of the pin fixture; "FUENF" up to 2.1.322, "FIVE" after the rename).
+  const afterResume = Object.entries(FX.stamp.responses).find(([k]) => k.startsWith("5 ("))[1];
+  assert.equal(list.find((a) => a.label === "fuenf").cache.value, afterResume, "the result of the second pass, not the failure of the first");
 });
 
 // The whole journal (both passes) as an old journal, and variations of it: the outcome of ONE label removed (`kind` null =>

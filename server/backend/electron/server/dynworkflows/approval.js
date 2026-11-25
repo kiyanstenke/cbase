@@ -19,7 +19,10 @@
 // lib/workflow-approval.ts and iOS Chat/WorkflowApproval.swift.
 //
 // The keyword detector follows the behaviour of the pinned Claude version — when the pin moves, it is re-measured:
-// Reference-Version: 2.1.322
+// Reference-Version: 2.1.332
+// (2.1.332, measured against 2.1.322: the matcher and its bracket table unchanged; new is only that the CLI first masks
+// claude.ai mention spans `@[…](claude-ref:…)` / Google Docs links, so the word inside such a mention never counts. cbase
+// inputs carry no such spans — not carried over.)
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";

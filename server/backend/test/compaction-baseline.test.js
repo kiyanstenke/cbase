@@ -17,6 +17,8 @@
 //   - do-run.js without `attachment` in rawInput => "Attachments in the first turn" red (Claude) and "Loop engine" red.
 //   - FILE_CALL without the mask => "Shape" red (mask).
 //   - post-run.js with `headerTruncated: !auto && raw.truncated` => "Auto compaction ... says the head is missing" red.
+//   - formatSummary drops <analysis> unconditionally (the regex up to 2.1.322) => "Formatting" red.
+//   - skillAttachment without `cut` for a shortened skill => "Attachments" red (reload note).
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
@@ -91,6 +93,9 @@ test("Truncation on \"Prompt is too long\": gap, else 20 %, at least one, never 
 test("Formatting and message: <analysis> dropped, <summary> becomes \"Summary:\", sentences in the reference's order", () => {
   assert.equal(v.formatSummary("<analysis>\nsecret\n</analysis>\n\n<summary>\n1. A\n\n\n\n2. B\n</summary>"), "Summary:\n1. A\n\n2. B");
   assert.equal(v.formatSummary("plain text"), "plain text");
+  // Since 2.1.332 (reference): an <analysis> block AFTER an opened <summary> is content of the summary and stays.
+  assert.equal(v.formatSummary("<summary>\nSee the <analysis>kept</analysis> block\n</summary>"), "Summary:\nSee the <analysis>kept</analysis> block");
+  assert.equal(v.formatSummary("<analysis>x</analysis><summary>A</summary><analysis>y</analysis>"), "Summary:\nA<analysis>y</analysis>", "only the first, leading block drops");
   assert.equal(v.summaryMessage("S"), `${v.INTRO}\nS`);
   assert.equal(v.summaryMessage("S", { transcript: "/t.txt", headerTruncated: true, keep: "[Assistant]: x" }),
     `${v.INTRO}\nS\n${v.TRANSCRIPT_SET}/t.txt\n${v.HEADER_TRUNCATED(true)}\n${v.KEEP}\n\n[Assistant]: x`);
@@ -134,6 +139,12 @@ test("Attachments: the latest five files without memory files, Read form, refere
 
   const skill = skillAttachment(refs.skills, new Map(rows.map((z) => [z.id, z])));
   assert.ok(skill.includes("### Skill: latch\n\nSkill text"));
+  assert.ok(!skill.includes(v.SKILLS_RELOAD(["latch"])), "nothing cut => no reload note");
+  // A skill above SKILL_TOKEN_MAX is shortened and named in the reload note (since 2.1.332, reference).
+  const longRows = [{ id: 1, role: "tool", ts: 1, text: JSON.stringify({ name: "mcp__cbase__cbase_skill", input: { name: "long" }, id: "t1" }) },
+    { id: 2, role: "tool_result", ts: 2, text: JSON.stringify({ id: "t1", result: JSON.stringify({ body: "w".repeat(v.SKILL_TOKEN_MAX * 4 + 100) }), isError: false }) }];
+  const cutSkill = skillAttachment(attachmentRefs(longRows).skills, new Map(longRows.map((z) => [z.id, z])));
+  assert.ok(cutSkill.endsWith(v.SKILLS_RELOAD(["long"])), "the shortened skill is named, with the way back (cbase_skill)");
   assert.ok(v.truncateSkill("z".repeat(v.SKILL_TOKEN_MAX * 4 + 100)).endsWith(v.SKILL_TRUNCATED));
   assert.equal(v.truncateSkill("z".repeat(v.SKILL_TOKEN_MAX * 4 + 100)).length, v.SKILL_TOKEN_MAX * 4);
 

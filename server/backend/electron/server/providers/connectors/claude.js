@@ -103,7 +103,7 @@ export const CLAUDE_MODELS = [
 // Claude's `SendMessage` and `ListAgents`: talking to other agents only goes via `cbase_agents_list`/
 // `cbase_agent_send`. Measured at the pinned CLI: in `-p` it offers both
 // (init AND first request, in chat and oneshot form); the block removes both from init and request, exit 0, stderr
-// empty — also with ToolSearch. Re-measure on every CLI jump. Repeated at 2.1.296 and 2.1.322 (together with
+// empty — also with ToolSearch. Re-measure on every CLI jump. Repeated at 2.1.296, 2.1.322 and 2.1.332 (together with
 // sp4-claude-wait.mjs): the same names, both blocks hold; newly offered without a block only `Monitor` (it is in
 // CLAUDE_WAIT_LOCK).
 // `EnterWorktree`, `ExitWorktree` and `ReportFindings` — at the pin in the toolset of every chat run:
@@ -114,7 +114,7 @@ export const CLAUDE_MODELS = [
 // `TaskStop` stays ALLOWED (see CLAUDE_WAIT_LOCK): the end of a run sends `stop_task` as a control message over stdin
 // (runChatClaude cbaseEndInput), not as a tool call — whether blocking the tool touches this path is not measured at
 // the pin.
-// Reference-Version: 2.1.322
+// Reference-Version: 2.1.332
 export const CLAUDE_LOCK_DEFAULT = Object.freeze(["Workflow", "Agent", "Task", "SendMessage", "ListAgents", "EnterWorktree", "ExitWorktree", "ReportFindings"]);
 
 // What a ONESHOT must additionally not have: everything that triggers ANOTHER turn after the response. Up to 2.1.291
@@ -501,13 +501,18 @@ export function runChatClaude({ spec, onEvent, onSpawn }) {
     // stdin stays open (input-format stream-json). The orchestrator controls the end:
     //  • cbaseInject(text)  — another user message into the RUNNING process (monitor wait phase)
     //  • cbaseEndInput()    — close stdin → the CLI exits after its current state
-    const userMsg = (text) => JSON.stringify({ type: "user", message: { role: "user", content: [{ type: "text", text: String(text) }] } }) + "\n";
+    // `synthetic`: the line was not typed by the human (an agent's message or report, a wakeup, a monitor event, a
+    // channel or schedule input) and carries `isSynthetic: true`. Since 2.1.332 the CLI counts unmarked lines in the
+    // middle of a turn as the user's own words where it fetches no feature flags; marked ones reach the model as a
+    // system message at the same tool boundary, and at the end of a turn as a turn of their own like before (measured
+    // at 2.1.332 with t35-tool-limit.mjs and a marked copy: delivery unchanged in all three cases).
+    const userMsg = (text, synthetic = false) => JSON.stringify({ type: "user", ...(synthetic ? { isSynthetic: true } : {}), message: { role: "user", content: [{ type: "text", text: String(text) }] } }) + "\n";
     // Whether the input is still open the helper knows (ended, destroyed or EPIPE seen) — no second mark next to it.
     // `writeStdin` returns `false` as soon as the process accepts nothing anymore — exactly the answer `cbaseInject`
     // owes its caller. Also as soon as the end is DECIDED (`endDecided`): between the stop_task requests and the
     // closing stdin is still open, a message there would begin a turn that the closing would cut off.
     let endDecided = false;
-    child.cbaseInject = (text) => !endDecided && writeStdin(child, userMsg(text));
+    child.cbaseInject = (text, { synthetic = false } = {}) => !endDecided && writeStdin(child, userMsg(text, synthetic));
     // The end: up to 2.1.291 the CLI itself ended every background command 5 s after stdin closed. Since 2.1.292 it
     // WAITS for it — a dev server holds the process until the command's time limit — and afterwards runs an ADDITIONAL
     // turn with a model call (measured against an API mock: 20.4 s instead of 5.4 s, three instead of two requests). A
@@ -545,7 +550,8 @@ export function runChatClaude({ spec, onEvent, onSpawn }) {
     //    path; the CLI delivers it at the next tool boundary (measured at 2.1.280 and 2.1.296, t35-tool-limit.mjs).
     //    If it only arrives during the LAST model request, the turn ends without it, and the CLI runs it afterwards as
     //    its own turn — even if stdin closes at the first result (measured at 2.1.280 and 2.1.296).
-    child.controlCbase = (text) => !endDecided && writeStdin(child, userMsg(text));
+    //    Always synthetic: what arrives here is another agent's message or a grandchild's report, never the human.
+    child.controlCbase = (text) => !endDecided && writeStdin(child, userMsg(text, true));
     onSpawn?.(child); // hand the process to the caller (for abort/injection)
     writeStdin(child, userMsg(spec.input));
     let buf = "";

@@ -22,7 +22,7 @@
 //           of the Java hashCode of the UNTRUNCATED path in base 36 (the same folder carries `<sid>/tool-results`).
 //           Without the truncation the target of a transfer for a long cwd would lie in a slug the CLI never uses:
 //           it would take the real copy, write the turn there, and the confirmation would delete exactly that file.
-// Reference-Version: 2.1.322
+// Reference-Version: 2.1.332
 //           (A jump of the Claude pin needs the slug re-measured at the new binary and this line updated.)
 //
 // THE RULE: the search goes via the session id in ALL homes (the backend's and every project home), never via a

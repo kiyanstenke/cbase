@@ -29,7 +29,7 @@ import { firstSentence } from "../electron/mcp/first-set.js";
 // Claude Code: `CLAUDE_CODE_MAX_MCP_DESCRIPTION_LENGTH ?? (<condition> ? 16384 : 4096)`; measured on the wire 4,096 without and
 // 16,384 with deferred loading (measured against the pinned binary). The smaller one is held.
 const TRUNCATION_CLI = 4096;
-const MEASURED_ON = "2.1.322";
+const MEASURED_ON = "2.1.332";
 const BUDGET = 1500;
 const SET_MAX = 160;
 const SET_MIN = 20;

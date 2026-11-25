@@ -312,6 +312,7 @@
     "question-bypassed.test.js",
     "quiet.test.js",
     "run-injection.test.js",
+    "injection-synthetic.test.js",
     "run-inputs-persistence.test.js",
     "schema-register.test.js",
     "loop-watch.test.js",

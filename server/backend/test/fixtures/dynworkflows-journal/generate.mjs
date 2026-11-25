@@ -36,7 +36,7 @@ export const MAIN_MARKER = "CBASE-JOURNAL-FIXTURE";
 const TOOL_ID = "toolu_fixture_workflow";
 const RESUME_ID = "toolu_fixture_resume";
 const SO_ID = "toolu_fixture_structured";
-export const RESPONSES = { 1: "ALPHA", 2: "BETA", 3: { wort: "GAMMA", count: 3 }, 4: "ALPHA+BETA",
+export const RESPONSES = { 1: "ALPHA", 2: "BETA", 3: { wort: "GAMMA", zahl: 3 }, 4: "ALPHA+BETA",
   6: "DELTA", 7: "EPSILON", 8: "ZETA", 9: "ETA", 10: "THETA", 11: "IOTA", 12: "KAPPA", 13: "LAMBDA", 14: "MY", 15: "NY" };
 export const FAILS = 5;
 export const RESPONSE_AFTER_RESUME = "FIVE";

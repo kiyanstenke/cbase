@@ -717,7 +717,7 @@ async function doRun(chat, text, { noResume = false, goalDepth = 0, attachments 
       const child = runChildren.get(chat.id);
       if (typeof child?.cbaseInject !== "function") return false;
       const batch = agentController.takeReports();
-      if (!child.cbaseInject(agentController.reportText(batch))) {
+      if (!child.cbaseInject(agentController.reportText(batch), { synthetic: true })) {
         agentController.createBack(batch);
         return false;
       }
@@ -749,7 +749,7 @@ async function doRun(chat, text, { noResume = false, goalDepth = 0, attachments 
         : "[Scheduled continuation — the deadline you set has passed. Carry on.]";
       // The chat stands elsewhere — the continuation becomes the next turn THERE, not a new one in this process.
       if (turnInstanceDifferent(chat.id)) { wakeupRelease(); publishBackground(); return inNewInstance(text); }
-      if (!child.cbaseInject(text)) return false;
+      if (!child.cbaseInject(text, { synthetic: true })) return false;
       turnBegins(chat.id, [{ cause: "wakeup" }]); // a new turn, without human input
       wakeupRelease();
       bgIdleUntil = 0;

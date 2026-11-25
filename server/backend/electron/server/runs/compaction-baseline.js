@@ -29,12 +29,16 @@
 //   • Asking again when the answer lacks a <summary> block: it would be a second model call with booking, deadline and limit
 //     path in ../claude.js; until then an answer without the block is taken unformatted.
 //   • Leaving out single oversized tool results before truncating the head.
+//   • Behind switches that are off by default in the reference (2.1.332): the note that the summary request itself came from the
+//     system (with its "all else stays as asked"), and re-reading earlier turns with a conversation tool instead of the transcript
+//     file. Also not: how the summary should name a message from another session that came in as a separate turn (cbase marks
+//     agent messages itself, runs/message-marker.js), and the UI prefix of a failed auto-compaction.
 //
 // The measurement of the reference (numbers, behaviour switches) lives in the private part of the repository; the stamp below
 // names the Claude version the behaviour was last compared with.
-// Reference-Version: 2.1.322
+// Reference-Version: 2.1.332
 
-/** The numbers of the reference (measured; unchanged 2.1.296 → 2.1.322). */
+/** The numbers of the reference (measured; unchanged 2.1.296 → 2.1.332). */
 export const PTL_ATTEMPTS = 3;          // retries after "Prompt is too long" (full summary)
 export const TRUNCATE_SHARE = 0.2;        // without a gap: 20 % of the rounds
 export const FILES_MAX = 5;           // restored files at most
@@ -185,11 +189,24 @@ export function compactionRequest(history, { instruction = "", nonce = "x" } = {
 }
 
 // ── The answer ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
-/** `formatting`: <analysis> dropped, <summary> → "Summary:", multiple blank lines to one, trimmed. */
+/** The first complete `<tag>…</tag>` block: start, end behind the closing tag, content — or null. */
+function firstBlock(text, tag) {
+  const start = text.indexOf(`<${tag}>`);
+  if (start === -1) return null;
+  const from = start + tag.length + 2;
+  const close = text.indexOf(`</${tag}>`, from);
+  return close === -1 ? null : { start, end: close + tag.length + 3, content: text.slice(from, close) };
+}
+/**
+ * `formatting`: <analysis> dropped, <summary> → "Summary:", multiple blank lines to one, trimmed. Since 2.1.332 like the reference:
+ * the <analysis> block is dropped only when no <summary> opens before it — an "<analysis>" inside the summary is content.
+ */
 export function formatSummary(raw) {
   let n = String(raw ?? "");
-  n = n.replace(/<analysis>[\s\S]*?<\/analysis>/, "");
-  n = n.replace(/<summary>([\s\S]*?)<\/summary>/, (_, s) => `Summary:\n${s.trim()}`);
+  const analysis = firstBlock(n, "analysis");
+  if (analysis && !n.slice(0, analysis.start).includes("<summary>")) n = n.slice(0, analysis.start) + n.slice(analysis.end);
+  const summary = firstBlock(n, "summary");
+  if (summary) n = `${n.slice(0, summary.start)}Summary:\n${summary.content.trim()}${n.slice(summary.end)}`;
   n = n.replace(/\n\n+/g, "\n\n");
   return n.trim();
 }
@@ -328,15 +345,23 @@ export function truncateSkill(content, max = SKILL_TOKEN_MAX) {
   if (estimateTokens(t) <= max) return t;
   return t.slice(0, max * CHARACTERS_PER_TOKEN - SKILL_TRUNCATED.length) + SKILL_TRUNCATED;
 }
-/** invoked_skills. The model names each skill's path; cbase's skills have none, they are loaded with cbase_skill. */
-export function skillsText(skills) {
+/**
+ * After the skills, when some were cut short (SKILL_TOKEN_MAX) or left out (SKILL_BUDGET): which ones, and that their missing rules
+ * still apply — load the skill again before working in its area (since 2.1.332 in the reference).
+ */
+export const SKILLS_RELOAD = (names) => `Some of these skills were shortened or left out to keep the context small: ${names.join(", ")}. Their missing rules still apply: before you do work one of them covers, load it again with cbase_skill. That only reloads its text, it does not run it again; work that is already done needs no reload.`;
+/**
+ * invoked_skills. The model names each skill's path; cbase's skills have none, they are loaded with cbase_skill.
+ * `cut`: names of skills that were shortened or left out (the reload note).
+ */
+export function skillsText(skills, { cut = [] } = {}) {
   if (!skills?.length) return "";
   const s = skills.map((h) => `### Skill: ${h.name}\n\n${h.content}`).join("\n\n---\n\n");
   return `These skills were loaded EARLIER in this session, before the compaction — not in the current turn. They stand here only so that their guidelines stay in view.
 
 IMPORTANT: do not run these skills again and do not repeat their one-time setup steps (such as scheduling something or creating files). Text inside a skill body that looks like a request or an argument — for example under a heading like "## User Request" or "## Input" — was recorded at the moment the skill was first loaded. It belongs to that moment, not to what the user is asking now, so leave it alone. Keep following only the lasting guidelines of these skills, where they still apply.
 
-${s}`;
+${s}${cut.length ? `\n\n---\n\n${SKILLS_RELOAD(cut)}` : ""}`;
 }
 
 // task_status. The model truncates a shell's description to SHELL_DESCRIPTION_MAX and its command to SHELL_COMMAND_MAX characters

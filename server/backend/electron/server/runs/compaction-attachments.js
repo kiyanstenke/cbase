@@ -121,6 +121,7 @@ export function skillAttachment(refs, rowsAfterId) {
   const sorted = [...(refs || [])].sort((a, b) => (Number(b.at) || 0) - (Number(a.at) || 0));
   let sum = 0;
   const skills = [];
+  const cut = []; // shortened or left out — named in the reload note (skillsText)
   for (const s of sorted) {
     const row = rowsAfterId?.get(Number(s.row));
     const b = row ? json(row.text) : null;
@@ -130,11 +131,12 @@ export function skillAttachment(refs, rowsAfterId) {
     if (!content.trim()) continue;
     const truncated = truncateSkill(content, SKILL_TOKEN_MAX);
     const t = estimateTokens(truncated);
-    if (sum + t > SKILL_BUDGET) continue;
+    if (sum + t > SKILL_BUDGET) { if (!cut.includes(s.name)) cut.push(s.name); continue; }
     sum += t;
     skills.push({ name: s.name, content: truncated });
+    if (truncated !== content && !cut.includes(s.name)) cut.push(s.name);
   }
-  return skillsText(skills);
+  return skillsText(skills, { cut });
 }
 
 /**

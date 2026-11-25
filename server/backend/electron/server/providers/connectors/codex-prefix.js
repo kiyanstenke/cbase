@@ -14,7 +14,7 @@
 // Measured against the pinned Codex CLI (on every CLI jump; the measurement also covers the shape of the
 // user message in the rollout, the appending on resume and the naming rule for foreign servers). MEASURED_ON_CODEX
 // below is bound to the pin in server/backend/Dockerfile (guard in server/backend/test/codex-prefix.test.js): a Codex
-// jump is red until re-measured. Result at 0.162.1: (a) ALL_TOOLS `{ name, description }` including the declaration,
+// jump is red until re-measured. Result at 0.162.1, unchanged at 0.172.0 (codex-exec-call.cjs, byte-identical apart from the version): (a) ALL_TOOLS `{ name, description }` including the declaration,
 // the call reaches the server; (b) the input stands VERBATIM as `response_item` message role user (plus `event_msg`
 // item_completed UserMessage — `user_message` is no longer written since 0.153.1); (c) resume writes into the same
 // rollout; (d) foreign names: server `mein-srv` + tool `werk-zeug.x` ⇒ `mcp__mein_srv__werk_zeug_x` (see
@@ -63,7 +63,7 @@ import { openFromRuntimeFolder } from "../../runs/runtime-write.js";
 import { PLAYWRIGHT_TOOLS } from "../../toolchain/playwright-tools.js";
 
 /** The Codex version at which pattern, rollout shape and naming rule were last measured — == pin in server/backend/Dockerfile. */
-export const MEASURED_ON_CODEX = "0.162.1";
+export const MEASURED_ON_CODEX = "0.172.0";
 
 // If the shape of the block changes (header, end, list), that counts as a new revision — otherwise old threads would carry the old wording.
 const FORM = "codex-prefix/3"; // 3: English wording

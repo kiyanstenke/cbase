@@ -15,7 +15,7 @@ import { runOverruled } from "./limit-gate.js";
 import { sse } from "../runtime/sse.js";
 import { isCompletionNotice } from "./completionNotice.js";
 import { isMessage } from "./message-marker.js";
-import { announcementForm, inputOf, pickedUpInTurn, turnBegins } from "./human-input.js";
+import { announcementForm, humanFrom, inputOf, pickedUpInTurn, turnBegins } from "./human-input.js";
 import { startLock, waitingInTheQueue } from "./project-lock.js";
 import { turnInstanceDifferent } from "./instance.js";
 import { onlyReadable, onlyReadableText } from "./only-readable.js";
@@ -226,7 +226,9 @@ function injectEntry(chatId, entry) {
   if (held(chatId, entry)) return false;
   const child = runChildren.get(chatId);
   if (typeof child?.cbaseInject !== "function") return false;
-  if (!child.cbaseInject(withHints(cardsFence(chatId, [entry]), entry.prompt))) return false;
+  // Not typed by the human (completion notice, event, channel …) ⇒ marked as such for the CLI (providers/connectors/claude.js).
+  const synthetic = humanFrom([inputOf(entry)]).length === 0;
+  if (!child.cbaseInject(withHints(cardsFence(chatId, [entry]), entry.prompt), { synthetic })) return false;
   const queue = pendingRunInputs.get(chatId) || [];
   const i = queue.indexOf(entry);
   if (i >= 0) queue.splice(i, 1);
@@ -307,7 +309,9 @@ function injectNextRunInput(chatId) {
   const inputs = block.map(inputOf);
   const preamble = injectionPreamble(chatId, inputs);
   const input = withTurnPreamble(block.map((e) => e.prompt).filter(Boolean).join("\n\n"), preamble?.text || "");
-  if (!child.cbaseInject(withHints(cardsFence(chatId, block), input))) return false;
+  // A bundle without any human input is marked as not typed (providers/connectors/claude.js); one human line keeps the bundle the user's.
+  const synthetic = humanFrom(inputs).length === 0;
+  if (!child.cbaseInject(withHints(cardsFence(chatId, block), input), { synthetic })) return false;
   preamble?.confirm();
   bundleWithdraw(queue, block);
   if (!queue.length) pendingRunInputs.delete(chatId);

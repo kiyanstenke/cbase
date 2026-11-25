@@ -2,7 +2,7 @@
 // (provenance frame) and how its result is sanitised before the script sees it. The behaviour follows the workflow
 // subagent of the pinned Claude Code (both frames with their indentation, relay of at most 4000 characters); the
 // wordings are cbase's own.
-// Reference-Version: 2.1.322
+// Reference-Version: 2.1.332
 //
 // NOT the subagent frame (providers/agent-runtime.js subagentFrame): "do not delegate further" and "report briefly"
 // are the wrong frame for an agent whose last text is literally the return value. The marker line "WORKFLOW AGENT of

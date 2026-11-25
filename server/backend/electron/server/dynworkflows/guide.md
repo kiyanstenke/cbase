@@ -3,7 +3,7 @@
      server/backend/test/dynworkflows-reminder.test.js runs every ```javascript example through the sandbox, so each one
      has to stay runnable. Points where cbase behaves differently from the reference version are marked "cbase:". The
      stamp below names the Claude version the guide was last checked against. -->
-<!-- Reference-Version: 2.1.322 -->
+<!-- Reference-Version: 2.1.332 -->
 # Dynamic workflows in cbase
 
 ## When a workflow pays off
@@ -44,8 +44,9 @@ entry of every `agent()` call and all `log()` lines. Read that file before guess
 - **Edit and rerun:** each call saves its script at `scriptPath`. Edit that file and call again with `{scriptPath}`
   instead of `script`, rather than sending the whole script again.
 - **Resume:** `{scriptPath, resumeFromRunId}` after an abort or an edit. The longest unchanged opening stretch of
-  `agent()` calls is replayed from the journal; from the first changed or added call on, everything runs for real.
-  Same script and same `args` means every result comes from the journal.
+  `agent()` calls is replayed from the journal; from the first changed, added or failed call on, everything runs for
+  real. A call that was still running when the run stopped, or that waited at a usage limit, runs again without ending
+  the replay. Same script and same `args` means every result comes from the journal, unless a call failed.
 - **Library:** `cbase_dynamic_workflow_list` shows this chat's saved workflows; start one with `{name, args}` instead
   of `script`. `cbase_dynamic_workflow_save` adds a script, only when the user asks for it.
 - **Stop:** `cbase_dynamic_workflow_stop` with the `taskId`. **One agent only** is not a workflow: use `cbase_agent`.

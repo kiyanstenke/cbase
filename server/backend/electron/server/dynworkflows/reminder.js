@@ -31,7 +31,7 @@
 // the setter runs/do-run.js setTurnPreamble (server.js): runs/ never imports dynworkflows/.
 //
 // The behaviour follows the pinned Claude version, the wordings are cbase's own — when the pin moves, it is re-measured:
-// Reference-Version: 2.1.322
+// Reference-Version: 2.1.332
 // (The baseline also asks `ultra_effort_enter` at `deliveredTurnStart`, not only at `isRegularUserPrompt` — cbase stays
 // with the human input, see above.)
 import fs from "node:fs";
