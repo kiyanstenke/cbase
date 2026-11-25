@@ -1,6 +1,6 @@
 {
   "name": "cbase-backend",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "cbase per-user backend — runs headless in the user container (headless.js); tests and lockfile live here too",
   "private": true,
   "license": "AGPL-3.0-only",

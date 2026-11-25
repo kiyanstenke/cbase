@@ -1,6 +1,6 @@
 {
   "name": "cbase-gateway",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "cbase gateway — control plane of the client/server operation (no external dependencies)",
   "private": true,
   "license": "AGPL-3.0-only",
