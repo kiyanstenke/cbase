@@ -37,12 +37,17 @@ export function foldDefault(p: AgendaStep): boolean {
  * itself invisible — so the whole subtree of a collapsed point is missing. Reading goes via `parent`
  * (in pre-order the parent always comes first), not via depth: an unknown parent hides nothing. A
  * deviation beats the default; on a leaf it means nothing.
+ *
+ * `showDone` false (the bar's default): a point whose (computed) status is "done" is missing with its whole subtree — a
+ * parent with open leaves is not done, so it stays and shows its `done/total`. What is missing, the footer counts
+ * (`doneLeaves`) and shows on a click; the fold memo applies to what stays.
  */
-export function visibleRows(steps: readonly AgendaStep[], deviations: AgendaDeviations): AgendaRow[] {
+export function visibleRows(steps: readonly AgendaStep[], deviations: AgendaDeviations, showDone = true): AgendaRow[] {
   const hidden = new Set<string>();
   const rows: AgendaRow[] = [];
   for (const p of steps) {
     if (p.parent !== null && hidden.has(p.parent)) { hidden.add(p.id); continue; }
+    if (!showDone && p.status === "done") { hidden.add(p.id); continue; }
     const deviation = deviations[p.id];
     const open = p.subitems > 0 && (typeof deviation === "boolean" ? deviation : foldDefault(p));
     if (p.subitems > 0 && !open) hidden.add(p.id);
@@ -64,6 +69,70 @@ export function toggleFold(deviations: AgendaDeviations, row: AgendaRow, steps: 
   const open = !row.open;
   if (open !== foldDefault(row.point)) fresh[row.point.id] = open;
   return fresh;
+}
+
+/** Under this key (localStorage) lies whether a chat's bar shows done points — "1" = shown; anything else is the default (hidden). */
+export const doneKey = (chatId: string): string => `cbase-agenda-done:${chatId}`;
+
+/** The memo of "show done" from storage: only "1" shows them — missing, broken or a read error is the default (hidden). */
+export function readShowDone(raw: string | null | undefined): boolean {
+  return raw === "1";
+}
+
+/** The done LEAVES — what the footer "n done" counts while done points are hidden (a parent is not a step). */
+export function doneLeaves(steps: readonly AgendaStep[]): number {
+  let n = 0;
+  for (const s of steps) if (s.subitems === 0 && s.status === "done") n += 1;
+  return n;
+}
+
+/**
+ * What makes point `id` visible: every ancestor unfolded (as a deviation only where the default is closed — the memo keeps
+ * only deviations) and done shown if the point or one of its ancestors is done. `null` for an unknown id.
+ */
+export function revealPoint(steps: readonly AgendaStep[], deviations: AgendaDeviations, id: string): { deviations: AgendaDeviations; needsDone: boolean } | null {
+  const byId = new Map(steps.map((s) => [s.id, s]));
+  const target = byId.get(id);
+  if (!target) return null;
+  const fresh: AgendaDeviations = { ...deviations };
+  let needsDone = target.status === "done";
+  const seen = new Set<string>([id]);
+  for (let a = target.parent ? byId.get(target.parent) : undefined; a && !seen.has(a.id); a = a.parent ? byId.get(a.parent) : undefined) {
+    seen.add(a.id);
+    if (a.status === "done") needsDone = true;
+    if (foldDefault(a)) delete fresh[a.id];
+    else fresh[a.id] = true;
+  }
+  return { deviations: fresh, needsDone };
+}
+
+/** A search hit in the active tree: the point and its ancestor texts (top level first). */
+export interface AgendaHit {
+  point: AgendaStep;
+  path: string[];
+}
+
+/**
+ * Search over the WHOLE active tree, done points included: the query (trimmed, case-insensitive) is a substring of the text
+ * or the note. Hits in agenda order, each with its path. An empty query finds nothing (the list is the view then). The
+ * archive the server searches (`loadAgendaArchive(…, { q })`), with the same rule.
+ */
+export function searchSteps(steps: readonly AgendaStep[], query: string): AgendaHit[] {
+  const q = query.trim().toLocaleLowerCase();
+  if (!q) return [];
+  const byId = new Map(steps.map((s) => [s.id, s]));
+  const hits: AgendaHit[] = [];
+  for (const p of steps) {
+    if (!`${p.text}\n${p.note}`.toLocaleLowerCase().includes(q)) continue;
+    const path: string[] = [];
+    const seen = new Set<string>([p.id]);
+    for (let a = p.parent ? byId.get(p.parent) : undefined; a && !seen.has(a.id); a = a.parent ? byId.get(a.parent) : undefined) {
+      seen.add(a.id);
+      path.unshift(a.text);
+    }
+    hits.push({ point: p, path });
+  }
+  return hits;
 }
 
 /** The memo from storage: only a JSON object of booleans counts; anything else (missing, broken, foreign shape) is

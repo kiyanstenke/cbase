@@ -68,6 +68,7 @@ import { startAmountTick } from "./account/openrouter-inquiry.js";
 import { migrateRetiredModels } from "./account/model-migration.js";
 import { migrateAutoChats, migrateRoleLevelsLater } from "./chats/auto-gone.js";
 import { haltAutoArchive, autoArchiveCycle, autoArchiveTickMs } from "./chats/auto-archive.js";
+import { sweepAgendaArchive, agendaSweepTickMs, agendaSweepFirstMs } from "./agenda/auto-archive.js";
 import { seedMissingAgendaKeeper, seedMissingTimelineAgents, seedMissingSummarizer } from "./outerloop/seed.js";
 import { migrateProfilesIntoInstructions } from "./workspaces/instructions-migration.js";
 import { outerLoopTurnStart, setOuterLoopAborter } from "./outerloop/abort.js";
@@ -1108,7 +1109,14 @@ export function startServer({ port, dataRoot, webDir, pickDirectory, notify }) {
         try { scheduledTick(); } catch (e) { console.error("[scheduled] tick:", e?.message || e); }
       }, SCHEDULED_CHECK_MS());
       scheduledTimer.unref?.();
-      server.once("close", () => { clearInterval(autoArchiveTimer); haltAutoArchive(); clearInterval(scheduledTimer); });
+      // The agenda's sweep (agenda/auto-archive.js): finished top-level points go to the archive after a week — once shortly after
+      // the start (a legacy agenda is cleaned up right away), then hourly; on the server run like the ticks above.
+      const agendaSweep = () => { try { const n = sweepAgendaArchive(); if (n) console.log(`[agenda] ${n} finished subtree(s) archived`); } catch (e) { console.error("[agenda] sweep:", e?.message || e); } };
+      const agendaSweepFirst = setTimeout(agendaSweep, agendaSweepFirstMs());
+      agendaSweepFirst.unref?.();
+      const agendaSweepTimer = setInterval(agendaSweep, agendaSweepTickMs());
+      agendaSweepTimer.unref?.();
+      server.once("close", () => { clearInterval(autoArchiveTimer); haltAutoArchive(); clearInterval(scheduledTimer); clearTimeout(agendaSweepFirst); clearInterval(agendaSweepTimer); });
     });
   }));
 }

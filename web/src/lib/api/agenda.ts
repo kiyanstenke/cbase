@@ -89,6 +89,8 @@ export interface Agenda {
   version: number;
   /** null = never written (not "0 ms ago"). */
   changedAt: number | null;
+  /** How many finished subtrees lie in the chat's archive (the "Archive (n)" row) — 0 on an older server. */
+  archived: number;
 }
 
 export interface AgendaState {
@@ -158,6 +160,7 @@ export function normAgenda(raw: unknown, chatId: string): Agenda {
     steps: Array.isArray(a.steps) ? a.steps.map(normStep).filter((s): s is AgendaStep => s !== null) : [],
     version: count(a.version),
     changedAt: count(a.changedAt) || null,
+    archived: whole(a.archived),
   };
 }
 
@@ -165,4 +168,92 @@ export function normAgenda(raw: unknown, chatId: string): Agenda {
 export async function loadAgenda(chatId: string): Promise<AgendaState> {
   const r = await api<Record<string, unknown>>(`/api/chats/${encodeURIComponent(chatId)}/agenda`);
   return { agenda: normAgenda(r?.agenda, chatId), keepsAgenda: r?.keepsAgenda !== false };
+}
+
+// ── The archive ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// A finished subtree leaves the active tree (by the main agent or the server's sweep) and becomes ONE archive entry: its root
+// text, its leaf count, when it was done and archived, and by whom. The rail lists them read-only behind "Archive (n)"
+// (`GET …/agenda/archive`, newest first, paged by entry id) and opens one via `GET …/agenda?point=<rootId>`. With `q` the
+// same route also answers the search hits over the active tree AND the archive.
+
+/** Who archived: the main agent (`main`) or the server's sweep of long-finished subtrees (`auto`). */
+export type AgendaArchiveBy = "main" | "auto";
+
+export interface AgendaArchiveEntry {
+  /** Entry id (a number, newest = highest) — `before` pages with it. */
+  id: number;
+  /** The archived subtree's root point — `?point=` opens it. */
+  rootId: string;
+  text: string;
+  leaves: number;
+  doneAt: number | null;
+  archivedAt: number;
+  by: AgendaArchiveBy;
+}
+
+/** A search hit from the server: `path` = the ancestor texts, `entryId` and `rootId` (the archived subtree's root) only on an
+ *  archived hit. */
+export interface AgendaArchiveHit {
+  id: string;
+  text: string;
+  status: AgendaStatus;
+  path: string[];
+  archived: boolean;
+  entryId: number | null;
+  rootId: string | null;
+}
+
+export interface AgendaArchivePage {
+  entries: AgendaArchiveEntry[];
+  more: boolean;
+  total: number;
+  hits: AgendaArchiveHit[];
+  hitsMore: boolean;
+}
+
+function normEntry(raw: unknown): AgendaArchiveEntry | null {
+  if (!raw || typeof raw !== "object") return null;
+  const e = raw as Record<string, unknown>;
+  const id = whole(e.id);
+  if (!id || typeof e.rootId !== "string" || !e.rootId) return null;
+  return {
+    id, rootId: e.rootId, text: text(e.text), leaves: whole(e.leaves),
+    doneAt: count(e.doneAt) || null, archivedAt: count(e.archivedAt), by: e.by === "auto" ? "auto" : "main",
+  };
+}
+
+function normHit(raw: unknown): AgendaArchiveHit | null {
+  if (!raw || typeof raw !== "object") return null;
+  const h = raw as Record<string, unknown>;
+  if (typeof h.id !== "string" || !h.id) return null;
+  return {
+    id: h.id, text: text(h.text), status: isStatus(h.status) ? h.status : "open",
+    path: Array.isArray(h.path) ? h.path.map(text) : [], archived: h.archived === true, entryId: whole(h.entryId) || null,
+    rootId: typeof h.rootId === "string" && h.rootId ? h.rootId : null,
+  };
+}
+
+/** An archive page (and search hits) from a response — every field with a default, an entry without id or root drops out. */
+export function normArchivePage(raw: unknown): AgendaArchivePage {
+  const r = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  const list = <X,>(v: unknown, f: (x: unknown) => X | null): X[] => (Array.isArray(v) ? v.map(f).filter((x): x is X => x !== null) : []);
+  return { entries: list(r.entries, normEntry), more: r.more === true, total: whole(r.total), hits: list(r.hits, normHit), hitsMore: r.hitsMore === true };
+}
+
+/** One page of a chat's archive — `before` the last entry id of the page before, `q` adds the search hits. */
+export async function loadAgendaArchive(chatId: string, opts: { before?: number; limit?: number; q?: string } = {}): Promise<AgendaArchivePage> {
+  const qs = new URLSearchParams();
+  if (opts.before) qs.set("before", String(opts.before));
+  if (opts.limit) qs.set("limit", String(opts.limit));
+  if (opts.q?.trim()) qs.set("q", opts.q.trim());
+  const tail = qs.toString();
+  const r = await api<unknown>(`/api/chats/${encodeURIComponent(chatId)}/agenda/archive${tail ? `?${tail}` : ""}`);
+  return normArchivePage(r);
+}
+
+/** The subtree of one point, every status — active or archived (`archived`); the steps in preorder, the root first. */
+export async function loadAgendaPoint(chatId: string, pointId: string): Promise<{ agenda: Agenda; archived: boolean }> {
+  const r = await api<Record<string, unknown>>(`/api/chats/${encodeURIComponent(chatId)}/agenda?point=${encodeURIComponent(pointId)}`);
+  const point = r?.point && typeof r.point === "object" ? (r.point as Record<string, unknown>) : {};
+  return { agenda: normAgenda(r?.agenda, chatId), archived: point.archived === true };
 }

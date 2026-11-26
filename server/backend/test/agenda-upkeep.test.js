@@ -450,7 +450,9 @@ test("(5) tool: cbase_agenda supplies the version, cbase_agenda_maintain writes 
       assert.equal(ok.isError, false, ok.text);
       assert.deepEqual([ok.data.ok, ok.data.version, ok.data.changed], [true, v + 1, [{ pointId: "s1", kind: "status", prior: "open", after: "in_work" }]],
         "the answer: compact view plus version");
-      assert.ok(ok.data.agenda?.steps?.some((s) => s.id === "s1" && s.status === "in_work"), ok.text);
+      // Compact like cbase_agenda_write: only the touched items, not the agenda again.
+      assert.deepEqual(ok.data.steps?.map((s) => [s.id, s.status]), [["s1", "in_work"]], ok.text);
+      assert.equal(ok.data.agenda, undefined, ok.text);
       assert.equal(raw(c.id, "s1").upkeep?.runId, l.id, "written under the MCP server's run marker, not the model's");
       // A refusal goes to the model as an error result with code - STALE without the current number.
       const old = await call("cbase_agenda_maintain", { base: v, steps: [{ op: "status", id: "s2", status: "in_work" }] });

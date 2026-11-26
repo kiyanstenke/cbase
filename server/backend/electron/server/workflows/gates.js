@@ -489,6 +489,8 @@ function agendaItem(chat, id) {
 // long answer by the human should not make the item fail.
 const clipped = (text, max = 2000) => { const z = [...String(text || "")]; return z.length > max ? `${z.slice(0, max - 1).join("")}…` : z.join(""); };
 
+// The item lives in the ACTIVE tree only: once archived (the agent, or the sweep a week after it was finished), the next round
+// no longer finds it and creates a new "Request review" item — intended, the archived one is history.
 function reviewPointCreate(chat, cursor, question) {
   if (!store.chatKeepsAgenda(chat)) return { id: "" };
   const note = firstLines(question, 400);

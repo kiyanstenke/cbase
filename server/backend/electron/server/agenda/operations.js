@@ -14,6 +14,8 @@
 //                   { op: "move", id, under?, after? }                          the whole subtree moves along
 //                   { op: "erase", id }                                         the whole subtree goes along
 //                   { op: "arrange", under?, ids: [EVERY child of this parent] }
+//                   { op: "archive", id }                                       a FINISHED subtree leaves the tree for the archive
+//                   { op: "restore", id }                                       an archived subtree comes back to its old place
 //   Where an item goes (fresh, move): `under` = the parent item, the top level if not given; `after` = the sibling it follows
 //   (including that sibling's subtree), or "beginning", the end of the siblings if not given. With `under`, `after` must be a
 //   child of `under`; WITHOUT `under`, `after` sets the level (the item goes behind `after`, on its level) — so an
@@ -29,8 +31,9 @@
 import { AGENDA_STATUS, agendaTree, agendaPreorder } from "../store.js";
 import { T } from "../i18n.js";
 
-export const AGENDA_CAP = Object.freeze({ title: 120, description: 8000, points: 200, text: 80, note: 2000 });
-export const AGENDA_OPERATIONS = Object.freeze(["fresh", "change", "move", "erase", "arrange"]);
+// `points` counts the ACTIVE tree only — the archive (store/agenda.js chat_agenda_archive) is unbounded.
+export const AGENDA_CAP = Object.freeze({ title: 120, description: 8000, points: 500, text: 80, note: 2000 });
+export const AGENDA_OPERATIONS = Object.freeze(["fresh", "change", "move", "erase", "arrange", "archive", "restore"]);
 
 // `code` names the kind of error for the keeper's write path (agenda/upkeep.js turns it into a status through
 // AGENDA_UPKEEP_CODES); without it, it is an error of the computation itself (400).
@@ -113,10 +116,14 @@ function projectNames(projects) {
 }
 
 /**
- * The new agenda according to `input` — `{ title, description, steps, nextSeq, deleted }` (`deleted` = the ids of all items an
- * `erase` took along, for the response). Throws `AgendaError`; `alt` stays untouched.
+ * The new agenda according to `input` — `{ title, description, steps, nextSeq, deleted, archive, restore, archived, restored }`
+ * (`deleted` = the ids of all items an `erase` took along; `archive` = the entries for the archive table, `restore` = the ids of
+ * the archive entries that came back — both written by store.agendaChange in the same transaction; `archived`/`restored` = the
+ * root ids, for the response). Throws `AgendaError`; `alt` stays untouched.
+ * `archiveEntryOf(id)` = the archive entry holding point `id` (store.agendaArchiveEntryOf) — the computation stays pure, the
+ * caller reads; without it `restore` is an error. `by` = who archives ("main", or "auto" for the sweep).
  */
-export function applyOps(old, input, now, { projects = null } = {}) {
+export function applyOps(old, input, now, { projects = null, archiveEntryOf = null, by = "main" } = {}) {
   if (!input || typeof input !== "object" || Array.isArray(input)) throw new AgendaError(T("The body must be an object — nothing written."));
   if (!given(input.title) && !given(input.description) && !given(input.steps)) {
     throw new AgendaError(T("Nothing to change: give title, description or steps — nothing written."));
@@ -127,6 +134,10 @@ export function applyOps(old, input, now, { projects = null } = {}) {
   // Copies — the operations change item by item, and an error halfway must not have touched `alt`.
   let points = (old.steps || []).map((s) => ({ ...s, parent: s.parent ?? null, projectId: s.projectId ?? null }));
   const deleted = [];
+  const archive = [];
+  const restore = [];
+  const archived = [];
+  const restored = [];
   // Does this project still exist in the workspace? Unknown projects (`projects` missing) count as alive — no silent assumption.
   const known = projectList(projects);
   const projectAlive = (id) => !known || known.some((p) => p.id === id);
@@ -280,6 +291,44 @@ export function applyOps(old, input, now, { projects = null } = {}) {
           j = e;
         }
         points.splice(beginning, areaEnd - beginning, ...op.ids.flatMap((x) => blocks.get(x)));
+      } else if (kind === "archive") {
+        const k = find(op.id);
+        const tree = agendaTree(points);
+        if (tree[k].status !== "done") {
+          throw error(T`“${op.id}” is not finished (${tree[k].status}) — only a subtree whose items are all done goes to the archive`);
+        }
+        const parent = points[k].parent ?? null;
+        const siblings = children(parent);
+        const before = siblings[siblings.indexOf(op.id) - 1] ?? null;
+        const block = points.splice(k, subtreeEnd(k) - k);
+        const withKids = new Set(block.map((p) => p.parent).filter(Boolean));
+        const leaves = block.filter((p) => !withKids.has(p.id));
+        const doneAt = Math.max(0, ...leaves.map((p) => Number(p.doneAt) || Number(p.changedAt) || 0)) || null;
+        // A parent left without children holds its STORED status again (store/agenda.js) — all its children were done, so it is.
+        if (parent !== null && !points.some((p) => p.parent === parent)) {
+          const e = points.findIndex((p) => p.id === parent);
+          if (points[e].status !== "done") points[e] = { ...points[e], status: "done", doneAt: doneAt || now };
+        }
+        archive.push({ rootId: op.id, parentId: parent, afterId: before, text: block[0].text, points: block, leaves: leaves.length, doneAt, by });
+        archived.push(op.id);
+      } else if (kind === "restore") {
+        if (typeof op.id !== "string" || !op.id) throw new AgendaError(T`${where} (restore): id is missing — nothing written.`);
+        const entry = typeof archiveEntryOf === "function" ? archiveEntryOf(op.id) : null;
+        if (!entry || restore.includes(entry.id)) {
+          throw error(T`“${op.id}” is not in the archive — read it with cbase_agenda (archive: true or search)`);
+        }
+        const clash = entry.points.filter((p) => points.some((q) => q.id === p.id)).map((p) => p.id);
+        if (clash.length) throw error(T`the ids ${idList(clash)} already stand in the agenda`);
+        // Its old place: under the old parent if it still stands, behind the old sibling if that still stands there — otherwise
+        // at the end of that level (or the top level).
+        const parent = entry.parentId && points.some((p) => p.id === entry.parentId) ? entry.parentId : null;
+        const after = entry.afterId && points.some((p) => p.id === entry.afterId && (p.parent ?? null) === parent) ? entry.afterId : null;
+        const following = after ?? (entry.afterId === null && parent === entry.parentId ? "beginning" : null);
+        const block = entry.points.map((p) => ({ ...p }));
+        block[0] = { ...block[0], parent, projectId: parent === null ? (block[0].projectId ?? null) : null, restoredAt: now };
+        points.splice(place({ parent, following }), 0, ...block);
+        restore.push(entry.id);
+        restored.push(entry.rootId);
       } else {
         throw new AgendaError(T`${where}: unknown op ${JSON.stringify(kind)} — allowed are ${AGENDA_OPERATIONS.join(", ")}; nothing written.`);
       }
@@ -291,9 +340,9 @@ export function applyOps(old, input, now, { projects = null } = {}) {
   }
 
   if (points.length > AGENDA_CAP.points) {
-    throw new AgendaError(T`Cap: an agenda holds at most ${AGENDA_CAP.points} items (it would be ${points.length}) — merge items or delete finished subtrees; nothing written.`);
+    throw new AgendaError(T`Cap: an agenda holds at most ${AGENDA_CAP.points} items (it would be ${points.length}) — archive finished subtrees (op archive) or merge items; nothing written.`);
   }
-  return { title, description, steps: points, nextSeq, deleted };
+  return { title, description, steps: points, nextSeq, deleted, archive, restore, archived, restored };
 }
 
 // ── The agenda keeper ────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -468,7 +517,10 @@ export function bringAlongWriter(old, computation, input, { originator = "main",
   const touched = new Set([
     ...ops.filter((op) => ["change", "move", "erase"].includes(op.op) && typeof op.id === "string").map((op) => op.id),
     ...(computation.deleted || []),
+    // An archived point is touched too (its log rows get an outcome) — and it still exists, only elsewhere.
+    ...(computation.archive || []).flatMap((e) => (e.points || []).map((p) => p.id)),
   ]);
+  const inArchive = new Set((computation.archive || []).flatMap((e) => (e.points || []).map((p) => p.id)));
   const main = originator === "main";
   const statusSet = new Set(ops.filter((op) => op.op === "change" && typeof op.id === "string" && given(op.status)).map((op) => op.id));
   const points = computation.steps || [];
@@ -508,7 +560,7 @@ export function bringAlongWriter(old, computation, input, { originator = "main",
         continue;
       }
       if (!touched.has(z.pointId)) continue;
-      const found = stays.has(z.pointId);
+      const found = stays.has(z.pointId) || inArchive.has(z.pointId);
       const corrected = z.kind === "fresh" ? !found : found && stage(computed.get(z.pointId)) < stage(z.stage);
       touched2.push({ id: z.id, outcome: corrected ? "corrected" : "confirmed" });
     }
@@ -572,9 +624,10 @@ export function upkeepAfterwards(marker, pointId, rows) {
  * counters per status (leaves only) and per item in preorder `{ id, parent, depth, text, note, status, subitems, done, total,
  * project, createdAt, changedAt, doneAt, upkeep }` — `status` on an item with sub-items is computed (store/agenda.js
  * agendaTree), `project` resolved at read time from `projects` (a deleted project ⇒ null), `upkeep.afterwards` from
- * `upkeepRows` (store.agendaUpkeepHistory; without them `null` = unknown — read through agenda/change.js agendaView).
+ * `upkeepRows` (store.agendaUpkeepHistory; without them `null` = unknown — read through agenda/change.js agendaView); `archived` = the
+ * number of archive entries.
  */
-export function agendaResponse(a, projects = null, { upkeepRows = null } = {}) {
+export function agendaResponse(a, projects = null, { upkeepRows = null, archived = 0 } = {}) {
   const points = a.steps || [];
   const tree = agendaTree(points);
   const names = projectNames(projects);
@@ -598,5 +651,74 @@ export function agendaResponse(a, projects = null, { upkeepRows = null } = {}) {
     version: a.version,
     changedAt: a.changedAt,
     counter: agendaCounter(a),
+    // How many finished subtrees lie in the archive (store.agendaArchiveCount) — the clients show "Archive (n)".
+    archived: Number(archived) || 0,
   };
+}
+
+// ── Reading views ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// The agenda as the AGENT reads it by default (cbase_agenda, the turn block, other chats): only what is not finished. A point
+// stays if its COMPUTED status is not done — a parent with one open leaf stays (with its done/total), its done children fall.
+// Preorder holds: an unfinished point's parent is unfinished too. The clients get the full tree and hide on their own (the
+// toggle "n done"). `hidden.done` = finished LEAVES left out.
+
+/** Only the unfinished points of an agenda IN ITS RESPONSE SHAPE (agendaResponse: `status` computed, `subitems` per point) —
+ *  `{ agenda, hidden: { done } }`. Filtering the response keeps a parent's done/total those of its whole subtree. */
+export function openOnly(view) {
+  const points = view?.steps || [];
+  const keep = points.filter((s) => s.status !== "done");
+  const done = points.filter((s) => s.status === "done" && !s.subitems).length;
+  return { agenda: { ...view, steps: keep }, hidden: { done } };
+}
+
+/** The subtree of point `id` (preorder, the root first) — or null if the point is not in `points`. */
+export function subtreeOf(points, id) {
+  const list = points || [];
+  const k = list.findIndex((p) => p.id === id);
+  if (k < 0) return null;
+  const ids = new Set([id]);
+  let j = k + 1;
+  while (j < list.length && ids.has(list[j].parent)) { ids.add(list[j].id); j += 1; }
+  return list.slice(k, j);
+}
+
+/** The cap of search hits — and the answer says when it cut (`more`). */
+export const AGENDA_SEARCH_CAP = 50;
+
+/**
+ * Search the active points and the archive for `query` (case-insensitive, in text and note) — `{ hits, more }`, `cap` per source
+ * (active, archive), hits in the
+ * order active tree first, then the archive newest first: `{ id, text, status, path: [texts of the ancestors], archived, entryId, rootId }`.
+ * `entries` = store.agendaArchive (each `{ id, points }`).
+ */
+export function searchAgenda(points, entries, query, { cap = AGENDA_SEARCH_CAP } = {}) {
+  const q = String(query ?? "").trim().toLocaleLowerCase();
+  if (!q) return { hits: [], more: false };
+  // Each source has its own cap — a common word with many active hits must not crowd out the archive (the clients take the
+  // archived hits from here and search the active tree themselves).
+  const hits = [];
+  let more = false;
+  let taken = 0;
+  const active = new Map((points || []).map((p) => [p.id, p]));
+  const ancestors = (byId, id) => {
+    const path = [];
+    for (let e = byId.get(id); e; e = byId.get(e.parent)) path.unshift(e.text);
+    return path;
+  };
+  const scan = (list, entryId, base = [], rootId = null) => {
+    const tree = agendaTree(list);
+    const byId = new Map(list.map((p) => [p.id, p]));
+    list.forEach((p, i) => {
+      if (!`${p.text}\n${p.note || ""}`.toLocaleLowerCase().includes(q)) return;
+      if (taken >= cap) { more = true; return; }
+      taken += 1;
+      // An archived subtree's path begins where it hung in the active tree, as far as that still stands.
+      const path = [...base, ...ancestors(byId, p.parent)];
+      hits.push({ id: p.id, text: p.text, status: tree[i].status, path, archived: entryId !== null, ...(entryId !== null ? { entryId, rootId } : {}) });
+    });
+  };
+  scan(points || [], null);
+  taken = 0;
+  for (const e of entries || []) scan(e.points || [], e.id, e.parentId ? ancestors(active, e.parentId) : [], e.rootId ?? e.points?.[0]?.id ?? null);
+  return { hits, more };
 }

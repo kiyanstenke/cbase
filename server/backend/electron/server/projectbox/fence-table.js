@@ -277,6 +277,8 @@ export const FENCE_TABLE = Object.freeze([
   // the main agent (agenda/routes.js via communication/sender.js).
   Z("chat-agenda", "GET", "/api/chats/:chat/agenda", "allowed", MCP),
   Z("chat-agenda-write", "PUT", "/api/chats/:chat/agenda", "allowed", MCP),
+  // The agenda's archive (entries, search): read like the agenda itself — `?chatId` of another chat by the same predicate.
+  Z("chat-agenda-archive", "GET", "/api/chats/:chat/agenda/archive", "allowed", MCP),
   // The agenda keeper: the chat in the path is the observed one; who may write is checked by the route against the run marker
   // (agenda/upkeep.js, 403 without a running keeper run on this chat).
   Z("chat-agenda-maintain", "POST", "/api/chats/:chat/agenda/upkeep", "allowed", MCP),

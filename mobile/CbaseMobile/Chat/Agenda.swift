@@ -172,8 +172,10 @@ struct Agenda: Decodable, Equatable {
     let version: Int
     /// Milliseconds; `nil` = never written (not "0 ms ago").
     let changedAt: Double?
+    /// How many archived subtrees the chat has (the sheet's "Archive (n)") — 0 from an older server that does not send it.
+    let archived: Int
 
-    private enum CodingKeys: String, CodingKey { case chatId, title, description, steps, version, changedAt }
+    private enum CodingKeys: String, CodingKey { case chatId, title, description, steps, version, changedAt, archived }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -184,6 +186,7 @@ struct Agenda: Decodable, Equatable {
         version = c.int(.version)
         let changed = c.dbl(.changedAt)
         changedAt = changed > 0 ? changed : nil
+        archived = max(0, c.int(.archived))
     }
 
     /// The state in the chat's model: "not loaded" until the route has answered — "no agenda yet" only shows AFTER loading
@@ -376,15 +379,195 @@ struct Agenda: Decodable, Equatable {
     /// The same agenda with the requested chat, if the response names none.
     private func withChat(_ id: String) -> Agenda {
         guard chatId.isEmpty else { return self }
-        return Agenda(chatId: id, title: title, description: description, steps: steps, version: version, changedAt: changedAt)
+        return Agenda(chatId: id, title: title, description: description, steps: steps, version: version, changedAt: changedAt,
+                      archived: archived)
     }
 
-    private init(chatId: String, title: String, description: String, steps: [Step], version: Int, changedAt: Double?) {
+    private init(chatId: String, title: String, description: String, steps: [Step], version: Int, changedAt: Double?, archived: Int) {
         self.chatId = chatId
         self.title = title
         self.description = description
         self.steps = steps
         self.version = version
         self.changedAt = changedAt
+        self.archived = archived
+    }
+}
+
+// MARK: Navigation — done points hidden, search, archive (counterpart of the same parts of web/src/lib/agenda.ts)
+//
+// Done points are hidden by default: the sheet shows `withoutDone(steps)` and a footer row "n done" (`hiddenDone`) that shows
+// them again — remembered per device and chat under `doneKey`. Search runs over EVERYTHING: the active tree locally
+// (`localHits`, done points included) and the archive on the server (`GET …/agenda/archive?q=`, `ArchivePage.hits`); `mergeHits`
+// joins both without duplicates. A tap on an active hit makes it visible (`reveal`). The archive arrives page by page
+// (`ArchivePage.entries`); an entry's subtree comes from `GET …/agenda?point=<rootId>`.
+extension Agenda {
+    /// Under this key (UserDefaults) lies whether a chat's sheet shows done points ("1") — absent = hidden.
+    static func doneKey(_ chatId: String) -> String { "cbase-agenda-done:\(chatId)" }
+
+    /// The steps without done points and their subtrees (a done parent has only done leaves). Read via `parent` like
+    /// `visibleRows`; a parent with open leaves is not done and stays, with its done/total.
+    static func withoutDone(_ steps: [Step]) -> [Step] {
+        var hidden = Set<String>()
+        return steps.filter { p in
+            if p.status == "done" || p.parent.map({ hidden.contains($0) }) == true {
+                hidden.insert(p.id)
+                return false
+            }
+            return true
+        }
+    }
+
+    /// The number in the footer row "n done": done LEAVES (items with subitems do not count, like the progress).
+    static func hiddenDone(_ steps: [Step]) -> Int {
+        steps.filter { $0.status == "done" && $0.subitems == 0 }.count
+    }
+
+    /// One search hit — active (computed here) or archived (from the server, with the archive entry's id).
+    struct Hit: Decodable, Equatable, Identifiable {
+        let id: String
+        let text: String
+        let status: String
+        /// The ancestors' texts, top first.
+        let path: [String]
+        let archived: Bool
+        /// Only for an archived hit: the archive entry that holds it.
+        let entryId: Int?
+
+        /// Unique across active tree and archive (an id can come back from the archive and stand in both).
+        var key: String { archived ? "archive:\(entryId ?? 0):\(id)" : "active:\(id)" }
+
+        private enum CodingKeys: String, CodingKey { case id, text, status, path, archived, entryId }
+
+        init(id: String, text: String, status: String, path: [String], archived: Bool, entryId: Int?) {
+            self.id = id
+            self.text = text
+            self.status = status
+            self.path = path
+            self.archived = archived
+            self.entryId = entryId
+        }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            let id = c.str(.id)
+            guard !id.isEmpty else {
+                throw DecodingError.dataCorruptedError(forKey: .id, in: c, debugDescription: "Hit without id")
+            }
+            self.id = id
+            text = c.str(.text)
+            let raw = c.str(.status)
+            status = Agenda.status.contains(raw) ? raw : "open"
+            path = c.strings(.path)
+            archived = c.bool(.archived)
+            entryId = c.intOpt(.entryId)
+        }
+    }
+
+    /// Whether a text matches the query: case-insensitive substring; an empty query matches nothing.
+    static func matches(_ text: String, query: String) -> Bool {
+        let q = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return !q.isEmpty && text.lowercased().contains(q)
+    }
+
+    /// The hits in the active tree (text and note, done points included), in agenda order, each with its path.
+    static func localHits(_ steps: [Step], query: String) -> [Hit] {
+        let byId = Dictionary(steps.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        return steps.filter { matches("\($0.text)\n\($0.note)", query: query) }.map { p in
+            Hit(id: p.id, text: p.text, status: p.status, path: ancestors(p.id, byId: byId).map(\.text), archived: false, entryId: nil)
+        }
+    }
+
+    /// Active hits first (computed here), then the server's ARCHIVED hits (its active ones would only repeat these) — each once.
+    static func mergeHits(local: [Hit], server: [Hit]) -> [Hit] {
+        var seen = Set<String>()
+        return (local + server.filter(\.archived)).filter { seen.insert($0.key).inserted }
+    }
+
+    /// The ancestors of a point, top first — a cycle or an unknown parent ends the walk.
+    static func ancestors(_ id: String, byId: [String: Step]) -> [Step] {
+        var out: [Step] = []
+        var seen: Set<String> = [id]
+        var current = byId[id]?.parent
+        while let pid = current, let p = byId[pid], seen.insert(pid).inserted {
+            out.insert(p, at: 0)
+            current = p.parent
+        }
+        return out
+    }
+
+    /// What makes a point visible: every ancestor unfolded (only deviations are kept, like `toggleFold`) and whether the done
+    /// points must be shown (the point or an ancestor is done).
+    static func reveal(_ id: String, steps: [Step], deviations: [String: Bool]) -> (deviations: [String: Bool], needsDone: Bool) {
+        let byId = Dictionary(steps.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        var fresh = deviations
+        var needsDone = byId[id]?.status == "done"
+        for a in ancestors(id, byId: byId) {
+            if a.status == "done" { needsDone = true }
+            if foldDefault(a) { fresh.removeValue(forKey: a.id) } else { fresh[a.id] = true }
+        }
+        return (fresh, needsDone)
+    }
+
+    /// One archived subtree as a row of the archive list (its points come with `?point=<rootId>`).
+    struct ArchiveEntry: Decodable, Equatable, Identifiable {
+        let id: Int
+        let rootId: String
+        let text: String
+        let leaves: Int
+        /// Milliseconds; `nil` = unknown.
+        let doneAt: Double?
+        let archivedAt: Double
+        /// `main` (the chat's agent) · `auto` (archived by the server).
+        let by: String
+
+        private enum CodingKeys: String, CodingKey { case id, rootId, text, leaves, doneAt, archivedAt, by }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            let id = c.int(.id)
+            let rootId = c.str(.rootId)
+            guard id > 0, !rootId.isEmpty else {
+                throw DecodingError.dataCorruptedError(forKey: .id, in: c, debugDescription: "Archive entry without id")
+            }
+            self.id = id
+            self.rootId = rootId
+            text = c.str(.text)
+            leaves = max(0, c.int(.leaves))
+            let done = c.dbl(.doneAt)
+            doneAt = done > 0 ? done : nil
+            archivedAt = max(0, c.dbl(.archivedAt))
+            by = c.str(.by) == "auto" ? "auto" : "main"
+        }
+    }
+
+    private struct MaybeEntry: Decodable {
+        let entry: ArchiveEntry?
+        init(from decoder: Decoder) throws { entry = try? ArchiveEntry(from: decoder) }
+    }
+
+    private struct MaybeHit: Decodable {
+        let hit: Hit?
+        init(from decoder: Decoder) throws { hit = try? Hit(from: decoder) }
+    }
+
+    /// The archive route's response (`GET /api/chats/:id/agenda/archive`) — with `q` also the search hits.
+    struct ArchivePage: Decodable {
+        let entries: [ArchiveEntry]
+        let more: Bool
+        let total: Int
+        let hits: [Hit]
+        let hitsMore: Bool
+
+        private enum CodingKeys: String, CodingKey { case entries, more, total, hits, hitsMore }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            entries = c.list(.entries, MaybeEntry.self).compactMap(\.entry)
+            more = c.bool(.more)
+            total = max(0, c.int(.total))
+            hits = c.list(.hits, MaybeHit.self).compactMap(\.hit)
+            hitsMore = c.bool(.hitsMore)
+        }
     }
 }

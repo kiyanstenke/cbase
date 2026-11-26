@@ -12,6 +12,13 @@
 //                                             project — the name case-insensitive, resolved in the workspace of the chat read;
 //                                             the response says under `filter` that it is filtered and how many items the
 //                                             whole agenda has
+//   GET …/agenda?open=1                       only the unfinished points (operations.js openOnly) — the agent's default view;
+//                                             the response names under `hidden` how many finished leaves it left out
+//   GET …/agenda?point=<id>                   only the subtree of this point, every status — active or from the archive
+//                                             (`point: { id, archived }`)
+//   GET /api/chats/:id/agenda/archive         the archive: one entry per archived subtree, newest first (`before`, `limit`
+//                                             ≤ 100, default 30) — with `q` additionally the search hits over the active tree
+//                                             AND the archive (operations.js searchAgenda); `chatId` reads another chat
 //   PUT /api/chats/:id/agenda                 one atomic change (agenda/operations.js) — ONLY the main agent of this coding
 //                                             chat (communication/sender.js senderOf === "coding")
 //   POST /api/chats/:id/agenda/upkeep         the agenda keeper brings it up to date (agenda/upkeep.js, tool
@@ -28,7 +35,7 @@
 import { NEXT, readBody, send } from "../runtime/http.js";
 import * as store from "../store.js";
 import { T } from "../i18n.js";
-import { AgendaError, nextStep, agendaCounter, onlyProject, findProject } from "./operations.js";
+import { AgendaError, nextStep, agendaCounter, onlyProject, findProject, openOnly, subtreeOf, searchAgenda } from "./operations.js";
 import { changeAgenda, agendaView } from "./change.js";
 import { maintainAgenda } from "./upkeep.js";
 import { senderOf } from "../communication/sender.js";
@@ -64,15 +71,58 @@ function projectsOf(workspaceId) {
   return new Map((store.getWorkspace(workspaceId)?.projects || []).map((p) => [p.id, p.name]));
 }
 
-// The response of an agenda read, with the read filter `project` (id or name) — `{ agenda, filter? }` or `{ error }`.
-function read(agenda, workspaceId, projectValue) {
+// The response of an agenda read — `{ agenda, filter?, hidden?, point? }` or `{ error }`. In this order: `point` (the subtree of
+// one point, active or archived — then the other two do not apply), the read filter `project` (id or name), `open` (only the
+// unfinished points). The counter is that of the agenda read (after `project`, before `open` — the hidden ones still count).
+function read(agenda, workspaceId, { project: projectValue = null, open = false, point = "" } = {}) {
   const projects = projectsOf(workspaceId);
+  const counter = agendaCounter(agenda);
+  const id = String(point ?? "").trim();
+  if (id) {
+    const active = subtreeOf(agenda.steps, id);
+    if (active) return { agenda: { ...agendaView({ ...agenda, steps: active }, projects), counter }, point: { id, archived: false } };
+    const entry = store.agendaArchiveEntryOf(agenda.chatId, id);
+    const part = entry && subtreeOf(entry.points, id);
+    if (!part) return { error: T`unknown id “${id}” — neither in the agenda nor in its archive.` };
+    return { agenda: { ...agendaView({ ...agenda, steps: part }, projects), counter }, point: { id, archived: true, archivedAt: entry.archivedAt, by: entry.by } };
+  }
+  let part = agenda;
+  let filter = null;
   const value = String(projectValue ?? "").trim();
-  if (!value) return { agenda: agendaView(agenda, projects) };
-  const r = findProject(value, projects);
-  if (r.error) return { error: T`project: ${r.error}.` };
-  const part = onlyProject(agenda, r.project.id);
-  return { agenda: agendaView(part, projects), filter: { project: r.project, points: part.steps.length, from: (agenda.steps || []).length } };
+  if (value) {
+    const r = findProject(value, projects);
+    if (r.error) return { error: T`project: ${r.error}.` };
+    part = onlyProject(agenda, r.project.id);
+    filter = { project: r.project, points: part.steps.length, from: (agenda.steps || []).length };
+  }
+  // `open` filters the RESPONSE: the computed status and done/total of a kept parent stay those of its whole subtree.
+  const view = agendaView(part, projects);
+  if (!open) return { agenda: view, ...(filter ? { filter } : {}) };
+  const r = openOnly(view);
+  return { agenda: r.agenda, ...(filter ? { filter } : {}), hidden: r.hidden };
+}
+
+const flag = (v) => ["1", "true", "yes"].includes(String(v ?? "").toLowerCase());
+const readOptions = (url) => ({ project: url.searchParams.get("project"), open: flag(url.searchParams.get("open")), point: url.searchParams.get("point") });
+
+export const AGENDA_ARCHIVE_PAGE = Object.freeze({ standard: 30, max: 100 });
+
+// The archive of a chat: one row per entry (without its points — those come with ?point=), newest first, paged by entry id;
+// with `q` the search hits over active tree and archive.
+function archiveRead(agenda, url) {
+  const before = Number(url.searchParams.get("before")) || null;
+  const asked = Number(url.searchParams.get("limit")) || AGENDA_ARCHIVE_PAGE.standard;
+  const limit = Math.max(1, Math.min(AGENDA_ARCHIVE_PAGE.max, Math.floor(asked)));
+  const page = store.agendaArchive(agenda.chatId, { before, limit: limit + 1 });
+  const entries = page.slice(0, limit).map(({ points: _p, chatId: _c, parentId: _pa, afterId: _a, ...e }) => e);
+  const out = { entries, more: page.length > limit, total: store.agendaArchiveCount(agenda.chatId) };
+  const q = String(url.searchParams.get("q") ?? "").trim();
+  if (q) {
+    const r = searchAgenda(agenda.steps, store.agendaArchive(agenda.chatId), q);
+    out.hits = r.hits;
+    out.hitsMore = r.more;
+  }
+  return out;
 }
 
 // The overview: every readable chat of the workspace with a non-empty agenda, active before archived, within that the most
@@ -108,13 +158,24 @@ export async function agendaChatRoutes(ctx) {
       if (!target) return send(res, 404, { error: T("Chat not found") });
       const reason = readableReason(chat, target);
       if (reason) return send(res, 403, { error: reason });
-      const g = read(store.readAgenda(target.id), target.workspaceId, project);
+      const { agenda, ...g } = read(store.readAgenda(target.id), target.workspaceId, readOptions(url));
       if (g.error) return send(res, 400, { error: g.error });
-      return send(res, 200, { chat: chatHeader(target, projectsOf(target.workspaceId)), agenda: g.agenda, ...(g.filter ? { filter: g.filter } : {}), keepsAgenda: store.chatKeepsAgenda(target), note: NOTE });
+      return send(res, 200, { chat: chatHeader(target, projectsOf(target.workspaceId)), agenda, ...g, keepsAgenda: store.chatKeepsAgenda(target), note: NOTE });
     }
-    const g = read(store.readAgenda(id), chat.workspaceId, project);
+    const { agenda, ...g } = read(store.readAgenda(id), chat.workspaceId, readOptions(url));
     if (g.error) return send(res, 400, { error: g.error });
-    return send(res, 200, { agenda: g.agenda, ...(g.filter ? { filter: g.filter } : {}), keepsAgenda: store.chatKeepsAgenda(chat) });
+    return send(res, 200, { agenda, ...g, keepsAgenda: store.chatKeepsAgenda(chat) });
+  }
+  if (sub === "/agenda/archive" && m === "GET") {
+    const targetId = String(url.searchParams.get("chatId") || "").trim();
+    if (targetId && targetId !== id) {
+      const target = store.getChat(targetId);
+      if (!target) return send(res, 404, { error: T("Chat not found") });
+      const reason = readableReason(chat, target);
+      if (reason) return send(res, 403, { error: reason });
+      return send(res, 200, { chat: chatHeader(target, projectsOf(target.workspaceId)), ...archiveRead(store.readAgenda(target.id), url), note: NOTE });
+    }
+    return send(res, 200, archiveRead(store.readAgenda(id), url));
   }
   if (sub === "/agenda" && m === "PUT") {
     if (!store.chatKeepsAgenda(chat)) return send(res, 409, { error: NO_AGENDA() });
@@ -130,9 +191,12 @@ export async function agendaChatRoutes(ctx) {
       const r = changeAgenda(id, chat.workspaceId, input);
       // Without effect (same state, say `steps: []` or a status that already held): no new version, no event — otherwise the
       // rail would show "updated just now" although nothing changed. The model is told.
-      if (r.unchanged) return send(res, 200, { ok: true, unchanged: true, agenda: r.agenda });
-      // An erase takes the whole subtree along — the response names which items went.
-      return send(res, 200, { ok: true, agenda: r.agenda, ...(r.deleted.length ? { deleted: r.deleted } : {}) });
+      if (r.unchanged) return send(res, 200, { ok: true, unchanged: true, agenda: r.agenda, touched: [], next: nextStep(r.agenda) });
+      // An erase takes the whole subtree along — the response names which items went; likewise archive and restore. `touched`
+      // = the points whose stored form changed (the tool answers with only these).
+      return send(res, 200, { ok: true, agenda: r.agenda, touched: r.touched, next: nextStep(r.agenda),
+        ...(r.deleted.length ? { deleted: r.deleted } : {}), ...(r.archived.length ? { archived: r.archived } : {}),
+        ...(r.restored.length ? { restored: r.restored } : {}) });
     } catch (e) {
       if (e instanceof AgendaError) return send(res, 400, { error: e.message });
       if (e?.code === "archived") return send(res, 409, { error: ARCHIVE_TEXT(), archived: true });

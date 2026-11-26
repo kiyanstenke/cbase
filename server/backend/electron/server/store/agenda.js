@@ -43,7 +43,61 @@ function initAgendaSchema() {
       version INTEGER NOT NULL DEFAULT 0,
       changed_at INTEGER NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS chat_agenda_archive (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      chat_id TEXT NOT NULL,
+      root_id TEXT NOT NULL,
+      parent_id TEXT,
+      after_id TEXT,
+      text TEXT NOT NULL DEFAULT '',
+      points TEXT NOT NULL DEFAULT '[]',
+      leaves INTEGER NOT NULL DEFAULT 0,
+      done_at INTEGER,
+      archived_at INTEGER NOT NULL,
+      by TEXT NOT NULL DEFAULT 'main'
+    );
+    CREATE INDEX IF NOT EXISTS chat_agenda_archive_chat ON chat_agenda_archive (chat_id, id);
   `);
+}
+
+// ── The archive ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// A finished subtree leaves the active tree (agenda/operations.js `archive`, by the main agent or the hourly sweep,
+// agenda/auto-archive.js) and becomes ONE row here: its points in preorder as in `chat_agenda`, the place it came from
+// (`parent_id`, `after_id` = the sibling before it) for `restore`. Ids are never reused, so a restored subtree never collides.
+// Unbounded per chat; falls with the chat (deleteAgenda), goes along on a fork (copyAgenda). Written only inside the
+// transaction of agendaChange (the `archive`/`restore` lists of the computation) — never on its own.
+const AGENDA_ARCHIVE_BY = Object.freeze(["main", "auto"]);
+
+function archiveRowToEntry(r) {
+  return {
+    id: Number(r.id), chatId: r.chat_id, rootId: r.root_id, parentId: r.parent_id || null, afterId: r.after_id || null,
+    text: r.text || "", points: stepsFrom(r.points), leaves: Number(r.leaves) || 0, doneAt: Number(r.done_at) || null,
+    archivedAt: Number(r.archived_at) || 0, by: AGENDA_ARCHIVE_BY.includes(r.by) ? r.by : "main",
+  };
+}
+
+/** The archive entries of a chat, newest first — `before` = an entry id (paging), `limit` (default all). */
+function agendaArchive(chatId, { before = null, limit = null } = {}) {
+  const b = Number(before);
+  const rows = db.prepare(`SELECT * FROM chat_agenda_archive WHERE chat_id = ? ${Number.isInteger(b) && b > 0 ? "AND id < ?" : ""}
+    ORDER BY id DESC ${Number.isInteger(limit) && limit > 0 ? `LIMIT ${limit}` : ""}`)
+    .all(...[String(chatId), ...(Number.isInteger(b) && b > 0 ? [b] : [])]);
+  return rows.map(archiveRowToEntry);
+}
+
+/** How many archive entries a chat has (the clients show "Archive (n)"). */
+function agendaArchiveCount(chatId) {
+  return Number(db.prepare("SELECT COUNT(*) AS n FROM chat_agenda_archive WHERE chat_id = ?").get(String(chatId))?.n) || 0;
+}
+
+/** The archive entry whose subtree holds point `pointId` — or null. */
+function agendaArchiveEntryOf(chatId, pointId) {
+  const id = String(pointId || "");
+  if (!id) return null;
+  const root = db.prepare("SELECT * FROM chat_agenda_archive WHERE chat_id = ? AND root_id = ? ORDER BY id DESC LIMIT 1").get(String(chatId), id);
+  if (root) return archiveRowToEntry(root);
+  for (const e of agendaArchive(chatId)) if (e.points.some((p) => p.id === id)) return e;
+  return null;
 }
 
 // The mark of the agenda keeper on a point (display only): `{ agentId, runId, at, kind: "fresh" | "status", prior }`
@@ -69,6 +123,9 @@ function stepFrom(s) {
   const status = AGENDA_STATUS.includes(s.status) ? s.status : "open";
   const upkeep = upkeepFrom(s.upkeep);
   const upkeepLock = AGENDA_STATUS.includes(s.upkeepLock) ? s.upkeepLock : null;
+  // `restoredAt`: the point came back from the archive (operation `restore`) — the sweep leaves it alone for a while
+  // (agenda/auto-archive.js). Like the keeper's fields only present when set.
+  const restoredAt = Number(s.restoredAt) || 0;
   return {
     id: s.id,
     parent: typeof s.parent === "string" && s.parent ? s.parent : null,
@@ -81,6 +138,7 @@ function stepFrom(s) {
     doneAt: status === "done" ? (Number(s.doneAt) || null) : null,
     ...(upkeep ? { upkeep } : {}),
     ...(upkeepLock ? { upkeepLock } : {}),
+    ...(restoredAt ? { restoredAt } : {}),
   };
 }
 
@@ -230,6 +288,14 @@ function agendaChange(chatId, change, { now = Date.now() } = {}) {
     // changed — a new version nevertheless, otherwise every client would keep the old explanation.
     if (equal && fresh.newRevision !== true) return { ...old, unchanged: true };
     const version = old.version + 1;
+    // The archive moves in the SAME transaction (agenda/operations.js `archive` / `restore`): a subtree is never in both
+    // places, nor in neither.
+    for (const e of fresh.archive || []) {
+      db.prepare(`INSERT INTO chat_agenda_archive (chat_id, root_id, parent_id, after_id, text, points, leaves, done_at, archived_at, by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(id, String(e.rootId), e.parentId ?? null, e.afterId ?? null, String(e.text ?? ""),
+        JSON.stringify(e.points || []), Number(e.leaves) || 0, Number(e.doneAt) || null, now, AGENDA_ARCHIVE_BY.includes(e.by) ? e.by : "main");
+    }
+    for (const entryId of fresh.restore || []) db.prepare("DELETE FROM chat_agenda_archive WHERE chat_id = ? AND id = ?").run(id, Number(entryId));
     db.prepare(`INSERT INTO chat_agenda (chat_id, title, description, steps, next_seq, version, changed_at) VALUES (?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(chat_id) DO UPDATE SET title = excluded.title, description = excluded.description, steps = excluded.steps,
         next_seq = excluded.next_seq, version = excluded.version, changed_at = excluded.changed_at`)
@@ -241,6 +307,7 @@ function agendaChange(chatId, change, { now = Date.now() } = {}) {
 /** Delete the row of a chat (its closing path, chats/erase.js). */
 function deleteAgenda(chatId) {
   db.prepare("DELETE FROM chat_agenda WHERE chat_id = ?").run(String(chatId));
+  db.prepare("DELETE FROM chat_agenda_archive WHERE chat_id = ?").run(String(chatId));
 }
 
 /**
@@ -256,20 +323,36 @@ function copyAgenda(ofChatId, byChatId) {
   const r = db.prepare("SELECT * FROM chat_agenda WHERE chat_id = ?").get(String(ofChatId));
   if (!r) return;
   let steps = r.steps;
+  const marked = (s) => Boolean(s) && typeof s === "object" && !Array.isArray(s) && Object.hasOwn(s, "upkeep");
+  const withoutMark = (s) => {
+    if (!marked(s)) return s;
+    const { upkeep: _marking, ...without } = s;
+    return without;
+  };
   try {
     const raw = JSON.parse(r.steps || "[]");
-    const marked = (s) => Boolean(s) && typeof s === "object" && !Array.isArray(s) && Object.hasOwn(s, "upkeep");
     // Only rewrite if a mark is there — otherwise the row goes along byte for byte.
-    if (Array.isArray(raw) && raw.some(marked)) {
-      steps = JSON.stringify(raw.map((s) => {
-        if (!marked(s)) return s;
-        const { upkeep: _marking, ...without } = s;
-        return without;
-      }));
-    }
+    if (Array.isArray(raw) && raw.some(marked)) steps = JSON.stringify(raw.map(withoutMark));
   } catch { /* unreadable: as it is — the reader repairs (stepsFrom), as with the original */ }
-  db.prepare(`INSERT INTO chat_agenda (chat_id, title, description, steps, next_seq, version, changed_at) VALUES (?, ?, ?, ?, ?, ?, ?)
+  const copied = db.prepare(`INSERT INTO chat_agenda (chat_id, title, description, steps, next_seq, version, changed_at) VALUES (?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(chat_id) DO NOTHING`).run(String(byChatId), r.title, r.description, steps, r.next_seq, r.version, r.changed_at);
+  // The archive goes along (a restore in the fork needs it), in its order — only with a fresh copy (a repeated one would double
+  // it) and, like the active points, without the keeper's marks.
+  if (!Number(copied?.changes)) return;
+  for (const e of db.prepare("SELECT * FROM chat_agenda_archive WHERE chat_id = ? ORDER BY id").all(String(ofChatId))) {
+    let points = e.points;
+    try {
+      const raw = JSON.parse(e.points || "[]");
+      if (Array.isArray(raw) && raw.some(marked)) points = JSON.stringify(raw.map(withoutMark));
+    } catch { /* unreadable: as it is */ }
+    db.prepare(`INSERT INTO chat_agenda_archive (chat_id, root_id, parent_id, after_id, text, points, leaves, done_at, archived_at, by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(String(byChatId), e.root_id, e.parent_id, e.after_id, e.text, points, e.leaves, e.done_at, e.archived_at, e.by);
+  }
+}
+
+/** The chats that have an agenda row (the sweep, agenda/auto-archive.js). */
+function agendaChatIds() {
+  return db.prepare("SELECT chat_id FROM chat_agenda ORDER BY chat_id").all().map((r) => r.chat_id);
 }
 
 /** All agendas of the chats of a workspace, most recently changed first — for the overview. */
@@ -280,4 +363,4 @@ function agendasInWorkspace(workspaceId) {
 
 // Wrapper export: via the facade (store.js `export *`), never imported directly (import-direction.test.js).
 export { AGENDA_STATUS, chatKeepsAgenda, initAgendaSchema, readAgenda, agendaIsEmpty, agendaChange, deleteAgenda, copyAgenda, agendasInWorkspace,
-  agendaPreorder, agendaTree };
+  agendaPreorder, agendaTree, AGENDA_ARCHIVE_BY, agendaArchive, agendaArchiveCount, agendaArchiveEntryOf, agendaChatIds };

@@ -44,7 +44,7 @@ export function agendaTreeOf(id) {
   ];
   return {
     chatId: id, title: "Zwei Vorhaben", description: "## Ziel\n\nShop und Blog — Agenda-Beschreibung-Probe.", steps,
-    version: 3, changedAt: 1_790_000_000_000, counter: { open: 2, in_work: 1, done: 3 },
+    version: 3, changedAt: 1_790_000_000_000, counter: { open: 2, in_work: 1, done: 3 }, archived: 0,
   };
 }
 
@@ -699,7 +699,7 @@ export async function routesChat(ctx) {
       }
       if (agenda && method === "GET") {
         return json(res, 200, {
-          agenda: { chatId: agenda[1], title: "", description: "", steps: [], version: 0, changedAt: null, counter: { open: 0, in_work: 0, done: 0 } },
+          agenda: { chatId: agenda[1], title: "", description: "", steps: [], version: 0, changedAt: null, counter: { open: 0, in_work: 0, done: 0 }, archived: 0 },
           keepsAgenda: true,
         });
       }

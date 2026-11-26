@@ -65,7 +65,7 @@ const agenda = (o = {}) => ({ chatId: CHAT, title: "Auth rework", description: "
 // status is open, doneAt only when done, changedAt falls back to createdAt, a foreign chat never applies, a missing one is the asked one.
 const RESPONSES = [
   { agenda: agenda({
-    version: 3, changedAt: 500,
+    version: 3, changedAt: 500, archived: 4,
     steps: [
       step({ id: "s1", text: "One", status: "in_work", note: "running since today" }),
       { text: "without id", status: "open" },
@@ -241,7 +241,7 @@ func rowsOf(_ a: Agenda?, _ deviation: [String: Bool]) -> [Any] {
 }
 func view(_ a: Agenda?) -> [String: Any] {
     let agendaOut: Any = a.map { a in
-        ["chatId": a.chatId, "title": a.title, "description": a.description, "version": a.version, "changedAt": emptyOr(a.changedAt),
+        ["chatId": a.chatId, "title": a.title, "description": a.description, "version": a.version, "changedAt": emptyOr(a.changedAt), "archived": a.archived,
          "steps": a.steps.map { s in
             ["id": s.id, "parent": s.parent.map { $0 as Any } ?? NSNull(), "depth": s.depth, "text": s.text, "note": s.note,
              "status": s.status, "subitems": s.subitems, "done": s.done, "total": s.total,

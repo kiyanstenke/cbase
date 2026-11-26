@@ -6,6 +6,25 @@ versions follow [Semantic Versioning](https://semver.org/) as [VERSIONING.md](VE
 
 ## [Unreleased]
 
+### Added
+
+- The agenda of a coding chat gets an archive. A finished subtree can leave the active tree with the new `archive`
+  operation and come back to its old place with `restore`. Top-level items that have been finished for a week go to the
+  archive on their own. `GET /api/chats/:id/agenda/archive` lists the archive page by page and searches the active items
+  and the archive (`q`). `GET /api/chats/:id/agenda` takes `open=1` (only unfinished items) and `point=<id>` (one
+  subtree, also an archived one), and the agenda carries the number of archived subtrees (`archived`).
+- Web and iOS hide finished agenda items by default; a footer row "n done" shows them. A search field covers the
+  active items and the archive, and an "Archive" section at the end lists archived subtrees and opens them read-only.
+
+### Changed
+
+- Agents read only the unfinished part of an agenda by default (`cbase_agenda` with `done: true` for everything, `id`
+  for one subtree, `archive` and `search` for the archive). The same applies to the agenda block at the start of a
+  session. Writing (`cbase_agenda_write`, `cbase_agenda_maintain`) answers with only the items it touched, the next
+  step and the counter instead of the whole agenda. Together this cuts what a long agenda costs per read and per check
+  from tens of thousands of tokens to a few hundred.
+- An agenda holds up to 500 active items (was 200); the archive does not count.
+
 ### Fixed
 
 - When an agent starts a dynamic workflow or a graph workflow in the background, the start answer now tells it how to write to

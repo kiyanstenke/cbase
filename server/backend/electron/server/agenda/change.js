@@ -44,7 +44,7 @@ function upkeepRowsFor(chatId, agenda) {
  * agenda/operations.js onlyProject).
  */
 export function agendaView(agenda, projects = null) {
-  return agendaResponse(agenda, projects, { upkeepRows: upkeepRowsFor(agenda?.chatId, agenda) });
+  return agendaResponse(agenda, projects, { upkeepRows: upkeepRowsFor(agenda?.chatId, agenda), archived: agenda?.chatId ? store.agendaArchiveCount(agenda.chatId) : 0 });
 }
 
 /**
@@ -56,7 +56,7 @@ export function agendaView(agenda, projects = null) {
  *          its changes `[{ pointId, kind, prior, after }]` (empty otherwise)
  * @throws  AgendaError (computation, keeper check) or an error with `code` (store) — then nothing is written and nothing sent
  */
-export function changeAgenda(chatId, workspaceId, input, { now = Date.now(), originator = "main", keeper = null } = {}) {
+export function changeAgenda(chatId, workspaceId, input, { now = Date.now(), originator = "main", keeper = null, by = "main" } = {}) {
   if (!AGENDA_ORIGINATOR.includes(originator)) throw new Error(`changeAgenda: unknown originator ${JSON.stringify(originator)}`);
   if (originator === "keeper" && !(keeper?.agentId && keeper?.runId)) throw new Error("changeAgenda: the keeper needs agentId and runId");
   const id = String(chatId);
@@ -81,7 +81,7 @@ export function changeAgenda(chatId, workspaceId, input, { now = Date.now(), ori
       changed = p.changed.map(({ stage: _stage, ...g }) => g);
       return computation;
     }
-    computation = applyOps(old, input, now, { projects });
+    computation = applyOps(old, input, now, { projects, archiveEntryOf: (pid) => store.agendaArchiveEntryOf(id, pid), by });
     // Always pass the standing rows — WHO sets an outcome or a lock (only the main agent) is decided in ONE place:
     // bringAlongWriter.
     const n = bringAlongWriter(old, computation, input, { originator, rows: store.agendaUpkeepStanding(id) });
@@ -104,10 +104,17 @@ export function changeAgenda(chatId, workspaceId, input, { now = Date.now(), ori
   const agenda = agendaView(result, projects);
   if (!result.unchanged) sse(id, { type: "harness", subtype: "agenda", chatId: id, agenda });
   const old = new Set((prior?.steps || []).map((s) => s.id));
+  // `touched` = the points whose stored form changed or that are new (a restored subtree counts with all its points) — the
+  // write answer of the tools names only these (mcp/tools/agenda.js), not the whole tree.
+  const before = new Map((prior?.steps || []).map((s) => [s.id, JSON.stringify(s)]));
+  const touched = result.unchanged ? [] : (computation?.steps || []).filter((s) => before.get(s.id) !== JSON.stringify(s)).map((s) => s.id);
   return {
     agenda,
     unchanged: Boolean(result.unchanged),
     deleted: computation?.deleted || [],
+    archived: computation?.archived || [],
+    restored: computation?.restored || [],
+    touched,
     fresh: (computation?.steps || []).filter((s) => !old.has(s.id)).map((s) => s.id),
     changed: result.unchanged ? [] : changed,
   };

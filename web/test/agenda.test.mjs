@@ -22,7 +22,13 @@
 //       from translated keys; the panel draws the ring only on a marked point, absolute around the character (the
 //       row stays one row), with the explanation as title and sr-only; `afterwards` only with a known value
 //       (otherwise `null`, the marking stays), the explanation ends with its word ("… afterwards taken back by the
-//       main agent"), `open` and unknown say nothing.
+//       main agent"), `open` and unknown say nothing;
+//   (i) navigation: done points are hidden by default (`visibleRows(…, false)`) with their whole subtree, a parent with
+//       open leaves stays; the footer counts done LEAVES (`doneLeaves`); "show done" is remembered only as "1"
+//       (`readShowDone`, in try/catch); the search covers the whole active tree, done points and notes included,
+//       case-insensitive, with the ancestor path; a jump (`revealPoint`) unfolds the ancestors (as deviations only) and
+//       asks for done when the point or an ancestor is done; `normAgenda` reads `archived` (default 0), `normArchivePage`
+//       reads entries and hits tolerant; the panel has exactly ONE input (the search), wires the footer, search and archive.
 //
 // Counter-tests (one sabotage each, shown red):
 //   src/lib/agenda.ts: `return fresh.version > old.version ? fresh : old;` -> `return fresh;`                      => (c) red
@@ -41,6 +47,16 @@
 //   src/components/chat/AgendaPanel.tsx: `{upkeep ? <UpkeepMarker …/> : <Marker …/>}` -> always `<Marker …/>`   => (h) red
 //   src/lib/api/agenda.ts: normUpkeep `afterwards: null` (binding red too); src/lib/agenda.ts: one word of
 //   UPKEEP_AFTERWARDS_WORD changed (binding red too); AgendaPanel.tsx: explanation without `afterwards`            => (h) red
+//   src/lib/agenda.ts: the line `if (!showDone && p.status === "done") { hidden.add(p.id); continue; }` removed
+//     (done points stay)                                                                                       => (i) red
+//   src/lib/agenda.ts: in that line `continue` without `hidden.add(p.id)` (children of a done point appear)       => (i) red
+//   src/lib/agenda.ts: doneLeaves without `s.subitems === 0` (a done parent counts)                            => (i) red
+//   src/lib/agenda.ts: searchSteps matches `p.text` only (not the note) or without toLocaleLowerCase           => (i) red
+//   src/lib/agenda.ts: revealPoint `fresh[a.id] = true` for every ancestor (a default-open one is remembered) => (i) red
+//   src/lib/agenda.ts: revealPoint without `if (a.status === "done") needsDone = true;`                        => (i) red
+//   src/lib/api/agenda.ts: `archived: whole(a.archived),` -> `archived: 0,`                                    => (i) red
+//   src/components/chat/AgendaPanel.tsx: `visibleRows(agenda.steps, deviations, showDone)` without showDone   => (f) red
+//   src/components/chat/chatAgenda.ts: `readDone` without try/catch                                           => (f) red
 //
 // Run:  node --test web/test/agenda.test.mjs
 import { test } from "node:test";
@@ -74,7 +90,7 @@ const step = (o = {}) => ({ id: "s1", text: "Measure", note: "", status: "open",
 const agenda = (o = {}) => ({ chatId: "c1", title: "Plan", description: "", steps: [], version: 1, changedAt: 100, ...o });
 
 test("(a) normAgenda: default per field, step without id drops out, unknown status is open, never written is recognizable", () => {
-  assert.deepEqual(A.normAgenda(undefined, "c1"), { chatId: "c1", title: "", description: "", steps: [], version: 0, changedAt: null });
+  assert.deepEqual(A.normAgenda(undefined, "c1"), { chatId: "c1", title: "", description: "", steps: [], version: 0, changedAt: null, archived: 0 });
   const a = A.normAgenda({
     chatId: "c1", title: "T", description: "## Goal", version: 3, changedAt: 500,
     steps: [
@@ -246,7 +262,9 @@ test("(f) wiring: section after Git, branch with AgendaPanel, the shell passes e
   assert.match(hook, /agendaFromEvent\(evt, chatId\)/);
   assert.match(hook, /if \(chatRef\.current !== chatId\) return;/, "a response for the old chat is discarded");
   const panel = withoutComments(read("components/chat/AgendaPanel.tsx"));
-  for (const forbidden of ["method:", "PUT", "<textarea", "<input", "contentEditable"]) assert.ok(!panel.includes(forbidden), `the panel edits: ${forbidden}`);
+  for (const forbidden of ["method:", "PUT", "<textarea", "contentEditable"]) assert.ok(!panel.includes(forbidden), `the panel edits: ${forbidden}`);
+  assert.equal((panel.match(/<input\b/g) || []).length, 1, "exactly one input: the search field");
+  assert.match(panel, /<input ref=\{searchField\} type="search" data-agenda-search /, "the one input is the search");
   assert.match(panel, /@container\/agenda/, "container queries, no window queries");
   assert.ok(!/rounded-xl bg-panel/.test(panel), "no card per row");
   // Headings only: note and description never appear in the flow, only behind the character, as markdown in the cb-pop.
@@ -260,8 +278,9 @@ test("(f) wiring: section after Git, branch with AgendaPanel, the shell passes e
   assert.match(panel, /closest\?\.\("\[data-agenda-pop\]"\)/, "click outside through closest, no catcher");
   assert.ok(!/fixed inset-0/.test(panel), "no fixed-inset-0 catcher");
   assert.ok(!/agendaGroups/.test(panel), "the groups are gone; the tree is the view");
-  assert.match(panel, /visibleRows\(agenda\.steps, deviations\)/);
-  assert.match(panel, /const \[deviations, flip\] = useAgendaFold\(chatId\);/);
+  assert.match(panel, /visibleRows\(agenda\.steps, deviations, showDone\)/, "done points hidden unless shown");
+  assert.match(panel, /const \[deviations, flip, replaceFold\] = useAgendaFold\(chatId\);/);
+  assert.match(panel, /const \[showDone, setShowDone\] = useAgendaDone\(chatId\);/);
   assert.match(panel, /paddingLeft: z\.stage \* INSET_PX/);
   assert.match(panel, /const INSET_PX = 12;/, "indent 12 px per stage");
   assert.match(panel, /className=\{`min-w-0 flex-1 truncate /, "the point text is one line, truncated");
@@ -269,7 +288,10 @@ test("(f) wiring: section after Git, branch with AgendaPanel, the shell passes e
   const fold = hook.slice(hook.indexOf("function readFold("));
   assert.match(fold, /try \{ return readDeviations\(window\.localStorage\.getItem\(foldKey\(chatId\)\)\); \}\s*catch \{ return \{\}; \}/);
   assert.match(fold, /try \{\s*if \(Object\.keys\(deviations\)\.length\) window\.localStorage\.setItem\(foldKey\(chatId\), JSON\.stringify\(deviations\)\);\s*else window\.localStorage\.removeItem\(foldKey\(chatId\)\);\s*\} catch/);
-  assert.equal((hook.match(/localStorage/g) || []).length, 3, "no localStorage access outside the two protected places");
+  const done = hook.slice(hook.indexOf("function readDone("));
+  assert.match(done, /try \{ return readShowDone\(window\.localStorage\.getItem\(doneKey\(chatId\)\)\); \}\s*catch \{ return false; \}/);
+  assert.match(done, /try \{\s*if \(shown\) window\.localStorage\.setItem\(doneKey\(chatId\), "1"\);\s*else window\.localStorage\.removeItem\(doneKey\(chatId\)\);\s*\} catch/);
+  assert.equal((hook.match(/localStorage/g) || []).length, 6, "no localStorage access outside the four protected places");
 });
 
 test("(g) every sentence of the panel and of the agenda branch of the bar is in i18n-de.ts", () => {
@@ -328,4 +350,80 @@ test("(h) agenda keeper: `upkeep` only with a known kind, `prior` only with stat
   assert.match(panel, /upkeepExplanation\(p\.upkeep, now\)/);
   assert.match(panel, /upkeep\.afterwards \? t\(upkeep\.afterwards\) : ""/, "the explanation says what happened afterwards (translated)");
   assert.ok(!/#[0-9a-fA-F]{3,6}\b/.test(marker), "no fixed color values");
+});
+
+test("(i) navigation: done hidden by default, the footer counts done leaves, search over the whole tree with paths, a jump reveals", () => {
+  // Hidden: s2 (done leaf) and the done subtree s7 with s8, s9; s1 stays (open leaves below) and keeps its counter.
+  assert.deepEqual(view(L.visibleRows(TREE, {}, false)), ["s1:0+", "s3:1+", "s4:2+", "s5:3+", "s6:3", "s10:0"],
+    "done points are missing with their whole subtree; a parent with open leaves stays");
+  assert.deepEqual(view(L.visibleRows(TREE, { s7: true }, false)), ["s1:0+", "s3:1+", "s4:2+", "s5:3+", "s6:3", "s10:0"],
+    "an unfolded done point stays hidden while done is hidden");
+  assert.deepEqual(view(L.visibleRows(TREE, { s3: false }, false)), ["s1:0+", "s3:1-", "s10:0"], "folding still applies");
+  assert.deepEqual(view(L.visibleRows([point("d", null, 0, "done", 1), point("d1", "d", 1, "open"), point("e", null, 0, "open")], {}, false)), ["e:0"],
+    "the subtree goes with a hidden done point, whatever its children say");
+  assert.deepEqual(view(L.visibleRows(TREE, {}, true)), view(L.visibleRows(TREE, {})), "shown: exactly the former view");
+  assert.equal(L.doneLeaves(TREE), 3, "s2, s8, s9 — the done parent s7 is not a step");
+  assert.equal(L.doneLeaves([]), 0);
+
+  assert.equal(L.doneKey("c1"), "cbase-agenda-done:c1");
+  assert.equal(L.readShowDone("1"), true);
+  for (const raw of [null, undefined, "", "0", "true", "{}"]) assert.equal(L.readShowDone(raw), false, `"${raw}" is the default (hidden)`);
+
+  // Search: text and note, case-insensitive, done points included, path = ancestor texts from the top.
+  const tree = TREE.map((p) => (p.id === "s6" ? { ...p, text: "Write Login form" } : p.id === "s8" ? { ...p, note: "the LOGIN token" } : p));
+  const hits = L.searchSteps(tree, "  login ");
+  assert.deepEqual(hits.map((h) => [h.point.id, h.path]), [["s6", ["s1", "s3", "s4", "s5"]], ["s8", ["s7"]]],
+    "the open leaf by its text, the done leaf by its note, in agenda order with its path");
+  assert.deepEqual(L.searchSteps(tree, "   "), [], "an empty query finds nothing");
+  assert.deepEqual(L.searchSteps([point("x", "gone", 1, "open", 0, { text: "Orphan" })], "orphan").map((h) => h.path), [[]], "an unknown parent: no path");
+
+  // Jump: s8 is done under the done s7 (default closed) -> unfold s7 as a deviation, ask for done.
+  assert.deepEqual(L.revealPoint(TREE, {}, "s8"), { deviations: { s7: true }, needsDone: true });
+  // s6 is open under open parents; their closed deviations are removed (default open), nothing else is remembered.
+  assert.deepEqual(L.revealPoint(TREE, { s3: false, s5: false, s10: true }, "s6"), { deviations: { s10: true }, needsDone: false });
+  assert.deepEqual(L.revealPoint(TREE, {}, "s2"), { deviations: {}, needsDone: true }, "a done leaf under an open parent asks for done only");
+  assert.equal(L.revealPoint(TREE, {}, "nope"), null);
+  const shown = L.revealPoint(TREE, { s3: false }, "s6");
+  assert.ok(L.visibleRows(TREE, shown.deviations, false).some((z) => z.point.id === "s6"), "after the jump the point is visible");
+  const done8 = L.revealPoint(TREE, {}, "s8");
+  assert.ok(L.visibleRows(TREE, done8.deviations, done8.needsDone).some((z) => z.point.id === "s8"));
+});
+
+test("(i) archive shape: `archived` on the agenda (default 0), archive pages and hits read tolerant", () => {
+  assert.equal(A.normAgenda({ archived: 4 }, "c1").archived, 4);
+  assert.equal(A.normAgenda({ archived: "4" }, "c1").archived, 0, "only a number counts");
+  assert.equal(A.normAgenda({}, "c1").archived, 0, "an older server: no archive");
+  const page = A.normArchivePage({
+    entries: [
+      { id: 7, rootId: "s4", text: "Login", leaves: 3, doneAt: 50, archivedAt: 60, by: "auto" },
+      { id: 6, text: "without root" },
+      { id: 5, rootId: "s1", text: "Old", archivedAt: 10, by: "someone" },
+    ],
+    more: true, total: 12,
+    hits: [
+      { id: "s6", text: "Form", status: "done", path: ["s1", "s4"], archived: true, entryId: 7 },
+      { id: "s9", text: "Active", status: "in_work", path: [], archived: false },
+      { text: "without id" },
+    ],
+    hitsMore: false,
+  });
+  assert.deepEqual(page.entries.map((e) => [e.id, e.rootId, e.leaves, e.doneAt, e.archivedAt, e.by]), [[7, "s4", 3, 50, 60, "auto"], [5, "s1", 0, null, 10, "main"]]);
+  assert.deepEqual([page.more, page.total, page.hitsMore], [true, 12, false]);
+  assert.deepEqual(page.hits.map((h) => [h.id, h.archived, h.entryId, h.path]), [["s6", true, 7, ["s1", "s4"]], ["s9", false, null, []]]);
+  assert.deepEqual(A.normArchivePage(null), { entries: [], more: false, total: 0, hits: [], hitsMore: false });
+  // The panel: footer, search, archive wired; the archive opens a point read-only through ?point=.
+  const panel = withoutComments(read("components/chat/AgendaPanel.tsx"));
+  assert.match(panel, /showDone \? t\("Hide done"\) : t\("\{n\} done", \{ n: doneCount \}\)/);
+  assert.match(panel, /const doneCount = doneLeaves\(agenda\.steps\);/);
+  assert.match(panel, /searchSteps\(agenda\.steps, query\)/, "the active tree is searched in the client");
+  assert.match(panel, /useAgendaArchiveSearch\(chatId, query, archivedCount, agenda\?\.version \?\? 0\)/);
+  assert.match(panel, /t\("Archive \(\{n\}\)", \{ n: count \}\)/);
+  assert.match(panel, /loadAgendaPoint\(chatId, rootId\)/);
+  const api = read("lib/api/agenda.ts");
+  assert.match(api, /\/agenda\/archive\$\{tail/);
+  assert.match(api, /\/agenda\?point=\$\{encodeURIComponent\(pointId\)\}/);
+  const hook = withoutComments(read("components/chat/chatAgenda.ts"));
+  assert.match(hook, /export const SEARCH_DEBOUNCE_MS = 250;/);
+  assert.match(hook, /r\.hits\.filter\(\(x\) => x\.archived\)/, "server hits only for the archive — the active ones come from the client (no duplicates)");
+  assert.match(hook, /\}, \[chatId, version, open\]\);/, "the archive is read afresh on every new revision (a restore plus an archive keeps the count)");
 });

@@ -30,4 +30,12 @@ let LocDEAgenda: [String: String] = [
     "edited by the main agent afterwards": "danach vom Hauptagenten bearbeitet",
     "taken back by the main agent afterwards": "danach vom Hauptagenten zurückgenommen",
     "taken over by the main agent afterwards": "danach vom Hauptagenten übernommen",
+    // Navigation: done points hidden, search, archive
+    "Hide done": "Erledigte ausblenden",
+    "Search the agenda": "Agenda durchsuchen",
+    "Searching…": "Suche läuft …",
+    "More matches — narrow the search.": "Weitere Treffer — Suche eingrenzen.",
+    "The archive could not be searched: {error}": "Das Archiv ließ sich nicht durchsuchen: {error}",
+    "Archive ({n})": "Archiv ({n})",
+    "The archive could not be loaded: {error}": "Das Archiv ließ sich nicht laden: {error}",
 ]

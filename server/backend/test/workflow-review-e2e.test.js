@@ -414,13 +414,13 @@ test("A full agenda does not stop the review gate — the error stands in the st
   await withServer(async ({ base, ws, turns }) => {
     const flow = await makeFlow(base, ws, "Review-Full", reviewFlow());
     const chat = await newChat(base, ws, "Full");
-    const steps = Array.from({ length: 200 }, (_, i) => ({ op: "fresh", text: `Item ${i + 1}` }));
+    const steps = Array.from({ length: 500 }, (_, i) => ({ op: "fresh", text: `Item ${i + 1}` }));
     await json(`${base}/api/chats/${chat.id}/agenda`, { method: "PUT", body: JSON.stringify({ title: "Full", steps }) });
     const r = await start(base, chat.id, flow.id, "Branch-1");
     const waiting = await untilStatus(base, r.run.id, "waiting", "done", "failed");
     assert.equal(waiting.run.status, "waiting", `Run should wait despite a full agenda, was ${waiting.run.status}: ${waiting.run.note}`);
     const request = waiting.steps.filter((s) => s.kind === "review").at(-1);
-    assert.match(request.detail.agendaError || "", /Deckel: eine Agenda trägt höchstens 200 Punkte/);
+    assert.match(request.detail.agendaError || "", /Deckel: eine Agenda trägt höchstens 500 Punkte/);
     assert.equal(request.detail.point, "");
     assert.equal((await reviewPoints(base, chat.id)).length, 0);
     await say(base, chat.id, "passt");

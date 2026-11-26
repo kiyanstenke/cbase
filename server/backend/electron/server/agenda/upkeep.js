@@ -24,7 +24,7 @@ import { backgroundWork } from "../runs/background.js";
 import { openAskOf } from "../runs/ask.js";
 import { depositHint } from "../runs/hints.js";
 import { changeAgenda } from "./change.js";
-import { AGENDA_UPKEEP_CODES, AgendaError } from "./operations.js";
+import { AGENDA_UPKEEP_CODES, AgendaError, nextStep } from "./operations.js";
 
 /** The body's fields: the tool's arguments and the markers the MCP server sets AFTER them. */
 export const UPKEEP_BODY_FIELDS = Object.freeze(["base", "title", "description", "steps", "outerLoop", "ofProfile", "workflowAgent"]);
@@ -140,5 +140,5 @@ export function maintainAgenda(chat, body, { now = Date.now() } = {}) {
   }
   if (r.unchanged) return { status: 200, body: { ok: true, unchanged: true, agenda: r.agenda, version: r.agenda.version } };
   depositHint(chat.id, upkeepHintText(r.changed, r.agenda), { source: "agenda-keeper" });
-  return { status: 200, body: { ok: true, agenda: r.agenda, version: r.agenda.version, changed: r.changed } };
+  return { status: 200, body: { ok: true, agenda: r.agenda, version: r.agenda.version, changed: r.changed, touched: r.touched, next: nextStep(r.agenda) } };
 }

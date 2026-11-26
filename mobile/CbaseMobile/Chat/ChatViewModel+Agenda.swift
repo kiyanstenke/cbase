@@ -52,4 +52,38 @@ extension ChatViewModel {
             UserDefaults.standard.removeObject(forKey: key)
         }
     }
+
+    // MARK: Done points, archive, search (read-only, like the rest)
+
+    /// Whether this chat's sheet shows done points — per device and chat (`Agenda.doneKey`), default hidden.
+    func agendaShowsDone() -> Bool {
+        guard !isDraft else { return false }
+        return UserDefaults.standard.string(forKey: Agenda.doneKey(chat.id)) == "1"
+    }
+
+    func rememberAgendaShowsDone(_ show: Bool) {
+        guard !isDraft else { return }
+        let key = Agenda.doneKey(chat.id)
+        if show { UserDefaults.standard.set("1", forKey: key) } else { UserDefaults.standard.removeObject(forKey: key) }
+    }
+
+    /// One page of the archive, newest first — `before` = the last entry id already shown.
+    func loadAgendaArchive(before: Int? = nil, limit: Int = 30) async throws -> Agenda.ArchivePage {
+        var query = [URLQueryItem(name: "limit", value: String(limit))]
+        if let before { query.append(URLQueryItem(name: "before", value: String(before))) }
+        return try await client.get("/api/chats/\(chat.id)/agenda/archive", query: query)
+    }
+
+    /// The search over the archive (the server also searches the active tree; the sheet takes only its archived hits).
+    func searchAgendaArchive(_ text: String) async throws -> Agenda.ArchivePage {
+        try await client.get("/api/chats/\(chat.id)/agenda/archive",
+                             query: [URLQueryItem(name: "q", value: text), URLQueryItem(name: "limit", value: "1")])
+    }
+
+    /// The subtree of one point, every status, root first — for an archive entry its archived points.
+    func loadAgendaSubtree(_ pointId: String) async throws -> [Agenda.Step] {
+        let response: Agenda.Response = try await client.get("/api/chats/\(chat.id)/agenda",
+                                                             query: [URLQueryItem(name: "point", value: pointId)])
+        return response.agenda?.steps ?? []
+    }
 }

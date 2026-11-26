@@ -169,18 +169,21 @@ test("(1) errors: reason and place in the sentence, nothing written - and all or
 });
 
 test("(1) cap: every cap says it is one, and names its number and the sent one", () => {
-  assert.deepEqual({ ...AGENDA_CAP }, { title: 120, description: 8000, points: 200, text: 80, note: 2000 });
+  assert.deepEqual({ ...AGENDA_CAP }, { title: 120, description: 8000, points: 500, text: 80, note: 2000 });
   raises(() => applyOps(EMPTY, { title: "x".repeat(121) }, T0), /^Deckel: der Titel trägt höchstens 120 Zeichen \(gesendet: 121\).*nichts geschrieben\.$/);
   raises(() => applyOps(EMPTY, { description: "x".repeat(8001) }, T0), /^Deckel: die Beschreibung trägt höchstens 8\.000 Zeichen \(gesendet: 8\.001\)/);
   assert.equal(applyOps(EMPTY, { steps: [{ op: "fresh", text: "x".repeat(80) }] }, T0).steps[0].text.length, 80, "exactly 80 go");
   raises(() => applyOps(EMPTY, { steps: [{ op: "fresh", text: "x".repeat(81) }] }, T0), /^Deckel: .*höchstens 80 Zeichen \(gesendet: 81\) — ein Punkt ist eine Überschrift, Einzelheiten gehören in seine Notiz/);
   assert.equal(applyOps(EMPTY, { steps: [{ op: "fresh", text: "x", note: "n".repeat(2000) }] }, T0).steps[0].note.length, 2000, "exactly 2,000 go");
   raises(() => applyOps(EMPTY, { steps: [{ op: "fresh", text: "x", note: "x".repeat(2001) }] }, T0), /^Deckel: .*höchstens 2\.000 Zeichen \(gesendet: 2\.001\)/);
-  const full = applyOps(EMPTY, { steps: Array.from({ length: 200 }, (_, i) => ({ op: "fresh", text: `Item ${i + 1}` })) }, T0);
-  assert.equal(full.steps.length, 200, "exactly at the cap it goes");
-  raises(() => applyOps(full, { steps: [{ op: "fresh", text: "one too many", under: "s7" }] }, T0), /^Deckel: eine Agenda trägt höchstens 200 Punkte \(es wären 201\)/);
+  const full = applyOps(EMPTY, { steps: Array.from({ length: 500 }, (_, i) => ({ op: "fresh", text: `Item ${i + 1}` })) }, T0);
+  assert.equal(full.steps.length, 500, "exactly at the cap it goes");
+  raises(() => applyOps(full, { steps: [{ op: "fresh", text: "one too many", under: "s7" }] }, T0), /^Deckel: eine Agenda trägt höchstens 500 Punkte \(es wären 501\) — archiviere erledigte Teilbäume/);
   // At the cap: erase first, then create, in ONE call - the result counts, not the intermediate state.
-  assert.equal(applyOps(full, { steps: [{ op: "erase", id: "s1" }, { op: "fresh", text: "instead of s1" }] }, T0).steps.length, 200);
+  assert.equal(applyOps(full, { steps: [{ op: "erase", id: "s1" }, { op: "fresh", text: "instead of s1" }] }, T0).steps.length, 500);
+  // The archive does not count: at the cap, archiving a finished item makes room in the same call.
+  const doneFirst = applyOps(full, { steps: [{ op: "change", id: "s1", status: "done" }] }, T0);
+  assert.equal(applyOps(doneFirst, { steps: [{ op: "archive", id: "s1" }, { op: "fresh", text: "instead of s1" }] }, T0).steps.length, 500);
   // The text cap applies only to SENT texts - a 300-character text from the flat era stays until the model changes it.
   const oldLong = { ...EMPTY, steps: [{ id: "s1", parent: null, text: "y".repeat(300), note: "", status: "open", projectId: null, createdAt: T0, changedAt: T0, doneAt: null }], nextSeq: 2 };
   const checkedOff = applyOps(oldLong, { steps: [{ op: "change", id: "s1", status: "done", note: "finished" }, { op: "fresh", text: "afterwards" }] }, T0 + 1);
@@ -199,7 +202,7 @@ test("(1) cap: every cap says it is one, and names its number and the sent one",
 
 const CODING = Object.freeze({ id: "c-1", kind: "normal", specialRole: "" });
 
-test("(2) the block: empty yields none, a marker in the content stays in it, notes only at open items", () => {
+test("(2) the block: empty yields none, a marker in the content stays in it, only unfinished items with their notes", () => {
   assert.equal(agendaFence({ ...EMPTY }), "");
   assert.equal(agendaFence({ title: "  ", description: "\n", steps: [] }), "", "only whitespace is empty");
   const z = agendaFence({
@@ -214,8 +217,9 @@ test("(2) the block: empty yields none, a marker in the content stays in it, not
   assert.equal(occurrences(z, MARKER_CLOSE), 1, "exactly one closing marker - the one in the content is defused");
   assert.equal(occurrences(z, "<cbase-agenda"), 1, "exactly one opening marker");
   assert.match(z, new RegExp(`<cbase-agenda updated="${new Date(T0).toISOString()}">`));
-  assert.match(z, /- s1 \[done\] Done thing\n- s2 \[in_work\] Running thing\n {2}Note: Finding\n {2}second line/);
-  assert.equal(z.includes("old note"), false, "the note of a done step is history");
+  assert.match(z, /\n- s2 \[in_work\] Running thing\n {2}Note: Finding\n {2}second line\n\(1 done point left out \(cbase_agenda with done: true\)\)\n<\/cbase-agenda>/);
+  assert.equal(z.includes("Done thing") || z.includes("old note"), false, "a done step is history - it stands in no block, only its count");
+  assert.match(agendaFence({ title: "T", steps: [{ id: "s1", text: "a", status: "open" }] }, new Map(), { archived: 3 }), /\(3 archived subtrees \(cbase_agenda with archive: true or search\)\)/);
   assert.ok(z.indexOf("cbase_agenda_write") < z.indexOf("<cbase-agenda"), "the preamble names the tool BEFORE the fence");
 
   assert.equal(withAgenda("", "Hello"), "Hello");
@@ -361,7 +365,7 @@ test("(3) binding MCP <-> server: status, operations and caps stand in the schem
   const props = write.inputSchema.properties;
   assert.match(props.title.description, /at most 120 characters/);
   assert.match(props.description.description, /at most 8,000 characters/);
-  assert.match(props.steps.description, /at most 200 items/);
+  assert.match(props.steps.description, /at most 500 items/);
   assert.match(props.steps.items.properties.text.description, /at most 80 characters/);
   assert.match(props.steps.items.properties.note.description, /at most 2,000 characters/);
   assert.match(write.description, /at most 80 characters/);
@@ -423,7 +427,7 @@ test("(4) main seam: writing as main agent, rights, cap, stream, reading foreign
     // Without a row: the same shape, empty - never 404.
     const beginning = await request(base, "GET", `/api/chats/${chat.id}/agenda`);
     assert.equal(beginning.status, 200);
-    assert.deepEqual(beginning.data, { agenda: { chatId: chat.id, title: "", description: "", steps: [], version: 0, changedAt: null, counter: { open: 0, in_work: 0, done: 0 } }, keepsAgenda: true });
+    assert.deepEqual(beginning.data, { agenda: { chatId: chat.id, title: "", description: "", steps: [], version: 0, changedAt: null, counter: { open: 0, in_work: 0, done: 0 }, archived: 0 }, keepsAgenda: true });
 
     const stream = chatStream(base, chat.id);
     let state = null;
@@ -440,8 +444,10 @@ test("(4) main seam: writing as main agent, rights, cap, stream, reading foreign
           ofProfile: "", workflowAgent: "", outerLoop: "",
         });
         assert.equal(r.isError, false, r.text);
-        assert.deepEqual(r.data.agenda.steps.map((s) => [s.id, s.status]), [["s1", "in_work"], ["s2", "open"]]);
-        assert.equal(r.data.agenda.descriptionCharacters, "## Goal\nBook faster".length, "the answer is compact");
+        assert.deepEqual(r.data.steps.map((s) => [s.id, s.status]), [["s1", "in_work"], ["s2", "open"]]);
+        assert.equal(r.data.agenda, undefined, "the answer is compact: the touched items, not the agenda");
+        assert.deepEqual(r.data.next, { id: "s1", text: "Measure", status: "in_work" });
+        assert.deepEqual(r.data.counter, { open: 1, in_work: 1, done: 0 });
         const l = await call(READ);
         assert.equal(l.isError, false, l.text);
         assert.equal(l.data.agenda.title, "Rebuild till");
@@ -591,7 +597,7 @@ test("(5) run: the fixed sentence in the system prompt, the block only in a turn
     const e3 = input("Third message");
     assert.equal(e3.resume, "");
     assert.equal(occurrences(e3.text, "<cbase-agenda"), 1);
-    assert.match(e3.text, /Title: Plan X\nPoints \(in their order, indented = subpoint; [^\n]*\):\n- s1 \[in_work\] Step one\n {2}Note: Note one\n<\/cbase-agenda>\n\n---\n\nThird message$/);
+    assert.match(e3.text, /Title: Plan X\nPoints not yet done \(in their order, indented = subpoint; [^\n]*\):\n- s1 \[in_work\] Step one\n {2}Note: Note one\n<\/cbase-agenda>\n\n---\n\nThird message$/);
     assert.equal(e3.sp, e1.sp);
 
     // Never in the log: the human sees what they typed.
@@ -830,7 +836,7 @@ test("(7) response: computed status, done/total only over leaves, depth, project
   assert.equal(followUp(onlyProject(a, "p-b")), "");
 });
 
-test("(7) the block indented: two spaces per level, [status n/m] on parent items, {Project: X} on the top item, notes only at open items", () => {
+test("(7) the block indented: two spaces per level, [status n/m] on parent items, {Project: X} on the top item, only unfinished items", () => {
   const a = applyOps(EMPTY, { title: "Tree", steps: [
     { op: "fresh", text: "Issue X", project: "p-a", note: "Goal of X" }, // s1
     { op: "fresh", text: "measure", under: "s1", status: "done", note: "History" }, // s2
@@ -843,16 +849,15 @@ test("(7) the block indented: two spaces per level, [status n/m] on parent items
   assert.ok(z.includes([
     "- s1 [in_work 1/2] Issue X {Project: Alpha}",
     "  Note: Goal of X",
-    "  - s2 [done] measure",
     "  - s3 [open 0/1] build",
     "    - s4 [open] part a",
     "      Note: Finding",
     "      second line",
-    "- s5 [done 1/1] Finished",
-    "  - s6 [done] one",
+    "(2 done points left out (cbase_agenda with done: true))",
     "</cbase-agenda>",
   ].join("\n")), z);
-  assert.equal(z.includes("History") || z.includes("Note: old"), false, "notes at done items (also at a computed-done parent item) are history");
+  assert.equal(z.includes("measure") || z.includes("Finished") || z.includes("History") || z.includes("Note: old"), false,
+    "done items (also a computed-done parent item with its subtree) stand in no block - the count stands for them");
   // A deleted project carries no label.
   assert.match(agendaFence({ ...a, changedAt: T0 }, new Map()), /^- s1 \[in_work 1\/2\] Issue X$/m);
 });
@@ -915,7 +920,7 @@ test("(7) main seam: legacy row without parent, project when writing and reading
     assert.equal(foreign.data.filter.from, 9);
     // The tool passes the filter on; the list counts only leaves.
     await withMcp({ CBASE_BASE_URL: base, CBASE_CHAT_ID: b.id, CBASE_WORKSPACE_ID: ws.id }, async ({ call }) => {
-      const l = await call(READ, { chatId: chat.id, project: "Alpha" });
+      const l = await call(READ, { chatId: chat.id, project: "Alpha", done: true });
       assert.equal(l.isError, false, l.text);
       assert.deepEqual(l.data.agenda.steps.map((s) => [s.id, s.under || null, s.progress || null]), [["s7", null, "1/3"], ["s8", "s7", null], ["s9", "s7", null], ["s5", "s7", "0/1"], ["s6", "s5", null]]);
       assert.deepEqual(l.data.agenda.steps[0].project, { id: "p-alpha", name: "Alpha" });

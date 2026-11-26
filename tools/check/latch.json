@@ -12,6 +12,7 @@
     "active-runs.test.js",
     "agenda.test.js",
     "agenda-upkeep.test.js",
+    "agenda-archive.test.js",
     "agenda-title-rule.test.js",
     "agent-work-end.test.js",
     "agent-cap.test.js",
