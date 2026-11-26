@@ -22,6 +22,7 @@ import { useOlderReload } from "@/components/chat/chatOlder";
 import { EndAnchor, useUserInput } from "@/lib/scroll";
 import { useMarginWheel } from "@/lib/margin-wheel";
 import { dateLocale } from "@/lib/i18n";
+import type { UploadSource } from "@/lib/drop-files";
 import { AutocompactMenu, ThresholdsMarker, workflowCompactionHint } from "@/components/Autocompact";
 import { BubbleRow, ChatSkeleton } from "@/components/chat/ChatBubbleRow";
 import { RunDisplay } from "@/components/chat/RunDisplay";
@@ -153,7 +154,7 @@ export type ChatStageProps = {
   activeIdRef: React.RefObject<string | null>; // the context bar reads the chat id on click
   folderChats: Map<string, Chat[]>; // chats per folder (folder view)
   open: (id: string) => Promise<void>; // open a chat (from the folder view)
-  addFiles: (list: FileList | File[]) => Promise<void>; // drop target
+  addFiles: (source: UploadSource) => Promise<void>; // drop target (the DataTransfer itself: folders are walked)
   pushInfo: (title: string, body: string) => void; // info bubble (context bar)
   retryLimitNow: (anyway?: boolean) => Promise<void>; // limit strip
   cancelLimitWait: () => Promise<void>;
@@ -410,7 +411,7 @@ export function ChatStage(props: ChatStageProps) {
           e.preventDefault();
           setDragOver(false);
           if (archived) return; // read-only: in the archive the stage accepts no attachment
-          if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
+          if (e.dataTransfer.files.length) addFiles(e.dataTransfer);
         }}
       >
         {/* Folder view: lies OVER the chat area (absolute inset-0), so that the open chat with its event stream stays and a click on

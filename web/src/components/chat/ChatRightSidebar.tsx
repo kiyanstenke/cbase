@@ -10,6 +10,7 @@ import { Chevron, field, Hint, Menu, MenuEntry } from "@/components/CbKit";
 import { type Block } from "@/components/AssistantBlocks";
 import { AgentBar } from "@/components/AgentBar";
 import { type Agent, type BackgroundItem } from "@/lib/agents";
+import { filesOf, readableFile, type UploadSource } from "@/lib/drop-files";
 import type { WorkflowChoice } from "@/lib/agent-jump";
 import type { DynTreeStatus } from "@/lib/dyn-tree";
 import type { GraphRequest, GraphRunsStatus } from "@/lib/graph-runs";
@@ -507,16 +508,17 @@ export function ChatRightSidebar(props: ChatRightSidebarProps) {
   // chats of the same folder stay read-only. If the path exists, the server answers 409 + `exists`; here we ask and repeat with
   // ?overwrite=1 only after a yes. The server then sends "artifact_changed", and the list is also refreshed directly so the new
   // file shows up without a detour.
-  async function uploadArtifacts(list: FileList | File[]) {
+  async function uploadArtifacts(source: UploadSource) {
     const chatId = activeIdRef.current;
-    const chosen = Array.from(list);
-    if (!chatId || !chosen.length) return;
+    if (!chatId) return;
+    // Before the first await: a drop's entries are gone afterwards. A dropped folder keeps its path, artifacts may have subfolders.
+    const pending = filesOf(source);
     setArtifactUploading(true);
     let lastPath = "";
     try {
-      for (const file of chosen) {
-        // A dropped FOLDER delivers its path in webkitRelativePath; it is kept, artifacts may have subfolders.
-        const name = (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
+      for (const d of await pending) {
+        const name = d.rel;
+        const file = await readableFile(d, (rel) => t("\"{name}\" could not be read on this computer. If it is a cloud-only file (OneDrive, iCloud Drive, Dropbox), make it available offline and try again.", { name: rel }));
         const put = (overwrite: boolean) =>
           api<ChatArtifact>(
             `/api/chats/${chatId}/artifacts/upload?path=${encodeURIComponent(name)}${overwrite ? "&overwrite=1" : ""}`,
@@ -867,7 +869,7 @@ export function ChatRightSidebar(props: ChatRightSidebarProps) {
                   e.preventDefault();
                   e.stopPropagation();
                   setArtifactDragOver(false);
-                  uploadArtifacts(e.dataTransfer.files);
+                  uploadArtifacts(e.dataTransfer);
                 }}
               >
                 {/* Outputs visible: the chat's output location as the first folder; always there, read-only. */}

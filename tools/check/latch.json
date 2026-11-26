@@ -481,6 +481,7 @@
     "coding-tab.test.mjs",
     "composer-form.test.mjs",
     "composer-contract.test.mjs",
+    "drop-files.test.mjs",
     "file-status.test.mjs",
     "file-search.test.mjs",
     "file-symbols.test.mjs",

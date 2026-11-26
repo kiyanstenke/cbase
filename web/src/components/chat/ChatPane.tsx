@@ -15,6 +15,7 @@ import { type AskAnswer } from "@/components/AskCard";
 import { type ApprovalRuling } from "@/components/ApprovalCard";
 import { draftKey, draftKeyNew, readDraft, deleteDraft, useDraft, moveDraft } from "@/lib/draft";
 import { useT } from "@/lib/i18n";
+import { filesOf, readableFile, type UploadSource } from "@/lib/drop-files";
 import { useAutoCollapse } from "@/lib/viewport";
 import { isSection } from "@/lib/chat-bar";
 import { terminalLayoutKey, terminalScope } from "@/components/TerminalsPane";
@@ -1015,13 +1016,18 @@ export function ChatPane({
     if (!onlyChat) try { localStorage.removeItem(chatKey); } catch { /* local preference is optional */ }
   }
 
-  // Upload files (raw body, name as query) and queue them as waiting attachments.
-  async function addFiles(list: FileList | File[]) {
-    if (!list.length) return;
+  // Upload files (raw body, name as query) and queue them as waiting attachments. A drop comes as its DataTransfer: `filesOf`
+  // takes its entries before the first await and walks dropped folders into their files (drop-files.ts says why);
+  // `readableFile` turns an unreadable file into a named error instead of "Failed to fetch".
+  async function addFiles(source: UploadSource) {
+    const pending = filesOf(source);
     setUploading(true);
     try {
+      const list = await pending;
+      if (!list.length) return;
       const chatId = await ensureChat();
-      for (const f of Array.from(list)) {
+      for (const d of list) {
+        const f = await readableFile(d, (rel) => t("\"{name}\" could not be read on this computer. If it is a cloud-only file (OneDrive, iCloud Drive, Dropbox), make it available offline and try again.", { name: rel }));
         const att = await api<Attachment>(
           `/api/chats/${chatId}/attachments?name=${encodeURIComponent(f.name || "image.png")}`,
           { method: "POST", headers: { "Content-Type": "application/octet-stream" }, body: f },

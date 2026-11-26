@@ -18,6 +18,7 @@ import { api, subscribeGlobalEvents } from "@/lib/api";
 import { tr } from "@/lib/i18n";
 import { type SelectionTree, type Plan, type Rules, nameError, nameOf, normal, targetOf } from "@/lib/project-layout";
 import { type ZipDirectory, fileReader, readSmallEntry, readZipDirectory, zipTargetName } from "@/lib/zip-directory";
+import { fileOf, readFolderEntries } from "@/lib/drop-files";
 
 export const CHUNK = 3 * 1024 * 1024;
 export const PATHS_PER_STACK = 5000;
@@ -872,25 +873,8 @@ export function rememberedOperation(projectId: string, operation: string): Remem
 
 // ── Drag & drop (web) ────────────────────────────────────────────────────────────────────────────────────────────────
 
-/** The entries of a drop; to be fetched SYNCHRONOUSLY in the `drop` event (the items are empty afterwards). */
-export function depositEntries(dt: DataTransfer): FileSystemEntry[] {
-  const out: FileSystemEntry[] = [];
-  for (const it of Array.from(dt.items ?? [])) {
-    if (it.kind !== "file") continue;
-    const e = it.webkitGetAsEntry?.();
-    if (e) out.push(e);
-  }
-  return out;
-}
-
-const readFolderEntries = (d: FileSystemDirectoryEntry): Promise<FileSystemEntry[]> => new Promise((ok, no) => {
-  const reader = d.createReader();
-  const all: FileSystemEntry[] = [];
-  const further = () => reader.readEntries((part) => { if (!part.length) ok(all); else { all.push(...part); further(); } }, no);
-  further();
-});
-/** The file of a dropped entry. */
-export const fileOf = (f: FileSystemFileEntry): Promise<File> => new Promise((ok, no) => f.file(ok, no));
+// `depositEntries`, `readFolderEntries` and `fileOf` live in drop-files.ts (shared with the chat uploads).
+export { depositEntries, fileOf } from "@/lib/drop-files";
 
 /**
  * Read a drop (folders and files mixed): ONE selection of kind `files` whose `rel` carries the folder name, so a dropped folder becomes

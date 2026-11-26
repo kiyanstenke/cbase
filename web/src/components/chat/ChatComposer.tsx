@@ -2,6 +2,7 @@
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { api, type Attachment, type WorkflowMeta, type WorkflowRun } from "@/lib/api";
+import type { UploadSource } from "@/lib/drop-files";
 import { CbSendButton } from "@/components/CbSendButton";
 import { SlashPalette } from "@/components/SlashPalette";
 import { filterPalette, graphEntries, type PaletteEntry, placeSlash, slashMarkerLength, slashQuery, slashKey } from "@/lib/slash";
@@ -57,7 +58,7 @@ export type ChatComposerProps = {
   stopping: boolean;
   send: (preset?: string) => void | Promise<void>;
   stop: () => void | Promise<void>;
-  addFiles: (list: FileList | File[]) => void | Promise<void>;
+  addFiles: (source: UploadSource) => void | Promise<void>;
   addPastedText: (text: string) => void | Promise<void>; // a large paste becomes an attachment (isLargePaste)
   wfRun: WorkflowRun | null; // the chat's running workflow (placeholder): comes from the server, not from the picker
   taRef: React.RefObject<HTMLTextAreaElement | null>; // focused from outside (askAboutSelection, hero ideas)

@@ -1168,6 +1168,7 @@ export const DE: Record<string, string> = {
   "Unknown: \"{arg}\". Available: full, auto, plan, ask.": "Unbekannt: „{arg}\". Verfügbar: voll, auto, plan, fragen.",
   "Unstage": "Unstagen",
   "Upload failed: {msg}": "Upload fehlgeschlagen: {msg}",
+  "\"{name}\" could not be read on this computer. If it is a cloud-only file (OneDrive, iCloud Drive, Dropbox), make it available offline and try again.": "„{name}“ lässt sich auf diesem Rechner nicht lesen. Liegt die Datei nur in der Cloud (OneDrive, iCloud Drive, Dropbox), mach sie offline verfügbar und versuch es noch einmal.",
   "Upload failed: {name}": "Upload fehlgeschlagen: {name}",
   "Uploading…": "Upload läuft…",
   "Variables": "Variablen",

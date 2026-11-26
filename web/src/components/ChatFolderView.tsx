@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { API_BASE, api, type Chat, type ChatFolder } from "@/lib/api";
 import { ArtifactModal, ArtifactTree, type ChatArtifact, type ChatArtifactContent, artifactIsText, artifactKey, artifactTree, afterTheSave } from "@/components/ArtifactBrowser";
 import { useT } from "@/lib/i18n";
+import { filesOf, readableFile, type UploadSource } from "@/lib/drop-files";
 import { ghost } from "@/components/CbKit";
 import { useConfirm } from "@/components/Prompts";
 
@@ -124,14 +125,15 @@ export function ChatFolderView({ folder, chats, locale, reloadToken = 0, onOpenC
 
   // Upload context. As with artifact upload: for an existing file the server answers 409 + `exists`;
   // we ask and retry with ?overwrite=1 only after a yes.
-  async function uploadContext(list: FileList | File[]) {
-    const chosen = Array.from(list);
-    if (!chosen.length) return;
+  // A drop comes as its DataTransfer (folders walked, see drop-files.ts); `filesOf` runs before the first await.
+  async function uploadContext(source: UploadSource) {
+    const pending = filesOf(source);
     setUploading(true);
     setError("");
     try {
-      for (const file of chosen) {
-        const name = (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
+      for (const d of await pending) {
+        const name = d.rel;
+        const file = await readableFile(d, (rel) => t("\"{name}\" could not be read on this computer. If it is a cloud-only file (OneDrive, iCloud Drive, Dropbox), make it available offline and try again.", { name: rel }));
         const put = (overwrite: boolean) =>
           api<ChatArtifact>(
             `/api/chat-folders/${folder.id}/context/upload?path=${encodeURIComponent(name)}${overwrite ? "&overwrite=1" : ""}`,
@@ -242,7 +244,7 @@ export function ChatFolderView({ folder, chats, locale, reloadToken = 0, onOpenC
             if (!e.dataTransfer.files.length) return;
             e.preventDefault();
             setDragOver(false);
-            uploadContext(e.dataTransfer.files);
+            uploadContext(e.dataTransfer);
           }}
         >
           <div className="flex shrink-0 items-center gap-2 border-b border-edge px-4 py-3">

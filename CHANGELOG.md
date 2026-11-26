@@ -33,6 +33,10 @@ versions follow [Semantic Versioning](https://semver.org/) as [VERSIONING.md](VE
 - A message can now reach a workflow agent the script has not started yet: `wf:<runId>:<label>` goes onto the job of the
   next agent with that label, `wf:<runId>` onto the job of every agent started from then on. Before, only running, waiting
   or parked agents had an address, so a correction for a later step meant stopping the workflow.
+- Dropping a folder on a chat (as attachments, on the artifact list, or on a chat folder's context) uploads the files inside
+  it, with their subfolders where the target keeps paths. Before, the browser handed over the folder itself as one unreadable
+  file and the upload stopped with "Failed to fetch". A file the browser cannot read, such as a cloud-only placeholder of a sync
+  client, now fails with its name and a hint to make it available offline.
 
 ## [0.3.1] - 2026-11-25
 

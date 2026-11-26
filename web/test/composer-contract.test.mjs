@@ -19,7 +19,7 @@
 // React setters —, the `<ChatComposer …/>` call stands as CHILD between `<ChatStage …>` and `</ChatStage>` (its props do not run
 // through the stage), the stage carries drop target, header, banner, hero, history, approval cards, selection menu and base alone,
 // and the drop target is wired to `addFiles` from ChatPane. The sabotage reads in the source: `onDrop` no longer calls
-// `addFiles(e.dataTransfer.files)`, or `addFiles` does not arrive under its own name => red; likewise `PermissionPrompt` without
+// `addFiles(e.dataTransfer)`, or `addFiles` does not arrive under its own name => red; likewise `PermissionPrompt` without
 // `decidePermission` and the limit strip without `retryLimitNow`.
 // Three small contracts, all without context: the slash SWITCH `runSlash(text, attachments, h)` in `chatSlash.ts` (the values and
 // handlers it used to read as a closure arrive as a map `h: SlashHandler` and are destructured at the head — ChatPane keeps the
@@ -42,7 +42,7 @@
 // own name" red; `await loadArtifacts(chatId)` dropped from `uploadArtifacts` => "upload chain" red; `data-chat-bar` back in
 // ChatPane => "no identifier left in ChatPane" red. List: `onDelete={deleteFolder}` dropped from the FolderMenu => "folder menu"
 // red; `loadList={async () => []}` in ChatPane => "every prop under its own name" red; `data-pop="sort"` back in ChatPane => "no
-// identifier left in ChatPane" red. Stage: `addFiles(e.dataTransfer.files)` dropped from `onDrop` => "drop target" red;
+// identifier left in ChatPane" red. Stage: `addFiles(e.dataTransfer)` dropped from `onDrop` => "drop target" red;
 // `addFiles={() => {}}` in ChatPane => "every prop under its own name" red; `data-pop="header"` back in ChatPane => "no identifier
 // left in ChatPane" red; `<ChatComposer` out of the child slot => "the composer stands as child" red. Slash switch: the `browser`
 // branch dropped from the switch => "table command without branch" red; `pickBrowser: pickEffort` in the handler map => "own
@@ -456,7 +456,7 @@ test("ChatStage: the stage lives only in ChatStage.tsx — no identifier, no bui
     // From sending the first message on the chat is no longer empty (`firstInFlight`).
     "const empty = !firstInFlight && (!activeId || (bubbles.length === 0 && !chatLoading));", "function selectionInMessages(): { text: string; rect: DOMRect } | null {",
     "const [selMenu, setSelMenu] = useState<{ text: string; rect: DOMRect } | null>(null);", "const [dragOver, setDragOver] = useState(false);",
-    "async function addFiles(list: FileList | File[]) {", "async function answerAsk(requestId: string, answers: AskAnswer[]) {",
+    "async function addFiles(source: UploadSource) {", "async function answerAsk(requestId: string, answers: AskAnswer[]) {",
     "const [headerMenu, setHeaderMenu] = useState(false);", "const [projPickerOpen, setProjPickerOpen] = useState(false);",
     // An archived chat is not in the list — its metadata come from `useArchive` (`archiveChat`), the line stays in ChatPane.
     "function pickHeroProject(id: string | null) {", "const activeChat = chats.find((c) => c.id === activeId) ?? archiveChat;", "{providerSwitch && ("]) {
@@ -484,7 +484,7 @@ test("ChatStage: drop target, approval cards and limit strip are wired to the ha
   const drop = stage.slice(stage.indexOf("onDrop={(e) => {"), stage.indexOf("}}", stage.indexOf("onDrop={(e) => {")));
   assert.ok(drop.includes("if (!activeId) return;"), "without a chat no drop");
   assert.ok(drop.includes("e.preventDefault();") && drop.includes("setDragOver(false);"), "drop prevents opening the file and resets the flag");
-  assert.ok(drop.includes("if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);"), "drop target calls addFiles with the files");
+  assert.ok(drop.includes("if (e.dataTransfer.files.length) addFiles(e.dataTransfer);"), "drop target calls addFiles with the DataTransfer (folders are walked, drop-files.test.mjs)");
   assert.equal(inPaneStage.get("addFiles"), "addFiles", "addFiles comes from ChatPane under its own name");
   assert.equal(inPaneStage.get("setDragOver"), "setDragOver");
   const over = stage.slice(stage.indexOf("onDragOver={(e) => {"), stage.indexOf("}}", stage.indexOf("onDragOver={(e) => {")));
